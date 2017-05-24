@@ -2,8 +2,9 @@ package server
 
 import (
 	"cloudkarafka-mgmt/kafka"
-	"cloudkarafka-mgmt/storage"
+	"cloudkarafka-mgmt/zookeeper"
 
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -16,8 +17,9 @@ type base struct {
 }
 
 type broker struct {
-	Id, Version, AdvertisedPorts string
-	Uptime                       time.Duration
+	Id, Version     string
+	AdvertisedPorts interface{}
+	Uptime          time.Duration
 }
 
 type topic struct {
@@ -30,11 +32,20 @@ func generateViewModel() base {
 		brokers []broker
 		topics  []topic
 	)
-	if id, ok := storage.Get("id").(string); ok {
-		ts, _ := strconv.ParseInt(storage.Get("timestamp").(string), 10, 64)
-		t := time.Unix(ts/1000, 0)
-		uptime := time.Since(t)
-		brokers = append(brokers, broker{Id: id, Uptime: uptime})
+
+	for _, b := range zookeeper.Brokers() {
+		fmt.Println(b)
+		if id, ok := b["id"].(string); ok {
+			ts, _ := strconv.ParseInt(b["timestamp"].(string), 10, 64)
+			t := time.Unix(ts/1000, 0)
+			uptime := time.Since(t)
+			endpoints := b["endpoints"]
+			brokers = append(brokers, broker{
+				Id:              id,
+				Uptime:          uptime,
+				AdvertisedPorts: endpoints,
+			})
+		}
 	}
 	ts, err := kafka.Topics()
 	if err == nil {

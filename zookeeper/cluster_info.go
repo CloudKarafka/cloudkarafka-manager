@@ -1,29 +1,24 @@
 package zookeeper
 
 import (
-	"cloudkarafka-mgmt/storage"
-	"github.com/samuel/go-zookeeper/zk"
-
 	"encoding/json"
 	"fmt"
 )
 
-func clusterInfo(conn *zk.Conn) {
-	for {
-		ids, _, changes, err := conn.ChildrenW("/brokers/ids")
-		if err != nil {
-			fmt.Println("error")
-		}
-		for _, id := range ids {
-			storage.Add("id", id)
-			raw, _, _ := conn.Get(fmt.Sprintf("/brokers/ids/%s", id))
-			info := make(map[string]interface{})
-			err := json.Unmarshal(raw, &info)
-			fmt.Println(err)
-			for key, value := range info {
-				storage.Add(key, value)
-			}
-		}
-		<-changes
+func Brokers() []map[string]interface{} {
+	var brokers []map[string]interface{}
+	ids, _, err := conn.Children("/brokers/ids")
+	if err != nil {
+		fmt.Println(err)
+		connect("localhost:2181")
+		return brokers
 	}
+	for _, id := range ids {
+		raw, _, _ := conn.Get(fmt.Sprintf("/brokers/ids/%s", id))
+		info := make(map[string]interface{})
+		json.Unmarshal(raw, &info)
+		info["id"] = id
+		brokers = append(brokers, info)
+	}
+	return brokers
 }

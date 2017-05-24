@@ -19,8 +19,8 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	go kafka.Start()
-	go zookeeper.Start()
+	kafka.Start()
+	zookeeper.Start()
 	go server.Start(port)
 
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
