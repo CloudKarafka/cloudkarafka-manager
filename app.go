@@ -29,7 +29,7 @@ func main() {
 		fmt.Println("[ERROR] could not exit in reasonable time")
 		os.Exit(1)
 	})
-	//kafka.Stop()
-	//zookeeper.Stop()
-	os.Exit(0)
+	kafka.Stop()
+	zookeeper.Stop()
+	fmt.Println("stopped")
 }

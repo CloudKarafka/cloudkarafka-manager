@@ -17,6 +17,12 @@ func Start() error {
 	return err
 }
 
+func Stop() {
+	if conn != nil {
+		conn.Close()
+	}
+}
+
 func connect(url string) error {
 	var err error
 	if conn != nil {

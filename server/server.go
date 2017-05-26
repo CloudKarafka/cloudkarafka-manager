@@ -4,69 +4,66 @@ import (
 	"cloudkarafka-mgmt/kafka"
 	"cloudkarafka-mgmt/zookeeper"
 
+	"github.com/gorilla/mux"
+
+	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
-	"strconv"
 	"time"
 )
 
-type base struct {
-	Brokers []broker
-	Topics  []topic
+func brokers(w http.ResponseWriter, r *http.Request) {
+	brokers := zookeeper.Brokers()
+	writeJson(w, brokers, nil)
 }
 
-type broker struct {
-	Id, Version     string
-	AdvertisedPorts interface{}
-	Uptime          time.Duration
+func broker(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	vars := mux.Vars(r)
+	fmt.Fprintf(w, string(zookeeper.Broker(vars["id"])))
 }
 
-type topic struct {
-	Name, Replicas, Config string
-	Partitions             int
+func topics(w http.ResponseWriter, r *http.Request) {
+	topics, err := kafka.Topics()
+	writeJson(w, topics, err)
 }
 
-func generateViewModel() base {
-	var (
-		brokers []broker
-		topics  []topic
-	)
+func topic(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	topic, err := kafka.Topic(vars["name"])
+	writeJson(w, topic, err)
+}
 
-	for _, b := range zookeeper.Brokers() {
-		fmt.Println(b)
-		if id, ok := b["id"].(string); ok {
-			ts, _ := strconv.ParseInt(b["timestamp"].(string), 10, 64)
-			t := time.Unix(ts/1000, 0)
-			uptime := time.Since(t)
-			endpoints := b["endpoints"]
-			brokers = append(brokers, broker{
-				Id:              id,
-				Uptime:          uptime,
-				AdvertisedPorts: endpoints,
-			})
-		}
+func consumers(w http.ResponseWriter, r *http.Request) {
+	c, err := kafka.Consumers()
+	writeJson(w, c, err)
+}
+
+func consumer(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	consumer, err := kafka.Consumer(vars["name"])
+	writeJson(w, consumer, err)
+}
+
+func writeJson(w http.ResponseWriter, bytes interface{}, err error) {
+	w.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprintf(w, err.Error())
+	} else {
+		json.NewEncoder(w).Encode(bytes)
 	}
-	ts, err := kafka.Topics()
-	if err == nil {
-		for _, t := range ts {
-			topics = append(topics, topic{
-				Name:       t.Name,
-				Partitions: len(t.Partitions),
-			})
-		}
-	}
-	return base{Brokers: brokers, Topics: topics}
-}
-
-func home(w http.ResponseWriter, r *http.Request) {
-	t, _ := template.ParseFiles("server/views/home.tpl")
-	vm := generateViewModel()
-	t.Execute(w, vm)
 }
 
 func Start(port string) {
-	http.HandleFunc("/", home)
+	r := mux.NewRouter()
+	r.HandleFunc("/api/brokers", brokers)
+	r.HandleFunc("/api/brokers/{id}", broker)
+	r.HandleFunc("/api/topics", topics)
+	r.HandleFunc("/api/topics/{name}", topic)
+	r.HandleFunc("/api/consumers", consumers)
+	r.HandleFunc("/api/consumers/{name}", consumer)
+	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         port,
 		ReadTimeout:  10 * time.Second,

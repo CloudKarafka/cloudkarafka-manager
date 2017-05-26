@@ -3,6 +3,7 @@ package kafka
 import (
 	"github.com/Shopify/sarama"
 
+	"fmt"
 	"time"
 )
 
@@ -22,6 +23,32 @@ func Start() error {
 	//go consumerOffsets(s)
 	connect()
 	return nil
+}
+
+func Consumers() ([]*sarama.GroupDescription, error) {
+	resp, err := broker.DescribeGroups(&sarama.DescribeGroupsRequest{})
+	fmt.Println(err)
+	if err != nil {
+		connect()
+		return make([]*sarama.GroupDescription, 0), err
+	}
+	return resp.Groups, nil
+}
+
+func Consumer(name string) (*sarama.GroupDescription, error) {
+	resp, err := broker.DescribeGroups(&sarama.DescribeGroupsRequest{
+		Groups: []string{name},
+	})
+	if err != nil {
+		connect()
+		return nil, err
+	}
+	return resp.Groups[0], nil
+}
+
+func Topic(name string) (*sarama.TopicMetadata, error) {
+	resp, err := broker.GetMetadata(&sarama.MetadataRequest{Topics: []string{name}})
+	return resp.Topics[0], err
 }
 
 func Topics() ([]*sarama.TopicMetadata, error) {
