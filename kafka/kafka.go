@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/rcrowley/go-metrics"
 
 	"fmt"
 	"time"
@@ -67,6 +68,7 @@ func connect() {
 	url := "localhost:9092"
 	config := sarama.NewConfig()
 	config.ClientID = "CloudKarafka-consumer-offset-monitor"
+	config.MetricRegistry = metrics.DefaultRegistry
 	broker = sarama.NewBroker(url)
 	if err := broker.Open(config); err != nil {
 		time.Sleep(1 * time.Second)

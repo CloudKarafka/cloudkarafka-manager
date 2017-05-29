@@ -1,68 +1,27 @@
 package server
 
 import (
-	"cloudkarafka-mgmt/kafka"
-	"cloudkarafka-mgmt/zookeeper"
+	"cloudkarafka-mgmt/server/handler"
 
 	"github.com/gorilla/mux"
+	"github.com/rcrowley/go-metrics"
 
-	"encoding/json"
-	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
-func brokers(w http.ResponseWriter, r *http.Request) {
-	brokers := zookeeper.Brokers()
-	writeJson(w, brokers, nil)
-}
-
-func broker(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	vars := mux.Vars(r)
-	fmt.Fprintf(w, string(zookeeper.Broker(vars["id"])))
-}
-
-func topics(w http.ResponseWriter, r *http.Request) {
-	topics, err := kafka.Topics()
-	writeJson(w, topics, err)
-}
-
-func topic(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	topic, err := kafka.Topic(vars["name"])
-	writeJson(w, topic, err)
-}
-
-func consumers(w http.ResponseWriter, r *http.Request) {
-	c, err := kafka.Consumers()
-	writeJson(w, c, err)
-}
-
-func consumer(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	consumer, err := kafka.Consumer(vars["name"])
-	writeJson(w, consumer, err)
-}
-
-func writeJson(w http.ResponseWriter, bytes interface{}, err error) {
-	w.Header().Set("Content-Type", "application/json")
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, err.Error())
-	} else {
-		json.NewEncoder(w).Encode(bytes)
-	}
-}
-
 func Start(port string) {
+	go metrics.Log(metrics.DefaultRegistry, 5*time.Second, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
+
 	r := mux.NewRouter()
-	r.HandleFunc("/api/brokers", brokers)
-	r.HandleFunc("/api/brokers/{id}", broker)
-	r.HandleFunc("/api/topics", topics)
-	r.HandleFunc("/api/topics/{name}", topic)
-	r.HandleFunc("/api/consumers", consumers)
-	r.HandleFunc("/api/consumers/{name}", consumer)
+	r.HandleFunc("/api/brokers", handler.Brokers)
+	r.HandleFunc("/api/brokers/{id}", handler.Broker)
+	r.HandleFunc("/api/topics", handler.Topics)
+	r.HandleFunc("/api/topics/{name}", handler.Topic)
+	r.HandleFunc("/api/consumers", handler.Consumers)
+	r.HandleFunc("/api/consumers/{name}", handler.Consumer)
 	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         port,
