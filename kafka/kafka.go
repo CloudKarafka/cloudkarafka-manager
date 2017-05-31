@@ -47,20 +47,6 @@ func Consumer(name string) (*sarama.GroupDescription, error) {
 	return resp.Groups[0], nil
 }
 
-func Topic(name string) (*sarama.TopicMetadata, error) {
-	resp, err := broker.GetMetadata(&sarama.MetadataRequest{Topics: []string{name}})
-	return resp.Topics[0], err
-}
-
-func Topics() ([]*sarama.TopicMetadata, error) {
-	resp, err := broker.GetMetadata(&sarama.MetadataRequest{})
-	if err != nil {
-		connect()
-		return []*sarama.TopicMetadata{}, err
-	}
-	return resp.Topics, nil
-}
-
 func connect() {
 	if broker != nil {
 		broker.Close()
