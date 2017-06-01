@@ -7,6 +7,7 @@ import (
 )
 
 func internalError(w http.ResponseWriter, err error) {
+	fmt.Println(err)
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprintf(w, err.Error())
 }
