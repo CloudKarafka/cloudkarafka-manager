@@ -27,7 +27,13 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		topic(w, vars)
+		topic(w, vars["topic"])
+	case "PUT":
+		if err := r.ParseForm(); err != nil {
+			internalError(w, err)
+		} else {
+			updateTopic(w, vars["topic"], r.Form)
+		}
 	case "DELETE":
 		deleteTopic(w, vars["topic"])
 	default:
@@ -46,8 +52,8 @@ func Partition(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func topic(w http.ResponseWriter, vars map[string]string) {
-	topic, err := zookeeper.Topic(vars["topic"])
+func topic(w http.ResponseWriter, name string) {
+	topic, err := zookeeper.Topic(name)
 	if err != nil {
 		internalError(w, err)
 	} else {
@@ -75,26 +81,41 @@ func topics(w http.ResponseWriter) {
 }
 
 func createTopic(w http.ResponseWriter, form url.Values) {
-	partitions, err := strconv.Atoi(form.Get("partitions"))
+	partitions, replicationFactor, err := parseTopicOptions(form)
 	if err != nil {
 		internalError(w, err)
 		return
+	}
+	err = zookeeper.CreateOrUpdateTopic(form.Get("topic"), partitions, replicationFactor)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	topic(w, form.Get("topic"))
+}
+
+func updateTopic(w http.ResponseWriter, name string, form url.Values) {
+	partitions, replicationFactor, err := parseTopicOptions(form)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	err = zookeeper.CreateOrUpdateTopic(name, partitions, replicationFactor)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	topic(w, name)
+}
+
+func parseTopicOptions(form url.Values) (int, int, error) {
+	partitions, err := strconv.Atoi(form.Get("partitions"))
+	if err != nil {
+		return 0, 0, err
 	}
 	replicationFactor, err := strconv.Atoi(form.Get("replication_factor"))
 	if err != nil {
-		internalError(w, err)
-		return
+		return 0, 0, err
 	}
-	err = zookeeper.CreateTopic(form.Get("topic"), partitions, replicationFactor)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	topic, err := zookeeper.Topic(form.Get("topic"))
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, string(topic))
+	return partitions, replicationFactor, nil
 }

@@ -9,6 +9,10 @@ import (
 	"strconv"
 )
 
+var (
+	onlyIncreasePartitionCount = errors.New("ERROR: partition count can only increase.")
+)
+
 func Topics() ([]string, error) {
 	topics, _, err := conn.Children("/brokers/topics")
 	if err != nil {
@@ -34,7 +38,7 @@ func Partition(topic, partition string) ([]byte, error) {
 	return state, err
 }
 
-func CreateTopic(name string, partitions, replicationFactor int) error {
+func CreateOrUpdateTopic(name string, partitions, replicationFactor int) error {
 	topic := make(map[string]interface{})
 	topic["version"] = 1
 	var ids []int
@@ -47,14 +51,24 @@ func CreateTopic(name string, partitions, replicationFactor int) error {
 		return errors.New(msg)
 	}
 	hash := make(map[string][]int)
-	nrOfBrokers := len(ids)
 	perms := permutations(ids)
 	for i := 0; i < partitions; i++ {
-		hash[strconv.Itoa(i)] = perms[i%nrOfBrokers]
+		hash[strconv.Itoa(i)] = perms[i%len(perms)][:replicationFactor]
 	}
 	topic["partitions"] = hash
 	j, _ := json.Marshal(topic)
-	_, err := conn.Create("/brokers/topics/"+name, j, 0, zk.WorldACL(zk.PermAll))
+	path := "/brokers/topics/" + name
+	var err error
+	if exists, stat, _ := conn.Exists(path); exists {
+		currentPartitions, _, _ := conn.Children(path + "/partitions")
+		if len(hash) < len(currentPartitions) {
+			err = onlyIncreasePartitionCount
+		} else {
+			_, err = conn.Set(path, j, stat.Version)
+		}
+	} else {
+		_, err = conn.Create(path, j, 0, zk.WorldACL(zk.PermAll))
+	}
 	return err
 }
 
