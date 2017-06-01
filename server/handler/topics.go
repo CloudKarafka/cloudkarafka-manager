@@ -28,6 +28,8 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		topic(w, vars)
+	case "DELETE":
+		deleteTopic(w, vars["topic"])
 	default:
 		http.NotFound(w, r)
 	}
@@ -51,6 +53,15 @@ func topic(w http.ResponseWriter, vars map[string]string) {
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(topic))
+	}
+}
+
+func deleteTopic(w http.ResponseWriter, topic string) {
+	err := zookeeper.DeleteTopic(topic)
+	if err != nil {
+		internalError(w, err)
+	} else {
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

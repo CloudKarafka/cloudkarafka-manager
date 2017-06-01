@@ -58,6 +58,11 @@ func CreateTopic(name string, partitions, replicationFactor int) error {
 	return err
 }
 
+func DeleteTopic(name string) error {
+	_, err := conn.Create("/admin/delete_topics/"+name, nil, 0, zk.WorldACL(zk.PermAll))
+	return err
+}
+
 func permutations(arr []int) [][]int {
 	var helper func([]int, int)
 	res := [][]int{}
