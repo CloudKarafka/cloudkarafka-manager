@@ -38,7 +38,7 @@ func Partition(topic, partition string) ([]byte, error) {
 	return state, err
 }
 
-func CreateOrUpdateTopic(name string, partitions, replicationFactor int) error {
+func CreateOrUpdateTopic(name string, partitionCount, replicationFactor int) error {
 	topic := make(map[string]interface{})
 	topic["version"] = 1
 	var ids []int
@@ -50,18 +50,21 @@ func CreateOrUpdateTopic(name string, partitions, replicationFactor int) error {
 		msg := fmt.Sprintf("ERROR: replication factor (%v) can not be larger than number of brokers (%v).", replicationFactor, len(ids))
 		return errors.New(msg)
 	}
-	hash := make(map[string][]int)
-	perms := permutations(ids)
-	for i := 0; i < partitions; i++ {
-		hash[strconv.Itoa(i)] = perms[i%len(perms)][:replicationFactor]
+	nrOfBrokers := len(ids)
+	partitions := make(map[string][]int)
+	for i := 0; i < partitionCount; i++ {
+		partitions[strconv.Itoa(i)] = ids[:replicationFactor]
+		if nrOfBrokers > 1 {
+			ids = append(ids[1:], ids[0])
+		}
 	}
-	topic["partitions"] = hash
+	topic["partitions"] = partitions
 	j, _ := json.Marshal(topic)
 	path := "/brokers/topics/" + name
 	var err error
 	if exists, stat, _ := conn.Exists(path); exists {
 		currentPartitions, _, _ := conn.Children(path + "/partitions")
-		if len(hash) < len(currentPartitions) {
+		if len(partitions) < len(currentPartitions) {
 			err = onlyIncreasePartitionCount
 		} else {
 			_, err = conn.Set(path, j, stat.Version)
@@ -75,32 +78,4 @@ func CreateOrUpdateTopic(name string, partitions, replicationFactor int) error {
 func DeleteTopic(name string) error {
 	_, err := conn.Create("/admin/delete_topics/"+name, nil, 0, zk.WorldACL(zk.PermAll))
 	return err
-}
-
-func permutations(arr []int) [][]int {
-	var helper func([]int, int)
-	res := [][]int{}
-
-	helper = func(arr []int, n int) {
-		if n == 1 {
-			tmp := make([]int, len(arr))
-			copy(tmp, arr)
-			res = append(res, tmp)
-		} else {
-			for i := 0; i < n; i++ {
-				helper(arr, n-1)
-				if n%2 == 1 {
-					tmp := arr[i]
-					arr[i] = arr[n-1]
-					arr[n-1] = tmp
-				} else {
-					tmp := arr[0]
-					arr[0] = arr[n-1]
-					arr[n-1] = tmp
-				}
-			}
-		}
-	}
-	helper(arr, len(arr))
-	return res
 }
