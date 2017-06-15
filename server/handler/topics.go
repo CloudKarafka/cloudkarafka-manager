@@ -4,10 +4,16 @@ import (
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
+)
+
+var (
+	replicationFactorRequired = errors.New("ERROR: must suply replication_factor and it must be numeric.")
+	partitionsRequired        = errors.New("ERROR: must suply partitions and it must be numeric")
 )
 
 func Topics(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +92,7 @@ func createTopic(w http.ResponseWriter, form url.Values) {
 		internalError(w, err)
 		return
 	}
-	err = zookeeper.CreateOrUpdateTopic(form.Get("topic"), partitions, replicationFactor)
+	err = zookeeper.CreateTopic(form.Get("topic"), partitions, replicationFactor)
 	if err != nil {
 		internalError(w, err)
 		return
@@ -100,7 +106,7 @@ func updateTopic(w http.ResponseWriter, name string, form url.Values) {
 		internalError(w, err)
 		return
 	}
-	err = zookeeper.CreateOrUpdateTopic(name, partitions, replicationFactor)
+	err = zookeeper.UpdateTopic(name, partitions, replicationFactor)
 	if err != nil {
 		internalError(w, err)
 		return
@@ -111,11 +117,11 @@ func updateTopic(w http.ResponseWriter, name string, form url.Values) {
 func parseTopicOptions(form url.Values) (int, int, error) {
 	partitions, err := strconv.Atoi(form.Get("partitions"))
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, partitionsRequired
 	}
 	replicationFactor, err := strconv.Atoi(form.Get("replication_factor"))
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, replicationFactorRequired
 	}
 	return partitions, replicationFactor, nil
 }
