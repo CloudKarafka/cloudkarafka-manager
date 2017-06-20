@@ -28,20 +28,23 @@ type leaderCount struct {
 	Follower int
 }
 
-type byLeader []leaderCount
+type leaderCounts []leaderCount
 
-func (a byLeader) Len() int      { return len(a) }
-func (a byLeader) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a leaderCounts) Len() int      { return len(a) }
+func (a leaderCounts) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
+type byLeader struct{ leaderCounts }
+
 func (a byLeader) Less(i, j int) bool {
-	return a[i].Leader+a[i].Follower < a[j].Leader+a[j].Follower
+	ai, aj := a.leaderCounts[i], a.leaderCounts[j]
+	return 2*ai.Leader+ai.Follower < 2*aj.Leader+aj.Follower
 }
 
-type byFollower []leaderCount
+type byFollower struct{ leaderCounts }
 
-func (a byFollower) Len() int      { return len(a) }
-func (a byFollower) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
 func (a byFollower) Less(i, j int) bool {
-	return a[i].Follower < a[j].Follower
+	ai, aj := a.leaderCounts[i], a.leaderCounts[j]
+	return 2*ai.Follower+ai.Leader < 2*aj.Follower+aj.Leader
 }
 
 func Topics() ([]string, error) {
@@ -178,10 +181,10 @@ func leastPartitions(r int, ids []string, partitions []partition) []int {
 	}
 
 	replicas := make([]int, r)
-	sort.Sort(byLeader(count))
+	sort.Sort(byLeader{count})
 	replicas[0] = count[0].Broker
 	count = count[1:]
-	sort.Sort(byFollower(count))
+	sort.Sort(byFollower{count})
 	for i = 0; i < (r - 1); i++ {
 		replicas[i+1] = count[i].Broker
 	}
