@@ -23,15 +23,26 @@ type partition struct {
 }
 
 type leaderCount struct {
-	Leader string
-	Count  int
+	Broker   int
+	Leader   int
+	Follower int
 }
 
-type byLeaderCount []leaderCount
+type byLeader []leaderCount
 
-func (a byLeaderCount) Len() int           { return len(a) }
-func (a byLeaderCount) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a byLeaderCount) Less(i, j int) bool { return a[i].Count < a[j].Count }
+func (a byLeader) Len() int      { return len(a) }
+func (a byLeader) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byLeader) Less(i, j int) bool {
+	return a[i].Leader+a[i].Follower < a[j].Leader+a[j].Follower
+}
+
+type byFollower []leaderCount
+
+func (a byFollower) Len() int      { return len(a) }
+func (a byFollower) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+func (a byFollower) Less(i, j int) bool {
+	return a[i].Follower < a[j].Follower
+}
 
 func Topics() ([]string, error) {
 	topics, _, err := conn.Children("/brokers/topics")
@@ -131,6 +142,7 @@ func genPartitions(i, p, r int, ids []string, partitions []partition) map[string
 			Number:   strconv.Itoa(i),
 			Replicas: replicas,
 		}
+		fmt.Println(partitions)
 	}
 	parts := make(map[string][]int)
 	for _, part := range partitions {
@@ -140,29 +152,38 @@ func genPartitions(i, p, r int, ids []string, partitions []partition) map[string
 }
 
 func leastPartitions(r int, ids []string, partitions []partition) []int {
-	count := make(map[string]int)
+	lc := make(map[string]leaderCount)
 	for _, l := range ids {
-		count[l] = 0
+		b, _ := strconv.Atoi(l)
+		lc[l] = leaderCount{Broker: b, Leader: 0, Follower: 0}
 	}
 	for _, p := range partitions {
-		if len(p.Replicas) == 0 {
-			continue
+		for i, b := range p.Replicas {
+			l := strconv.Itoa(b)
+			entry := lc[l]
+			if i == 0 {
+				entry.Leader += 1
+			} else {
+				entry.Follower += 1
+			}
+			lc[l] = entry
 		}
-		count[strconv.Itoa(p.Replicas[0])] += 1
 	}
 
-	lc := make([]leaderCount, len(count))
+	count := make([]leaderCount, len(lc))
 	i := 0
-	for l, c := range count {
-		lc[i] = leaderCount{Leader: l, Count: c}
+	for _, k := range lc {
+		count[i] = k
 		i++
 	}
 
-	sort.Sort(byLeaderCount(lc))
 	replicas := make([]int, r)
-	for i := 0; i < r; i++ {
-		l, _ := strconv.Atoi(lc[i].Leader)
-		replicas[i] = l
+	sort.Sort(byLeader(count))
+	replicas[0] = count[0].Broker
+	count = count[1:]
+	sort.Sort(byFollower(count))
+	for i = 0; i < (r - 1); i++ {
+		replicas[i+1] = count[i].Broker
 	}
 	return replicas
 }
