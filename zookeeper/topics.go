@@ -72,7 +72,7 @@ func Partition(topic, partition string) ([]byte, error) {
 	return state, err
 }
 
-func UpdateTopic(name string, partitionCount, replicationFactor int) error {
+func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[string]interface{}) error {
 	path := topicPath(name)
 	if exists, _, _ := conn.Exists(path); !exists {
 		return topicDoesNotExist
@@ -103,10 +103,13 @@ func UpdateTopic(name string, partitionCount, replicationFactor int) error {
 	topic["partitions"] = genPartitions(len(parts), partitionCount, replicationFactor, ids, partitions)
 	raw, _ = json.Marshal(topic)
 	_, err := conn.Set(path, raw, stat.Version)
+	if cfg != nil {
+		config(name, cfg)
+	}
 	return err
 }
 
-func CreateTopic(name string, partitionCount, replicationFactor int) error {
+func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[string]interface{}) error {
 	if replicationFactor > len(Brokers()) {
 		return invalidReplicationFactor
 	}
@@ -117,11 +120,33 @@ func CreateTopic(name string, partitionCount, replicationFactor int) error {
 		return topicAlreadyExists
 	}
 	_, err := conn.Create(path, j, 0, zk.WorldACL(zk.PermAll))
+	if cfg != nil {
+		config(name, cfg)
+	}
 	return err
 }
 
 func DeleteTopic(name string) error {
 	_, err := conn.Create("/admin/delete_topics/"+name, nil, 0, zk.WorldACL(zk.PermAll))
+	return err
+}
+
+func config(name string, cfg map[string]interface{}) error {
+	path := "/config/topics/" + name
+	var err error
+	if d, stat, _ := conn.Get(path); d != nil {
+		data := make(map[string]interface{})
+		json.Unmarshal(d, &data)
+		for k, v := range cfg {
+			data["config"].(map[string]interface{})[k] = v
+		}
+		raw, _ := json.Marshal(data)
+		_, err = conn.Set(path, raw, stat.Version)
+	} else {
+		node := map[string]interface{}{"version": 1, "config": cfg}
+		raw, _ := json.Marshal(node)
+		_, err = conn.Create(path, raw, 0, zk.WorldACL(zk.PermAll))
+	}
 	return err
 }
 

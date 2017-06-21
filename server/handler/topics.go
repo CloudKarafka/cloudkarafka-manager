@@ -4,11 +4,10 @@ import (
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
 )
 
 var (
@@ -16,15 +15,23 @@ var (
 	partitionsRequired        = errors.New("ERROR: must suply partitions and it must be numeric")
 )
 
+type topicData struct {
+	Name              string                 `json:"name,omitempty"`
+	Partitions        int                    `json:"partitions,1"`
+	ReplicationFactor int                    `json:"replication_factor,1"`
+	Config            map[string]interface{} `json:"config"`
+}
+
 func Topics(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case "GET":
 		topics(w)
 	case "POST":
-		if err := r.ParseForm(); err != nil {
+		t, err := decodeTopic(r)
+		if err != nil {
 			internalError(w, err)
 		} else {
-			createTopic(w, r.Form)
+			createTopic(w, t)
 		}
 	}
 }
@@ -35,10 +42,11 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		topic(w, vars["topic"])
 	case "PUT":
-		if err := r.ParseForm(); err != nil {
+		t, err := decodeTopic(r)
+		if err != nil {
 			internalError(w, err)
 		} else {
-			updateTopic(w, vars["topic"], r.Form)
+			updateTopic(w, vars["topic"], t)
 		}
 	case "DELETE":
 		deleteTopic(w, vars["topic"])
@@ -56,6 +64,14 @@ func Partition(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(partition))
 	}
+}
+
+func decodeTopic(r *http.Request) (topicData, error) {
+	decoder := json.NewDecoder(r.Body)
+	var t topicData
+	err := decoder.Decode(&t)
+	defer r.Body.Close()
+	return t, err
 }
 
 func topic(w http.ResponseWriter, name string) {
@@ -86,42 +102,20 @@ func topics(w http.ResponseWriter) {
 	}
 }
 
-func createTopic(w http.ResponseWriter, form url.Values) {
-	partitions, replicationFactor, err := parseTopicOptions(form)
+func createTopic(w http.ResponseWriter, t topicData) {
+	err := zookeeper.CreateTopic(t.Name, t.Partitions, t.ReplicationFactor, t.Config)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
-	err = zookeeper.CreateTopic(form.Get("topic"), partitions, replicationFactor)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	topic(w, form.Get("topic"))
+	topic(w, t.Name)
 }
 
-func updateTopic(w http.ResponseWriter, name string, form url.Values) {
-	partitions, replicationFactor, err := parseTopicOptions(form)
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	err = zookeeper.UpdateTopic(name, partitions, replicationFactor)
+func updateTopic(w http.ResponseWriter, name string, t topicData) {
+	err := zookeeper.UpdateTopic(name, t.Partitions, t.ReplicationFactor, t.Config)
 	if err != nil {
 		internalError(w, err)
 		return
 	}
 	topic(w, name)
-}
-
-func parseTopicOptions(form url.Values) (int, int, error) {
-	partitions, err := strconv.Atoi(form.Get("partitions"))
-	if err != nil {
-		return 0, 0, partitionsRequired
-	}
-	replicationFactor, err := strconv.Atoi(form.Get("replication_factor"))
-	if err != nil {
-		return 0, 0, replicationFactorRequired
-	}
-	return partitions, replicationFactor, nil
 }
