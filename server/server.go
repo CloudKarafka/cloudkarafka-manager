@@ -16,6 +16,7 @@ func Start(port string) {
 	go metrics.Log(metrics.DefaultRegistry, 5*time.Second, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
 	r := mux.NewRouter()
+	r.HandleFunc("/api/acl/{topic}", handler.Acl)
 	r.HandleFunc("/api/brokers", handler.Brokers)
 	r.HandleFunc("/api/brokers/{id}", handler.Broker)
 	r.HandleFunc("/api/topics", handler.Topics)
