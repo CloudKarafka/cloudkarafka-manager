@@ -63,6 +63,12 @@ func Topic(name string) ([]byte, error) {
 	return topic, err
 }
 
+func Config(name string) ([]byte, error) {
+	path := "/config/topics/" + name
+	d, _, err := conn.Get(path)
+	return d, err
+}
+
 func Partition(topic, partition string) ([]byte, error) {
 	path := fmt.Sprintf("/brokers/topics/%s/partitions/%s/state", topic, partition)
 	state, _, err := conn.Get(path)
@@ -104,7 +110,7 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	raw, _ = json.Marshal(topic)
 	_, err := conn.Set(path, raw, stat.Version)
 	if cfg != nil {
-		config(name, cfg)
+		createOrSetConfig(name, cfg)
 	}
 	return err
 }
@@ -121,7 +127,7 @@ func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	}
 	_, err := conn.Create(path, j, 0, zk.WorldACL(zk.PermAll))
 	if cfg != nil {
-		config(name, cfg)
+		createOrSetConfig(name, cfg)
 	}
 	return err
 }
@@ -131,7 +137,7 @@ func DeleteTopic(name string) error {
 	return err
 }
 
-func config(name string, cfg map[string]interface{}) error {
+func createOrSetConfig(name string, cfg map[string]interface{}) error {
 	path := "/config/topics/" + name
 	var err error
 	if d, stat, _ := conn.Get(path); d != nil {

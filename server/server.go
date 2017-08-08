@@ -21,6 +21,7 @@ func Start(port string) {
 	r.HandleFunc("/api/brokers/{id}", handler.Broker)
 	r.HandleFunc("/api/topics", handler.Topics)
 	r.HandleFunc("/api/topics/{topic}", handler.Topic)
+	r.HandleFunc("/api/topics/{topic}/config", handler.Config)
 	r.HandleFunc("/api/topics/{topic}/{partition}", handler.Partition)
 	r.HandleFunc("/api/consumers", handler.Consumers)
 	r.HandleFunc("/api/consumers/{name}", handler.Consumer)

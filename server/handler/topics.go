@@ -55,6 +55,17 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func Config(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cfg, err := zookeeper.Config(vars["topic"])
+	if err != nil {
+		internalError(w, err)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, string(cfg))
+	}
+}
+
 func Partition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	partition, err := zookeeper.Partition(vars["topic"], vars["partition"])
