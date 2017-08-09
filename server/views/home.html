@@ -1,0 +1,114 @@
+<link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
+<h1> CloudKarafka's Apache Kafka Management Interface </h1>
+
+<div>
+  <h2> Brokers </h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th> Id </th>
+        <th> Version </th>
+        <th> Endpoints </th>
+        <th> Started </th>
+      </tr>
+    </thead>
+    <tbody id="broker-rows"> </tbody>
+  </table>
+</div>
+
+<script id='tmpl-brokers' type='text/x-handlebars-template'>
+{{#brokers}}
+    <tr>
+      <td> <a href="/brokers/{{id}}" > {{id}} </a> </td>
+      <td> </td>
+      <td> {{endpoints}} </td>
+      <td> {{started}} </td>
+    </tr>
+  {{/brokers}}
+</script>
+
+<script id='tmpl-no-brokers' type='text/x-handlebars-template'>
+  <tr> <td colspan="4"> No online brokers </td> </tr>
+</script>
+
+<div>
+  <h2> Topics </h2>
+  <table class=table>
+    <thead>
+      <tr>
+        <th> Name </th>
+        <th> Partitions </th>
+        <th> Replicas </th>
+      </tr>
+    </thead>
+    <tbody id="topic-rows"> </tbody>
+  </table>
+</div>
+
+
+<script id='tmpl-no-topics' type='text/x-handlebars-template'>
+  <tr> <td colspan="4"> No topics </td> </tr>
+</script>
+
+<script id='tmpl-topics' type='text/x-handlebars-template'>
+{{#topics}}
+    <tr>
+      <td> <a href="/topics/{{name}}" > {{name}} </a> </td>
+      <td> {{partitions}} </td>
+      <td> {{replicas}} </td>
+    </tr>
+  {{/topics}}
+</script>
+
+<script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
+<script src='/js/handlebars.min.js' type="text/javascript" ></script>
+<script type="text/javascript">
+var $topics = $('#topic-rows');
+var topicsTmpl = Handlebars.compile($('#tmpl-topics').html());
+var noTopicsTmpl = Handlebars.compile($('#tmpl-no-topics').html());
+
+$.get("/api/topics", function(topics) {
+  if (topics.length) {
+    var l = topics.length;
+    var result = [];
+    topics.forEach(function(topic) {
+      $.get("/api/topics/"+ topic, function(res) {
+        result.push({
+          name: topic,
+          partitions: Object.keys(res.partitions).length,
+          replicas: Object.values(res.partitions)[0].length
+        })
+        if (result.length == l) {
+          $topics.html(topicsTmpl({ topics: result }));
+        }
+      })
+    })
+  } else {
+    $topics.html(noTopicsTmpl());
+  }
+})
+
+var $brokers = $('#broker-rows');
+var brokersTmpl = Handlebars.compile($('#tmpl-brokers').html());
+var noBrokersTmpl = Handlebars.compile($('#tmpl-no-brokers').html());
+$.get("/api/brokers", function(brokers) {
+  if (brokers.length) {
+    var l = brokers.length;
+    var result = [];
+    brokers.forEach(function(broker) {
+      $.get("/api/brokers/"+ broker, function(res) {
+        result.push({
+          id: broker,
+          started: new Date(parseInt(res.timestamp)),
+          endpoints: res.endpoints,
+        })
+        if (result.length == l) {
+          $brokers.html(brokersTmpl({ brokers: result }));
+        }
+      })
+    })
+  } else {
+    $topics.html(noTopicsTmpl());
+  }
+})
+</script>

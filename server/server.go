@@ -1,7 +1,7 @@
 package server
 
 import (
-	"cloudkarafka-mgmt/server/handler"
+	"cloudkarafka-mgmt/server/api"
 
 	"github.com/gorilla/mux"
 	"github.com/rcrowley/go-metrics"
@@ -12,19 +12,30 @@ import (
 	"time"
 )
 
+func apiRoutes(r *mux.Router) {
+	a := r.PathPrefix("/api").Subrouter()
+	a.HandleFunc("/acl/{topic}", api.Acl)
+	a.HandleFunc("/brokers", api.Brokers)
+	a.HandleFunc("/brokers/{id}", api.Broker)
+	a.HandleFunc("/topics", api.Topics)
+	a.HandleFunc("/topics/{topic}", api.Topic)
+	a.HandleFunc("/topics/{topic}/config", api.Config)
+	a.HandleFunc("/topics/{topic}/{partition}", api.Partition)
+	a.HandleFunc("/consumers", api.Consumers)
+	a.HandleFunc("/consumers/{name}", api.Consumer)
+}
+
 func Start(port string) {
 	go metrics.Log(metrics.DefaultRegistry, 5*time.Second, log.New(os.Stdout, "metrics: ", log.Lmicroseconds))
 
 	r := mux.NewRouter()
-	r.HandleFunc("/api/acl/{topic}", handler.Acl)
-	r.HandleFunc("/api/brokers", handler.Brokers)
-	r.HandleFunc("/api/brokers/{id}", handler.Broker)
-	r.HandleFunc("/api/topics", handler.Topics)
-	r.HandleFunc("/api/topics/{topic}", handler.Topic)
-	r.HandleFunc("/api/topics/{topic}/config", handler.Config)
-	r.HandleFunc("/api/topics/{topic}/{partition}", handler.Partition)
-	r.HandleFunc("/api/consumers", handler.Consumers)
-	r.HandleFunc("/api/consumers/{name}", handler.Consumer)
+	apiRoutes(r)
+	r.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "server/views/home.html")
+	})
+
+	http.Handle("/js/", http.FileServer(http.Dir("server/public/")))
+	http.Handle("/css/", http.FileServer(http.Dir("server/public/")))
 	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         port,
