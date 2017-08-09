@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 var (
@@ -78,10 +79,24 @@ func Partition(w http.ResponseWriter, r *http.Request) {
 }
 
 func decodeTopic(r *http.Request) (topicData, error) {
-	decoder := json.NewDecoder(r.Body)
-	var t topicData
-	err := decoder.Decode(&t)
-	defer r.Body.Close()
+	var (
+		t   topicData
+		err error
+	)
+	switch r.Header.Get("content-type") {
+	case "application/json":
+		decoder := json.NewDecoder(r.Body)
+		err = decoder.Decode(&t)
+		defer r.Body.Close()
+	default:
+		err = r.ParseForm()
+		t.Name = r.PostForm.Get("name")
+		t.Partitions, err = strconv.Atoi(r.PostForm.Get("partitions"))
+		t.ReplicationFactor, err = strconv.Atoi(r.PostForm.Get("replication_factor"))
+		//t.Config = r.PostForm.Get("config")
+	}
+
+	fmt.Println(t)
 	return t, err
 }
 
