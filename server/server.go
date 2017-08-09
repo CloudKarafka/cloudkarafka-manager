@@ -34,6 +34,10 @@ func Start(port string) {
 		http.ServeFile(w, req, "server/views/home.html")
 	})
 
+	r.HandleFunc("/topics/{topic}", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "server/views/topic.html")
+	})
+
 	http.Handle("/js/", http.FileServer(http.Dir("server/public/")))
 	http.Handle("/css/", http.FileServer(http.Dir("server/public/")))
 	http.Handle("/", r)

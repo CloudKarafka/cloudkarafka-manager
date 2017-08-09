@@ -1,0 +1,52 @@
+<link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
+
+<h2> Topic </h2>
+<h2> Partitions </h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Number</th>
+      <th>Leader</th>
+      <th>In sync replicas</th>
+    </tr>
+  </thead>
+  <tbody id="partition-rows"></tbody>
+</table>
+<script id='tmpl-partitions' type='text/x-handlebars-template'>
+  {{#partitions}}
+      <tr>
+      <td>{{number}}</td>
+      <td>{{leader}}</td>
+      <td>{{isr}}</td>
+      </tr>
+  {{/partitions}}
+</script>
+<script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
+<script src='/js/handlebars.min.js' type="text/javascript" ></script>
+<script type="text/javascript">
+  var topicName = document.location.pathname.replace("/topics/", "");
+  document.title = "Topic: "+ topicName;
+  var renderPartitions = function() {
+    var $partitions = $('#partition-rows');
+    var partitionsTmpl = Handlebars.compile($('#tmpl-partitions').html());
+    var path = "/api/topics/"+ topicName;
+    $.get(path, function(topic) {
+      var l = Object.keys(topic.partitions).length;
+      var res = [];
+      Object.keys(topic.partitions).forEach(function(p) {
+        $.get(path + "/" + p, function(partition) {
+          res.push({
+            number: p,
+            leader: partition.leader,
+            isr: partition.isr,
+          })
+          if (res.length == l) {
+            $partitions.html(partitionsTmpl({ partitions: res }));
+          }
+        })
+      })
+    })
+  }
+
+  renderPartitions();
+</script>
