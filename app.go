@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/kafka"
 	"cloudkarafka-mgmt/server"
 	"cloudkarafka-mgmt/zookeeper"
@@ -21,8 +22,9 @@ func main() {
 
 	kafka.Start()
 	zookeeper.Start()
+	jmx.Start()
+	fmt.Println(jmx.KafkaVersion())
 	go server.Start(port)
-
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	<-signals
 	time.AfterFunc(time.Second*2, func() {
@@ -31,5 +33,6 @@ func main() {
 	})
 	kafka.Stop()
 	zookeeper.Stop()
+	jmx.Exit()
 	fmt.Println("stopped")
 }
