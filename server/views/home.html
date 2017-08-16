@@ -9,7 +9,10 @@
         <th> Id </th>
         <th> Version </th>
         <th> Endpoints </th>
-        <th> Started </th>
+        <th> Uptime </th>
+        <th> Messages in/s </th>
+        <th> Bytes in/s </th>
+        <th> Bytes out/s </th>
       </tr>
     </thead>
     <tbody id="broker-rows"> </tbody>
@@ -20,9 +23,12 @@
 {{#brokers}}
     <tr>
       <td> <a href="/brokers/{{id}}" > {{id}} </a> </td>
-      <td> </td>
+      <td> {{kafka_version}}</td>
       <td> {{endpoints}} </td>
-      <td> {{started}} </td>
+      <td> {{uptime}} </td>
+      <td> {{messages_in_per_sec}} </td>
+      <td> {{bytes_in_per_sec}} </td>
+      <td> {{bytes_out_per_sec}} </td>
     </tr>
   {{/brokers}}
 </script>
@@ -121,11 +127,7 @@ var renderBrokers = function() {
       var result = [];
       brokers.forEach(function(broker) {
         $.get("/api/brokers/"+ broker, function(res) {
-          result.push({
-            id: broker,
-            started: new Date(parseInt(res.timestamp)),
-            endpoints: res.endpoints,
-          })
+          result.push(res)
           if (result.length == l) {
             $brokers.html(brokersTmpl({ brokers: result }));
           }

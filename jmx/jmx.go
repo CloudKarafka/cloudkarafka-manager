@@ -6,15 +6,18 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 var (
-	cmd *exec.Cmd
-	out bytes.Buffer
-	in  io.WriteCloser
-	buf = bufio.NewScanner(&out)
+	cmd  *exec.Cmd
+	out  bytes.Buffer
+	in   io.WriteCloser
+	buf  = bufio.NewScanner(&out)
+	lock sync.Mutex
 )
 
 func Start() {
@@ -27,12 +30,26 @@ func Start() {
 	//fmt.Println(err)
 	//return
 	//}
-	pid := "83889"
+	pid := "5311"
 	start(pid)
 }
 
-func KafkaVersion() string {
-	return run("get -s -b kafka.server:type=app-info,id=0 Version")
+func KafkaVersion(id string) string {
+	return run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", id))
+}
+
+//If t is empty string BrokerTopicMetric for entire cluster is returned
+func BrokerTopicMetric(name, t string) float64 {
+	c := fmt.Sprintf("get -s -b kafka.server:type=BrokerTopicMetrics,name=%s", name)
+	if t != "" {
+		c = fmt.Sprintf("%s,topic=%s", c, t)
+	}
+	c = c + " OneMinuteRate"
+	in, err := strconv.ParseFloat(run(c), 64)
+	fmt.Println(in)
+	fmt.Println(err)
+	f, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", in), 64)
+	return f
 }
 
 func Exit() {
@@ -43,12 +60,25 @@ func Exit() {
 }
 
 func run(s string) string {
+	lock.Lock()
+	defer lock.Unlock()
 	in.Write([]byte(s + "\n"))
-	time.Sleep(50 * time.Millisecond)
-	txt, err := out.ReadString('\n')
-	if err != nil {
-		fmt.Println("[INFO]", "JMX term", err)
+	var (
+		txt string
+		err error
+	)
+	for {
+		time.Sleep(50 * time.Millisecond)
+		txt, err = out.ReadString('\n')
+		if txt != "" || err != nil {
+			break
+		}
+
 	}
+	if err != nil && err != io.EOF {
+		fmt.Printf("[INFO] package=jmx action=run cmd='%s' err=%s\n", s, err)
+	}
+	out.Reset()
 	return strings.Trim(txt, "\r\n")
 }
 

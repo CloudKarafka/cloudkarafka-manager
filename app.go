@@ -23,7 +23,6 @@ func main() {
 	kafka.Start()
 	zookeeper.Start()
 	jmx.Start()
-	fmt.Println(jmx.KafkaVersion())
 	go server.Start(port)
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	<-signals
