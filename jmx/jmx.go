@@ -1,41 +1,37 @@
 package jmx
 
 import (
-	"bufio"
-	"bytes"
 	"fmt"
 	"io"
 	"os/exec"
 	"strconv"
-	"strings"
+	//"strings"
 	"sync"
 	"time"
 )
 
 var (
-	cmd  *exec.Cmd
-	out  bytes.Buffer
-	in   io.WriteCloser
-	buf  = bufio.NewScanner(&out)
-	lock sync.Mutex
+	cmd    *exec.Cmd
+	in     io.WriteCloser
+	stdout io.ReadCloser
+	lock   = new(sync.Mutex)
 )
 
 func Start() {
 	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-v", "silent")
-	cmd.Stdout = &out
-	cmd.Stderr = &out
+	stdout, _ = cmd.StdoutPipe()
 	in, _ = cmd.StdinPipe()
 	//pid, err := exec.Command("ps", "-C", "java,kafka", "--sort", "cputime", "-o", "pid=", "|tail", "-1").Output()
 	//if err != nil {
 	//fmt.Println(err)
 	//return
 	//}
-	pid := "5311"
+	pid := "26228"
 	start(pid)
 }
 
 func KafkaVersion(id string) string {
-	return run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", id))
+	return run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", id), false)
 }
 
 //If t is empty string BrokerTopicMetric for entire cluster is returned
@@ -45,45 +41,59 @@ func BrokerTopicMetric(name, t string) float64 {
 		c = fmt.Sprintf("%s,topic=%s", c, t)
 	}
 	c = c + " OneMinuteRate"
-	in, err := strconv.ParseFloat(run(c), 64)
-	fmt.Println(in)
-	fmt.Println(err)
+	in, _ := strconv.ParseFloat(run(c, false), 64)
 	f, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", in), 64)
 	return f
 }
 
+// Takes name, topic and partition as arguments
+func LogOffset(n, t, p string) int {
+	c := fmt.Sprintf("get -s -b kafka.log:type=Log,name=%s,topic=%s,partition=%s Value", n, t, p)
+	o, err := strconv.Atoi(run(c, false))
+	if err != nil {
+		fmt.Println(err)
+	}
+	return o
+}
+
 func Exit() {
-	run("exit")
-	fmt.Println(string(out.Bytes()))
-	fmt.Println("wait")
+	run("exit", true)
 	cmd.Wait()
 }
 
-func run(s string) string {
+func run(s string, skipRead bool) string {
 	lock.Lock()
 	defer lock.Unlock()
 	in.Write([]byte(s + "\n"))
-	var (
-		txt string
-		err error
-	)
+	if skipRead {
+		return ""
+	}
+	buf := make([]byte, 128)
+	m := 0
 	for {
-		time.Sleep(50 * time.Millisecond)
-		txt, err = out.ReadString('\n')
-		if txt != "" || err != nil {
+		b := make([]byte, 16)
+		n, err := stdout.Read(b)
+		if b[n-1] == '\n' && n == 1 {
 			break
+		} else if err == io.EOF && n == 0 {
+			break
+		} else if n == 0 {
+			fmt.Println("[ERROR]", err)
+			break
+		} else if b[n-1] == '\n' {
+			m += n - 1
+			buf = append(buf[:], b[:n-1]...)
+			break
+		} else {
+			m += n
+			buf = append(buf[:], b[:n]...)
 		}
-
 	}
-	if err != nil && err != io.EOF {
-		fmt.Printf("[INFO] package=jmx action=run cmd='%s' err=%s\n", s, err)
-	}
-	out.Reset()
-	return strings.Trim(txt, "\r\n")
+	return string(buf[len(buf)-m:])
 }
 
 func start(pid string) {
 	cmd.Start()
-	run(fmt.Sprintf("open %s", pid))
+	run(fmt.Sprintf("open %s", pid), true)
 	time.Sleep(3 * time.Second)
 }

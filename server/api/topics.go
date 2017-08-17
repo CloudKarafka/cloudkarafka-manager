@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
@@ -21,6 +22,15 @@ type topicData struct {
 	Partitions        int                    `json:"partitions,1"`
 	ReplicationFactor int                    `json:"replication_factor,1"`
 	Config            map[string]interface{} `json:"config"`
+}
+
+type partition struct {
+	Number         string `json:"number"`
+	Topic          string `json:"topic"`
+	Leader         int    `json:"leader"`
+	Isr            []int  `json:"isr"`
+	LogEndOffset   int    `json:"log_end_offset"`
+	LogStartOffset int    `json:"log_start_offset"`
 }
 
 func Topics(w http.ResponseWriter, r *http.Request) {
@@ -69,12 +79,21 @@ func Config(w http.ResponseWriter, r *http.Request) {
 
 func Partition(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	partition, err := zookeeper.Partition(vars["topic"], vars["partition"])
+	p := partition{Topic: vars["topic"], Number: vars["partition"]}
+	part, err := zookeeper.Partition(p.Topic, p.Number)
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	json.Unmarshal(part, &p)
+
+	p.LogStartOffset = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
+	p.LogEndOffset = jmx.LogOffset("LogEndOffset", vars["topic"], vars["partition"])
+
 	if err != nil {
 		internalError(w, err)
 	} else {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(partition))
+		writeJson(w, p)
 	}
 }
 
