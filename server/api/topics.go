@@ -17,11 +17,15 @@ var (
 	partitionsRequired        = errors.New("ERROR: must suply partitions and it must be numeric")
 )
 
-type topicData struct {
+type topic struct {
 	Name              string                 `json:"name,omitempty"`
-	Partitions        int                    `json:"partitions,1"`
+	PartitionCount    int                    `json:"partition_count,1"`
 	ReplicationFactor int                    `json:"replication_factor,1"`
 	Config            map[string]interface{} `json:"config"`
+	BytesInPerSec     float64                `json:"bytes_in_per_sec"`
+	BytesOutPerSec    float64                `json:"bytes_out_per_sec"`
+	MessagesInPerSec  float64                `json:"messages_in_per_sec"`
+	Partitions        map[string][]int       `json:"partitions"`
 }
 
 type partition struct {
@@ -40,7 +44,7 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		t, err := decodeTopic(r)
 		if err != nil {
-			internalError(w, err)
+			internalError(w, err.Error())
 		} else {
 			createTopic(w, t)
 		}
@@ -51,11 +55,11 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		topic(w, vars["topic"])
+		getTopic(w, vars["topic"])
 	case "PUT":
 		t, err := decodeTopic(r)
 		if err != nil {
-			internalError(w, err)
+			internalError(w, err.Error())
 		} else {
 			updateTopic(w, vars["topic"], t)
 		}
@@ -70,7 +74,7 @@ func Config(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cfg, err := zookeeper.Config(vars["topic"])
 	if err != nil {
-		internalError(w, err)
+		internalError(w, err.Error())
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(cfg))
@@ -82,24 +86,33 @@ func Partition(w http.ResponseWriter, r *http.Request) {
 	p := partition{Topic: vars["topic"], Number: vars["partition"]}
 	part, err := zookeeper.Partition(p.Topic, p.Number)
 	if err != nil {
-		internalError(w, err)
+		internalError(w, p)
 		return
 	}
 	json.Unmarshal(part, &p)
 
-	p.LogStartOffset = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
-	p.LogEndOffset = jmx.LogOffset("LogEndOffset", vars["topic"], vars["partition"])
+	p.LogStartOffset, err = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
+	if err != nil {
+		internalError(w, p)
+		return
+	}
+	p.LogEndOffset, err = jmx.LogOffset("LogEndOffset", vars["topic"], vars["partition"])
+	if err != nil {
+		internalError(w, p)
+		return
+	}
 
 	if err != nil {
-		internalError(w, err)
+		internalError(w, p)
+		return
 	} else {
 		writeJson(w, p)
 	}
 }
 
-func decodeTopic(r *http.Request) (topicData, error) {
+func decodeTopic(r *http.Request) (topic, error) {
 	var (
-		t   topicData
+		t   topic
 		err error
 	)
 	switch r.Header.Get("content-type") {
@@ -110,7 +123,7 @@ func decodeTopic(r *http.Request) (topicData, error) {
 	default:
 		err = r.ParseForm()
 		t.Name = r.PostForm.Get("name")
-		t.Partitions, err = strconv.Atoi(r.PostForm.Get("partitions"))
+		t.PartitionCount, err = strconv.Atoi(r.PostForm.Get("partition_count"))
 		t.ReplicationFactor, err = strconv.Atoi(r.PostForm.Get("replication_factor"))
 		//t.Config = r.PostForm.Get("config")
 	}
@@ -119,20 +132,36 @@ func decodeTopic(r *http.Request) (topicData, error) {
 	return t, err
 }
 
-func topic(w http.ResponseWriter, name string) {
-	topic, err := zookeeper.Topic(name)
+func getTopic(w http.ResponseWriter, name string) {
+	t := topic{Name: name}
+	top, err := zookeeper.Topic(name)
 	if err != nil {
-		internalError(w, err)
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(topic))
+		internalError(w, t)
 	}
+	err = json.Unmarshal(top, &t)
+	if err != nil {
+		internalError(w, t)
+	}
+
+	t.BytesOutPerSec, err = jmx.BrokerTopicMetric("BytesOutPerSec", t.Name)
+	if err != nil {
+		fmt.Println(err)
+	}
+	t.BytesInPerSec, err = jmx.BrokerTopicMetric("BytesInPerSec", t.Name)
+	if err != nil {
+		fmt.Println(err)
+	}
+	t.MessagesInPerSec, err = jmx.BrokerTopicMetric("MessagesInPerSec", t.Name)
+	if err != nil {
+		fmt.Println(err)
+	}
+	writeJson(w, t)
 }
 
 func deleteTopic(w http.ResponseWriter, topic string) {
 	err := zookeeper.DeleteTopic(topic)
 	if err != nil {
-		internalError(w, err)
+		internalError(w, err.Error())
 	} else {
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -141,26 +170,26 @@ func deleteTopic(w http.ResponseWriter, topic string) {
 func topics(w http.ResponseWriter) {
 	topics, err := zookeeper.Topics()
 	if err != nil {
-		internalError(w, err)
+		internalError(w, err.Error())
 	} else {
 		writeJson(w, topics)
 	}
 }
 
-func createTopic(w http.ResponseWriter, t topicData) {
-	err := zookeeper.CreateTopic(t.Name, t.Partitions, t.ReplicationFactor, t.Config)
+func createTopic(w http.ResponseWriter, t topic) {
+	err := zookeeper.CreateTopic(t.Name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
-		internalError(w, err)
+		internalError(w, err.Error())
 		return
 	}
-	topic(w, t.Name)
+	getTopic(w, t.Name)
 }
 
-func updateTopic(w http.ResponseWriter, name string, t topicData) {
-	err := zookeeper.UpdateTopic(name, t.Partitions, t.ReplicationFactor, t.Config)
+func updateTopic(w http.ResponseWriter, name string, t topic) {
+	err := zookeeper.UpdateTopic(name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
-		internalError(w, err)
+		internalError(w, err.Error())
 		return
 	}
-	topic(w, name)
+	getTopic(w, name)
 }

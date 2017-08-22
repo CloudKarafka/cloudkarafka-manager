@@ -103,7 +103,7 @@ var renderTopics = function() {
         $.get("/api/topics/"+ topic, function(res) {
           result.push({
             name: topic,
-            partitions: Object.keys(res.partitions).length,
+            partition_count: Object.keys(res.partitions).length,
             replicas: Object.values(res.partitions)[0].length
           })
           if (result.length == l) {

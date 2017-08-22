@@ -34,18 +34,29 @@ func Brokers(w http.ResponseWriter, r *http.Request) {
 func Broker(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
-	var b broker
+	b := broker{Id: vars["id"]}
 	json.Unmarshal(zookeeper.Broker(vars["id"]), &b)
 	ts, err := strconv.ParseInt(b.Timestamp, 10, 64)
 	if err != nil {
-		internalError(w, err)
+		internalError(w, b)
 	}
 	t := time.Unix(ts/1000, 0)
 	b.Uptime = time.Since(t).String()
-	b.Id = vars["id"]
-	b.KafkaVersion = jmx.KafkaVersion(b.Id)
-	b.BytesOutPerSec = jmx.BrokerTopicMetric("BytesOutPerSec", "")
-	b.BytesInPerSec = jmx.BrokerTopicMetric("BytesInPerSec", "")
-	b.MessagesInPerSec = jmx.BrokerTopicMetric("MessagesInPerSec", "")
+	b.KafkaVersion, err = jmx.KafkaVersion(b.Id)
+	if err != nil {
+		internalError(w, b)
+	}
+	b.BytesOutPerSec, err = jmx.BrokerTopicMetric("BytesOutPerSec", "")
+	if err != nil {
+		internalError(w, b)
+	}
+	b.BytesInPerSec, err = jmx.BrokerTopicMetric("BytesInPerSec", "")
+	if err != nil {
+		internalError(w, b)
+	}
+	b.MessagesInPerSec, err = jmx.BrokerTopicMetric("MessagesInPerSec", "")
+	if err != nil {
+		internalError(w, b)
+	}
 	writeJson(w, b)
 }

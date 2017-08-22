@@ -15,7 +15,7 @@ func Acl(w http.ResponseWriter, r *http.Request) {
 	case "POST":
 		err := zookeeper.CreateAcl(vars["topic"], r.Body)
 		if err != nil {
-			internalError(w, err)
+			internalError(w, err.Error())
 		}
 		defer r.Body.Close()
 	default:

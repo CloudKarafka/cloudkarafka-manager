@@ -6,10 +6,10 @@ import (
 	"net/http"
 )
 
-func internalError(w http.ResponseWriter, err error) {
-	fmt.Println(err)
+func internalError(w http.ResponseWriter, bytes interface{}) {
+	fmt.Println(bytes)
 	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprintf(w, err.Error())
+	writeJson(w, bytes)
 }
 
 func writeJson(w http.ResponseWriter, bytes interface{}) {
