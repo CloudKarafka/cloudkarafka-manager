@@ -133,12 +133,15 @@ func decodeTopic(r *http.Request) (topic, error) {
 func getTopic(w http.ResponseWriter, name string) {
 	t := topic{Name: name}
 	top, err := zookeeper.Topic(name)
-	if err != nil {
-		internalError(w, t)
+	if len(top) == 0 {
+		http.NotFound(w, nil)
+		return
 	}
 	err = json.Unmarshal(top, &t)
 	if err != nil {
+		fmt.Println(err)
 		internalError(w, t)
+		return
 	}
 	t.PartitionCount = len(t.Partitions)
 	t.ReplicationFactor = len(t.Partitions["0"])

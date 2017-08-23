@@ -57,7 +57,7 @@ func Topics() ([]string, error) {
 
 func Topic(name string) ([]byte, error) {
 	topic, _, err := conn.Get("/brokers/topics/" + name)
-	if err != nil {
+	if err != nil && err != zk.ErrNoNode {
 		connect("localhost:2181")
 	}
 	return topic, err

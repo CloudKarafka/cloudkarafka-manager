@@ -17,8 +17,9 @@ var (
 	stdout io.ReadCloser
 	stderr io.ReadCloser
 
-	ReadTimeout = errors.New("JmxTerm didn't send any response in time")
-	NoSuchBean  = errors.New("No such Bean")
+	ReadTimeout  = errors.New("JmxTerm didn't send any response in time")
+	NoSuchBean   = errors.New("No such Bean")
+	NoJmxMetrics = errors.New("JMX metrics is not enabled")
 )
 
 func Start() {
@@ -31,7 +32,7 @@ func Start() {
 	//fmt.Println(err)
 	//return
 	//}
-	pid := "37214"
+	pid := "52798"
 	start(pid)
 }
 
@@ -83,6 +84,9 @@ func Exit() {
 }
 
 func run(str string) (string, error) {
+	if cmd == nil {
+		return "", NoJmxMetrics
+	}
 	l.Lock()
 	defer l.Unlock()
 	if n, err := stdin.Write([]byte(fmt.Sprintf("%s\n", str))); err != nil || n == 0 {
