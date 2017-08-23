@@ -18,7 +18,7 @@
     </table>
   </div>
   <div>
-    <h3> Update topic </h2>
+    <h3> Update topic </h3>
     <form id="update-topic">
       <div class="form-group">
         <label for="partitions">Partitions</label>
@@ -28,7 +28,13 @@
         <label for="name">Replication factor</label>
         <input type="text" class="form-control" name="replication_factor" value="1" step="1" min="1">
       </div>
-      <button type="submit" class="btn btn-default">Create</button>
+      <button type="submit" class="btn btn-default">Update</button>
+    </form>
+  </div>
+  <div>
+    <h3> Delete topic </h3>
+    <form id="delete-topic">
+      <button type="submit" class="btn btn-danger">Delete</button>
     </form>
   </div>
 </div>
@@ -74,6 +80,17 @@ $('#update-topic').submit(function(evt) {
     data: $(this).serialize(),
     success: function(blk) {
       renderPartitions();
+    }
+  })
+})
+$('#delete-topic').submit(function(evt) {
+  evt.preventDefault();
+  console.log($(this).serializeArray());
+  $.ajax({
+    url: "/api" + document.location.pathname,
+    type: "DELETE",
+    success: function(blk) {
+      document.location.pathname = "/"
     }
   })
 })
