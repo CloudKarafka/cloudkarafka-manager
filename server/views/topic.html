@@ -1,19 +1,37 @@
 <link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
 
 <h2> Topic </h2>
-<h2> Partitions </h2>
-<table class="table">
-  <thead>
-    <tr>
-      <th>Number</th>
-      <th>Leader</th>
-      <th>In sync replicas</th>
-      <th>Start offset</th>
-      <th>End Offset</th>
-    </tr>
-  </thead>
-  <tbody id="partition-rows"></tbody>
-</table>
+<div>
+  <div>
+    <h2> Partitions </h2>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Number</th>
+          <th>Leader</th>
+          <th>In sync replicas</th>
+          <th>Start offset</th>
+          <th>End Offset</th>
+        </tr>
+      </thead>
+      <tbody id="partition-rows"></tbody>
+    </table>
+  </div>
+  <div>
+    <h3> Update topic </h2>
+    <form id="update-topic">
+      <div class="form-group">
+        <label for="partitions">Partitions</label>
+        <input type="number" class="form-control" name="partition_count" value="10" step=1 min=0>
+      </div>
+      <div class="form-group">
+        <label for="name">Replication factor</label>
+        <input type="text" class="form-control" name="replication_factor" value="1" step="1" min="1">
+      </div>
+      <button type="submit" class="btn btn-default">Create</button>
+    </form>
+  </div>
+</div>
 <script id='tmpl-partitions' type='text/x-handlebars-template'>
   {{#partitions}}
       <tr>
@@ -47,6 +65,18 @@
       })
     })
   }
+$('#update-topic').submit(function(evt) {
+  evt.preventDefault();
+  console.log($(this).serializeArray());
+  $.ajax({
+    url: "/api" + document.location.pathname,
+    type: "PUT",
+    data: $(this).serialize(),
+    success: function(blk) {
+      renderPartitions();
+    }
+  })
+})
 
   renderPartitions();
 </script>
