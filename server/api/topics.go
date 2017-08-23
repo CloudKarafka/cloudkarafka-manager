@@ -22,9 +22,7 @@ type topic struct {
 	PartitionCount    int                    `json:"partition_count,1"`
 	ReplicationFactor int                    `json:"replication_factor,1"`
 	Config            map[string]interface{} `json:"config"`
-	BytesInPerSec     float64                `json:"bytes_in_per_sec"`
-	BytesOutPerSec    float64                `json:"bytes_out_per_sec"`
-	MessagesInPerSec  float64                `json:"messages_in_per_sec"`
+	Metrics           map[string]interface{} `json:"metrics"`
 	Partitions        map[string][]int       `json:"partitions"`
 }
 
@@ -142,19 +140,26 @@ func getTopic(w http.ResponseWriter, name string) {
 	if err != nil {
 		internalError(w, t)
 	}
+	t.PartitionCount = len(t.Partitions)
+	t.ReplicationFactor = len(t.Partitions["0"])
 
-	t.BytesOutPerSec, err = jmx.BrokerTopicMetric("BytesOutPerSec", t.Name)
-	if err != nil {
+	metrics := make(map[string]interface{})
+	if d, err := jmx.BrokerTopicMetric("BytesOutPerSec", t.Name); err != nil {
 		fmt.Println(err)
+	} else {
+		metrics["bytes_out_per_sec"] = d
 	}
-	t.BytesInPerSec, err = jmx.BrokerTopicMetric("BytesInPerSec", t.Name)
-	if err != nil {
+	if d, err := jmx.BrokerTopicMetric("BytesInPerSec", t.Name); err != nil {
 		fmt.Println(err)
+	} else {
+		metrics["bytes_in_per_sec"] = d
 	}
-	t.MessagesInPerSec, err = jmx.BrokerTopicMetric("MessagesInPerSec", t.Name)
-	if err != nil {
+	if d, err := jmx.BrokerTopicMetric("MessagesInPerSec", t.Name); err != nil {
 		fmt.Println(err)
+	} else {
+		metrics["messages_in_per_sec"] = d
 	}
+	t.Metrics = metrics
 	writeJson(w, t)
 }
 
