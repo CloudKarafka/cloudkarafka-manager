@@ -46,6 +46,9 @@
           <th> Name </th>
           <th> Partitions </th>
           <th> ReplicationFactor </th>
+          <th> Messages in/s </th>
+          <th> Bytes in/s </th>
+          <th> Bytes out/s </th>
         </tr>
       </thead>
       <tbody id="topic-rows"> </tbody>
@@ -81,6 +84,9 @@
       <td> <a href="/topics/{{name}}" > {{name}} </a> </td>
       <td> {{partition_count}} </td>
       <td> {{replication_factor}} </td>
+      <td> {{metrics.messages_in_per_sec}} </td>
+      <td> {{metrics.bytes_in_per_sec}} </td>
+      <td> {{metrics.bytes_out_per_sec}} </td>
     </tr>
   {{/topics}}
 </script>
