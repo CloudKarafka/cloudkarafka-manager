@@ -32,7 +32,7 @@ func Start() {
 	//fmt.Println(err)
 	//return
 	//}
-	pid := "52798"
+	pid := "36609"
 	start(pid)
 }
 
@@ -40,7 +40,7 @@ func KafkaVersion(id string) (string, error) {
 	return run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", id))
 }
 
-//If t is empty string BrokerTopicMetric for entire cluster is returned
+// If t is empty string BrokerTopicMetric for entire cluster is returned
 func BrokerTopicMetric(name, t string) (float64, error) {
 	c := fmt.Sprintf("get -s -b kafka.server:type=BrokerTopicMetrics,name=%s", name)
 	if t != "" {

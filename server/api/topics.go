@@ -125,8 +125,6 @@ func decodeTopic(r *http.Request) (topic, error) {
 		t.ReplicationFactor, err = strconv.Atoi(r.PostForm.Get("replication_factor"))
 		//t.Config = r.PostForm.Get("config")
 	}
-
-	fmt.Println(t)
 	return t, err
 }
 
@@ -196,6 +194,7 @@ func createTopic(w http.ResponseWriter, t topic) {
 func updateTopic(w http.ResponseWriter, name string, t topic) {
 	err := zookeeper.UpdateTopic(name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
+		fmt.Println(err)
 		internalError(w, err.Error())
 		return
 	}

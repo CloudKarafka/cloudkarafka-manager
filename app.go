@@ -26,7 +26,7 @@ func main() {
 	go server.Start(port)
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	<-signals
-	time.AfterFunc(time.Second*2, func() {
+	time.AfterFunc(2*time.Second, func() {
 		fmt.Println("[ERROR] could not exit in reasonable time")
 		os.Exit(1)
 	})
