@@ -67,3 +67,9 @@ func ValidateScramLogin(user, pass string) bool {
 	clientKey := enc.EncodeToString(auth.CalculateKey([]byte(pass), []byte("Client Key"), salt, 4096))
 	return clientKey == sk
 }
+
+func DeleteUser(name string) error {
+	_, stats, _ := conn.Get("/config/users/" + name)
+	err := conn.Delete("/config/users/"+name, stats.Version)
+	return err
+}

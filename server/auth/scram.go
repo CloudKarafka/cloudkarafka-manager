@@ -36,7 +36,7 @@ func CalculateKey(password, t, salt []byte, ittr int) []byte {
 
 func generateSalt() []byte {
 	src := rand.NewSource(time.Now().UnixNano())
-	n := 16
+	n := 32
 	b := make([]byte, n)
 	for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
 		if remain == 0 {

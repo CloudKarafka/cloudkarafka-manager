@@ -3,6 +3,8 @@ package api
 import (
 	"cloudkarafka-mgmt/zookeeper"
 
+	"github.com/gorilla/mux"
+
 	"encoding/json"
 	"net/http"
 )
@@ -26,6 +28,11 @@ func Users(w http.ResponseWriter, r *http.Request) {
 }
 
 func User(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	switch r.Method {
+	case "DELETE":
+		zookeeper.DeleteUser(vars["name"])
+	}
 }
 
 func decodeUser(r *http.Request) (user, error) {

@@ -98,6 +98,7 @@
       <thead>
         <tr>
           <th> Name </th>
+          <th> &nbsp; </th>
         </tr>
       </thead>
       <tbody id="users-rows"> </tbody>
@@ -127,6 +128,11 @@
 {{#users}}
     <tr>
       <td> <a href="/users/{{this}}" > {{ this }} </a> </td>
+      <td>
+        <form class="delete-user" action="/users/{{this}}" method="POST">
+          <button type="submit" class="btn btn-danger">Delete </button>
+        </form>
+      </td>
     </tr>
   {{/users}}
 </script>
@@ -204,6 +210,19 @@ $('#add-user').submit(function(evt) {
   evt.preventDefault();
   $.post("/api/users", $(this).serialize(), function(clb) {
     renderUsers();
+  })
+})
+
+$('#users-rows').on('submit', '.delete-user', function(evt) {
+  evt.preventDefault();
+  console.log($(this));
+  console.log($(this).action);
+  $.ajax({
+    url: "/api" + $(this).attr("action"),
+    type: "delete",
+    success: function() {
+      renderUsers();
+    }
   })
 })
 
