@@ -7,11 +7,11 @@ import (
 	"net/http"
 )
 
-func Acl(w http.ResponseWriter, r *http.Request) {
+func Acl(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		zookeeper.Acl(vars["topic"])
+		zookeeper.TopicAcl(vars["topic"])
 	case "POST":
 		err := zookeeper.CreateAcl(vars["topic"], r.Body)
 		if err != nil {

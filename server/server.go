@@ -10,17 +10,20 @@ import (
 	"time"
 )
 
-func ah(fn http.HandlerFunc) http.HandlerFunc {
+func ah(fn aclScopedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, pass, _ := r.BasicAuth()
-		if !zookeeper.ValidateScramLogin(user, pass) {
+		if zookeeper.ValidateScramLogin(user, pass) {
+			p := zookeeper.PermissionsFor(user)
+			fn(w, r, p)
+		} else {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			w.WriteHeader(http.StatusUnauthorized)
-			return
 		}
-		fn(w, r)
 	}
 }
+
+type aclScopedHandler func(http.ResponseWriter, *http.Request, zookeeper.Permissions)
 
 func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
@@ -41,15 +44,15 @@ func Start(port string) {
 	r := mux.NewRouter()
 	apiRoutes(r)
 
-	r.HandleFunc("/", ah(func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "server/views/home.html")
 	}))
 
-	r.HandleFunc("/topics/{topic}", ah(func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/topics/{topic}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "server/views/topic.html")
 	}))
 
-	r.HandleFunc("/brokers/{id}", ah(func(w http.ResponseWriter, req *http.Request) {
+	r.HandleFunc("/brokers/{id}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "server/views/broker.html")
 	}))
 

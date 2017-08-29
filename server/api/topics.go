@@ -35,26 +35,40 @@ type partition struct {
 	LogStartOffset int    `json:"log_start_offset"`
 }
 
-func Topics(w http.ResponseWriter, r *http.Request) {
+func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
-		topics(w)
+		topics(w, p)
 	case "POST":
+		if !p.ClusterWrite() {
+			http.NotFound(w, r)
+			return
+		}
 		t, err := decodeTopic(r)
 		if err != nil {
 			internalError(w, err.Error())
 		} else {
 			createTopic(w, t)
 		}
+	default:
+		http.NotFound(w, r)
 	}
 }
 
-func Topic(w http.ResponseWriter, r *http.Request) {
+func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
+		if !(p.ClusterRead() || p.TopicRead(vars["topic"])) {
+			http.NotFound(w, r)
+			return
+		}
 		getTopic(w, vars["topic"])
 	case "PUT":
+		if !(p.ClusterWrite() || p.TopicWrite(vars["topic"])) {
+			http.NotFound(w, r)
+			return
+		}
 		t, err := decodeTopic(r)
 		if err != nil {
 			internalError(w, err.Error())
@@ -62,14 +76,22 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 			updateTopic(w, vars["topic"], t)
 		}
 	case "DELETE":
+		if !(p.ClusterWrite() || p.TopicWrite(vars["topic"])) {
+			http.NotFound(w, r)
+			return
+		}
 		deleteTopic(w, vars["topic"])
 	default:
 		http.NotFound(w, r)
 	}
 }
 
-func Config(w http.ResponseWriter, r *http.Request) {
+func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
+	if !(p.ClusterRead() || p.TopicRead(vars["topic"])) {
+		http.NotFound(w, r)
+		return
+	}
 	cfg, err := zookeeper.Config(vars["topic"])
 	if err != nil {
 		internalError(w, err.Error())
@@ -79,7 +101,7 @@ func Config(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func Partition(w http.ResponseWriter, r *http.Request) {
+func Partition(w http.ResponseWriter, r *http.Request, perms zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	p := partition{Topic: vars["topic"], Number: vars["partition"]}
 	part, err := zookeeper.Partition(p.Topic, p.Number)
@@ -173,8 +195,8 @@ func deleteTopic(w http.ResponseWriter, topic string) {
 	}
 }
 
-func topics(w http.ResponseWriter) {
-	topics, err := zookeeper.Topics()
+func topics(w http.ResponseWriter, p zookeeper.Permissions) {
+	topics, err := zookeeper.Topics(p)
 	if err != nil {
 		internalError(w, err.Error())
 	} else {

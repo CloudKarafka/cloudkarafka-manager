@@ -47,8 +47,14 @@ func (a byFollower) Less(i, j int) bool {
 	return 2*ai.Follower+ai.Leader < 2*aj.Follower+aj.Leader
 }
 
-func Topics() ([]string, error) {
-	topics, _, err := conn.Children("/brokers/topics")
+func Topics(p Permissions) ([]string, error) {
+	ts, _, err := conn.Children("/brokers/topics")
+	var topics []string
+	for _, t := range ts {
+		if p.TopicRead(t) || p.ClusterRead() {
+			topics = append(topics, t)
+		}
+	}
 	if err != nil {
 		connect("localhost:2181")
 	}

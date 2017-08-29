@@ -26,12 +26,12 @@ type broker struct {
 	MessagesInPerSec float64  `json:"messages_in_per_sec"`
 }
 
-func Brokers(w http.ResponseWriter, r *http.Request) {
+func Brokers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	brokers := zookeeper.Brokers()
 	writeJson(w, brokers)
 }
 
-func Broker(w http.ResponseWriter, r *http.Request) {
+func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	w.Header().Set("Content-Type", "application/json")
 	vars := mux.Vars(r)
 	b := broker{Id: vars["id"]}

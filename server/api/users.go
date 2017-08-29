@@ -13,7 +13,7 @@ type user struct {
 	Name, Password string
 }
 
-func Users(w http.ResponseWriter, r *http.Request) {
+func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
 		users(w)
@@ -27,7 +27,7 @@ func Users(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func User(w http.ResponseWriter, r *http.Request) {
+func User(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "DELETE":
