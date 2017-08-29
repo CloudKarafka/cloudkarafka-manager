@@ -1,6 +1,5 @@
 package kafka
 
-/*
 import (
 	"github.com/Shopify/sarama"
 
@@ -12,7 +11,6 @@ import (
 )
 
 type message struct {
-	cluster   string
 	Metric    string
 	Topic     string
 	Type      string
@@ -22,37 +20,39 @@ type message struct {
 	Timestamp int64
 }
 
-func (me message) ClusterName() string {
-	return me.cluster
-}
-
-func consumerOffsets(s *shovel) error {
+func consumerOffsets() error {
+	config := sarama.NewConfig()
+	config.ClientID = "CloudKarafka-mgmt-consumer-offsets-monitor"
+	client, err := sarama.NewClient([]string{"localhost:9092"}, config)
+	if err != nil {
+		return err
+	}
+	consumer, err := sarama.NewConsumerFromClient(client)
+	if err != nil {
+		return err
+	}
 	topic := "__consumer_offsets"
 
-	if s.Started {
-		return nil
-	}
-	s.Started = true
-	fmt.Printf("[INFO] start shovels for %s\n", s.cluster)
+	fmt.Println("[INFO] start consumer offsets consumer")
 
-	partitions, err := s.client.Partitions(topic)
+	partitions, err := client.Partitions(topic)
 	if err != nil {
 		return err
 	}
 
 	for _, part := range partitions {
-		go s.consumePartition(topic, part)
+		go consumePartition(topic, part, consumer)
 	}
 	return nil
 }
 
-func (me *shovel) consumePartition(topic string, partition int32) {
-	pc, err := me.consumer.ConsumePartition(topic, partition, sarama.OffsetNewest)
+func consumePartition(topic string, partition int32, consumer sarama.Consumer) {
+	pc, err := consumer.ConsumePartition(topic, partition, sarama.OffsetNewest)
 	if err != nil {
-		fmt.Printf("[ERROR] failed-to-consume cluster=%s topic=%s partition=%v\n", me.cluster, topic, partition)
+		fmt.Printf("[ERROR] failed-to-consume topic=%s partition=%v\n", topic, partition)
 		fmt.Println(err)
 		time.Sleep(30 * time.Second)
-		me.consumePartition(topic, partition)
+		consumePartition(topic, partition, consumer)
 		return
 	}
 
@@ -63,15 +63,16 @@ func (me *shovel) consumePartition(topic string, partition int32) {
 	}()
 
 	for msg := range pc.Messages() {
-		if m, err := me.processConsumerOffsetsMessage(msg); err == nil {
+		if m, err := processConsumerOffsetsMessage(msg); err == nil {
 			if m.Topic == "__consumer_offsets" {
 				continue
 			}
+			store(m)
 		}
 	}
 }
 
-func (me *shovel) processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) (message, error) {
+func processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) (message, error) {
 	var keyver, valver uint16
 	var group, topic string
 	var partition uint32
@@ -120,9 +121,6 @@ func (me *shovel) processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) (me
 	}
 
 	m = message{
-		Metric:    "consumer-offsets",
-		Type:      "kafka",
-		cluster:   me.cluster,
 		Topic:     topic,
 		Group:     group,
 		Partition: int(partition),
@@ -145,4 +143,3 @@ func readString(buf *bytes.Buffer) (string, error) {
 	}
 	return string(strbytes), nil
 }
-*/

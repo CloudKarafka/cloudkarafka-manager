@@ -20,7 +20,7 @@
 </div>
 
 <script id='tmpl-brokers' type='text/x-handlebars-template'>
-{{#brokers}}
+  {{#brokers}}
     <tr>
       <td> <a href="/brokers/{{id}}" > {{id}} </a> </td>
       <td> {{kafka_version}}</td>
@@ -89,6 +89,34 @@
       <td> {{metrics.bytes_out_per_sec}} </td>
     </tr>
   {{/topics}}
+</script>
+
+<div>
+  <div>
+    <h2> Consumers </h2>
+    <table class=table>
+      <thead>
+        <tr>
+          <th> Name </th>
+          <th> Consumed topics </th>
+        </tr>
+      </thead>
+      <tbody id="consumer-rows"> </tbody>
+    </table>
+  </div>
+</div>
+
+<script id='tmpl-no-consumers' type='text/x-handlebars-template'>
+  <tr> <td colspan="2"> No consumers </td> </tr>
+</script>
+
+<script id='tmpl-consumers' type='text/x-handlebars-template'>
+{{#consumers}}
+    <tr>
+      <td> <a href="/consumers/{{name}}" > {{name}} </a> </td>
+      <td> {{topics}} </td>
+    </tr>
+  {{/consumers}}
 </script>
 
 <div>
@@ -186,6 +214,28 @@ var renderBrokers = function() {
   })
 }
 
+var renderConsumers = function() {
+  var $consumers = $('#consumer-rows');
+  var consumersTmpl = Handlebars.compile($('#tmpl-consumers').html());
+  var noConsumersTmpl = Handlebars.compile($('#tmpl-no-consumers').html());
+  $.get("/api/consumers", function(consumers) {
+    if (consumers.length) {
+      var l = consumers.length;
+      var result = [];
+      consumers.forEach(function(consumer) {
+        $.get("/api/consumers/"+ consumer, function(res) {
+          result.push(res)
+          if (result.length == l) {
+            $consumers.html(consumersTmpl({ consumers: result }));
+          }
+        })
+      })
+    } else {
+      $consumers.html(noConsumersTmpl());
+    }
+  })
+}
+
 var renderUsers = function() {
   var $users = $('#users-rows');
   var usersTmpl = Handlebars.compile($('#tmpl-users').html());
@@ -227,7 +277,8 @@ $('#users-rows').on('submit', '.delete-user', function(evt) {
 })
 
 
-renderTopics();
-renderUsers();
 renderBrokers();
+renderTopics();
+renderConsumers();
+renderUsers();
 </script>

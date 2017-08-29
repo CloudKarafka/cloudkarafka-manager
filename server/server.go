@@ -1,11 +1,13 @@
 package server
 
 import (
+	"cloudkarafka-mgmt/kafka"
 	"cloudkarafka-mgmt/server/api"
 	"cloudkarafka-mgmt/zookeeper"
 
 	"github.com/gorilla/mux"
 
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -41,6 +43,8 @@ func apiRoutes(r *mux.Router) {
 }
 
 func Start(port string) {
+	fmt.Println(kafka.Consumers())
+	//fmt.Println(kafka.ConsumedTopics(, "test2"))
 	r := mux.NewRouter()
 	apiRoutes(r)
 

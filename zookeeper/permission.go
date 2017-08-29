@@ -27,11 +27,11 @@ func (me Permissions) ClusterWrite() bool {
 }
 
 func (me Permissions) TopicRead(t string) bool {
-	return (me.Topics[t] & R) == 1
+	return (me.Cluster&R) == 1 || (me.Topics[t]&R) == 1
 }
 
 func (me Permissions) TopicWrite(t string) bool {
-	return (me.Topics[t] & W) == 1
+	return (me.Cluster&W) == 1 || (me.Topics[t]&W) == 1
 }
 
 func PermissionsFor(username string) Permissions {
