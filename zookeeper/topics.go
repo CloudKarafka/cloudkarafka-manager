@@ -48,17 +48,7 @@ func (a byFollower) Less(i, j int) bool {
 }
 
 func Topics(p Permissions) ([]string, error) {
-	ts, _, err := conn.Children("/brokers/topics")
-	var topics []string
-	for _, t := range ts {
-		if p.TopicRead(t) || p.ClusterRead() {
-			topics = append(topics, t)
-		}
-	}
-	if err != nil {
-		connect("localhost:2181")
-	}
-	return topics, nil
+	return all("/brokers/topics", p.TopicRead)
 }
 
 func Topic(name string) ([]byte, error) {

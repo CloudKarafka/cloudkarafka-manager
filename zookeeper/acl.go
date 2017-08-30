@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	tPath = "/kafka-acl/Topics/"
+	tPath = "/kafka-acl/Topic/"
 	cPath = "/kafka-acl/Cluster/kafka-cluster"
+	gPath = "/kafka-acl/Group"
 )
 
 type acl struct {
@@ -25,7 +26,23 @@ type aclNode struct {
 }
 
 func ClusterAcl() ([]acl, error) {
-	node, _, err := conn.Get(cPath)
+	return aclFor(cPath)
+}
+
+func TopicAcl(t string) ([]acl, error) {
+	return aclFor(tPath + t)
+}
+
+func GroupAcl(g string) ([]acl, error) {
+	return aclFor(gPath + g)
+}
+
+func Groups(p Permissions) ([]string, error) {
+	return all(gPath, p.GroupRead)
+}
+
+func aclFor(path string) ([]acl, error) {
+	node, _, err := conn.Get(path)
 	if err != nil {
 		return nil, err
 	}
@@ -37,24 +54,13 @@ func ClusterAcl() ([]acl, error) {
 	return a.Acls, nil
 }
 
-func TopicAcl(topic string) ([]acl, error) {
-	node, _, err := conn.Get(tPath + topic)
-	if err != nil {
-		return nil, err
-	}
-	var a aclNode
-	err = json.Unmarshal(node, &a)
-	if err != nil {
-		return nil, err
-	}
-	return a.Acls, nil
-}
+type AclFunc func(string) ([]acl, error)
 
-func AllTopicAcls() map[string][]acl {
+func AllAcls(all AllFunc, details AclFunc) map[string][]acl {
 	acls := make(map[string][]acl)
-	topics, _ := Topics(Permissions{Cluster: RW})
-	for _, t := range topics {
-		acls[t], _ = TopicAcl(t)
+	rows, _ := all(Permissions{Cluster: RW})
+	for _, r := range rows {
+		acls[r], _ = details(r)
 	}
 	return acls
 }

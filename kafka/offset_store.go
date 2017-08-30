@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"cloudkarafka-mgmt/zookeeper"
+
 	"sync"
 )
 
@@ -18,23 +20,29 @@ type Offset struct {
 	Offset    int
 }
 
-func Consumers() []string {
+func Consumers(p zookeeper.Permissions) []string {
 	l.Lock()
 	defer l.Unlock()
 	consumers := make([]string, len(OffsetStore))
 	i := 0
 	for c, _ := range OffsetStore {
-		consumers[i] = c
-		i += 1
+		if p.GroupRead(c) {
+			consumers[i] = c
+			i += 1
+		}
 	}
 	return consumers
 
 }
 
-func Consumer(c string) ConsumerGroup {
+func Consumer(c string, p zookeeper.Permissions) ConsumerGroup {
 	l.Lock()
 	defer l.Unlock()
-	return OffsetStore[c]
+	var os ConsumerGroup
+	if p.GroupRead(c) {
+		os = OffsetStore[c]
+	}
+	return os
 }
 
 func store(msg message) {

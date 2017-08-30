@@ -12,6 +12,8 @@ var (
 	conn *zk.Conn
 )
 
+type AllFunc func(Permissions) ([]string, error)
+
 func Start() error {
 	err := connect("localhost:2181")
 	return err
@@ -41,4 +43,18 @@ func connect(url string) error {
 	fmt.Printf("[INFO] %v zookeeper shovel connected\n", url)
 
 	return nil
+}
+
+func all(path string, fn permissionFunc) ([]string, error) {
+	var rows []string
+	children, _, err := conn.Children(path)
+	if err != nil {
+		return rows, err
+	}
+	for _, c := range children {
+		if fn(c) {
+			rows = append(rows, c)
+		}
+	}
+	return rows, nil
 }

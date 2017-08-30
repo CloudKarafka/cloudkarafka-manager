@@ -43,7 +43,7 @@ func apiRoutes(r *mux.Router) {
 }
 
 func Start(port string) {
-	fmt.Println(kafka.Consumers())
+	fmt.Println(kafka.Consumers(zookeeper.Permissions{Cluster: zookeeper.R}))
 	//fmt.Println(kafka.ConsumedTopics(, "test2"))
 	r := mux.NewRouter()
 	apiRoutes(r)
