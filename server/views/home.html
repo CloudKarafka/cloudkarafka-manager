@@ -114,7 +114,20 @@
 {{#consumers}}
     <tr>
       <td> <a href="/consumers/{{name}}" > {{name}} </a> </td>
-      <td> {{topics}} </td>
+      <td>
+        {{#topics}}
+        <dl>
+          <dt>
+            {{name}}
+          </dt>
+          <dd>
+            Lag: {{lag}}
+            <br/>
+            Coverage: {{consume_ratio}}
+          </dd>
+        </dl>
+        {{/topics}}
+      </td>
     </tr>
   {{/consumers}}
 </script>
