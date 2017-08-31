@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -16,11 +17,7 @@ type user struct {
 func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
-		if !p.ClusterRead() {
-			http.NotFound(w, r)
-			return
-		}
-		users(w)
+		users(w, p)
 	case "POST":
 		if !p.ClusterWrite() {
 			http.NotFound(w, r)
@@ -39,18 +36,20 @@ func User(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		if !p.ClusterRead() {
+		if !p.ClusterRead() && vars["name"] != p.Username {
 			http.NotFound(w, r)
 			return
 		}
-		perms := zookeeper.PermissionsFor(vars["name"])
-		writeJson(w, perms)
+		user := zookeeper.PermissionsFor(vars["name"])
+		writeJson(w, user)
 	case "DELETE":
+		fmt.Println(p.ClusterWrite())
 		if !p.ClusterWrite() {
 			http.NotFound(w, r)
 			return
 		}
 		zookeeper.DeleteUser(vars["name"])
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -69,11 +68,9 @@ func decodeUser(r *http.Request) (user, error) {
 	}
 	return u, err
 }
-func getUser(w http.ResponseWriter, name string) {
-}
 
-func users(w http.ResponseWriter) {
-	users, err := zookeeper.Users()
+func users(w http.ResponseWriter, p zookeeper.Permissions) {
+	users, err := zookeeper.Users(p)
 	if err != nil {
 		internalError(w, err.Error())
 	} else {
@@ -87,5 +84,4 @@ func createUser(w http.ResponseWriter, u user) {
 		internalError(w, err.Error())
 		return
 	}
-	getUser(w, u.Name)
 }

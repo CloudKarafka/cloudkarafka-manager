@@ -32,7 +32,6 @@ func Consumers(p zookeeper.Permissions) []string {
 		}
 	}
 	return consumers
-
 }
 
 func Consumer(c string, p zookeeper.Permissions) ConsumerGroup {
@@ -59,3 +58,5 @@ func store(msg message) {
 		Offset:    msg.Offset,
 	}
 }
+
+//Clean up old consumers

@@ -8,10 +8,10 @@ import (
 type Permission int
 
 const (
-	R  Permission = 1 << iota // R == 1 (iota has been reset)
-	W  Permission = 1 << iota // W == 2
-	RW Permission = R + W     // RW == 4
 	N  Permission = 0
+	R  Permission = 1
+	W  Permission = 2
+	RW Permission = R + W // RW == 3
 )
 
 func (p *Permission) UnmarshalJSON(b []byte) error {
@@ -39,6 +39,7 @@ func ParsePermission(s string) Permission {
 func (p Permission) MarshalJSON() ([]byte, error) {
 	return json.Marshal(p.String())
 }
+
 func (p Permission) String() string {
 	var s string
 	switch {
@@ -64,27 +65,27 @@ type Permissions struct {
 type permissionFunc func(string) bool
 
 func (me Permissions) ClusterRead() bool {
-	return (me.Cluster & R) == 1
+	return me.Cluster >= R
 }
 
 func (me Permissions) ClusterWrite() bool {
-	return (me.Cluster & W) == 1
+	return me.Cluster >= W
 }
 
 func (me Permissions) TopicRead(t string) bool {
-	return (me.Cluster&R) == 1 || (me.Topics[t]&R) == 1 || (me.Topics["*"]&R) == 1
+	return me.Cluster >= R || me.Topics[t] >= R || me.Topics["*"] >= R
 }
 
 func (me Permissions) TopicWrite(t string) bool {
-	return (me.Cluster&W) == 1 || (me.Topics[t]&W) == 1 || (me.Topics["*"]&W) == 1
+	return me.Cluster >= W || me.Topics[t] >= W || me.Topics["*"] >= W
 }
 
 func (me Permissions) GroupRead(g string) bool {
-	return (me.Cluster&R) == 1 || (me.Groups[g]&R) == 1 || (me.Groups["*"]&R) == 1
+	return me.Cluster >= R || me.Groups[g] >= R || me.Groups["*"] >= R
 }
 
 func (me Permissions) GroupWrite(g string) bool {
-	return (me.Cluster&W) == 1 || (me.Groups[g]&W) == 1 || (me.Groups["*"]&W) == 1
+	return me.Cluster >= W || me.Groups[g] >= W || me.Groups["*"] >= W
 }
 
 func PermissionsFor(username string) Permissions {

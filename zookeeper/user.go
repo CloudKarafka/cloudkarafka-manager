@@ -11,9 +11,10 @@ import (
 	"strings"
 )
 
-func Users() ([]string, error) {
-	users, _, err := conn.Children("/config/users")
-	return users, err
+func Users(p Permissions) ([]string, error) {
+	return all("/config/users", func(usr string) bool {
+		return p.ClusterRead() || usr == p.Username
+	})
 }
 
 func User(name string) ([]byte, error) {
@@ -71,5 +72,8 @@ func ValidateScramLogin(user, pass string) bool {
 func DeleteUser(name string) error {
 	_, stats, _ := conn.Get("/config/users/" + name)
 	err := conn.Delete("/config/users/"+name, stats.Version)
-	return err
+	if err != nil {
+		return err
+	}
+	return DeleteAcls(name)
 }

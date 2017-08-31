@@ -96,31 +96,31 @@ func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	}
 }
 
-func Partition(w http.ResponseWriter, r *http.Request, perms zookeeper.Permissions) {
+func Partition(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	part, err := zookeeper.Partition(vars["Topic"], vars["Number"])
+	part, err := zookeeper.Partition(vars["topic"], vars["partition"])
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
-	p := partitionVM{P: part}
+	partition := partitionVM{P: part}
 
-	p.LogStartOffset, err = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
+	partition.LogStartOffset, err = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
 	if err != nil {
-		internalError(w, p)
+		internalError(w, partition)
 		return
 	}
-	p.LogEndOffset, err = jmx.LogOffset("LogEndOffset", vars["topic"], vars["partition"])
+	partition.LogEndOffset, err = jmx.LogOffset("LogEndOffset", vars["topic"], vars["partition"])
 	if err != nil {
-		internalError(w, p)
+		internalError(w, partition)
 		return
 	}
 
 	if err != nil {
-		internalError(w, p)
+		internalError(w, partition)
 		return
 	} else {
-		writeJson(w, p)
+		writeJson(w, partition)
 	}
 }
 

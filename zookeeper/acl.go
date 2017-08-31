@@ -4,12 +4,13 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 
 	"encoding/json"
+	"fmt"
 )
 
-var (
-	tPath = "/kafka-acl/Topic/"
-	cPath = "/kafka-acl/Cluster/kafka-cluster"
-	gPath = "/kafka-acl/Group"
+const (
+	tPath string = "/kafka-acl/Topic"
+	cPath string = "/kafka-acl/Cluster/kafka-cluster"
+	gPath string = "/kafka-acl/Group"
 )
 
 type acl struct {
@@ -29,11 +30,11 @@ func ClusterAcl() ([]acl, error) {
 }
 
 func TopicAcl(t string) ([]acl, error) {
-	return aclFor(tPath + t)
+	return aclFor(fmt.Sprintf("%s/%s", tPath, t))
 }
 
 func GroupAcl(g string) ([]acl, error) {
-	return aclFor(gPath + g)
+	return aclFor(fmt.Sprintf("%s/%s", gPath, g))
 }
 
 func Groups(p Permissions) ([]string, error) {
@@ -77,21 +78,25 @@ func CreateAcl(principal, resource, resourceType string, perm Permission) error 
 	switch resourceType {
 	case "Group":
 		acls, err = GroupAcl(resource)
-		path = path + "/" + resource
 	case "Topic":
 		acls, err = TopicAcl(resource)
-		path = path + "/" + resource
 	case "Cluster":
 		acls, err = ClusterAcl()
-		path = path + "/kafka-cluster"
+		resource = "kafka-cluster"
 	}
-	if err != nil {
+	path = fmt.Sprintf("%s/%s", path, resource)
+	a := acl{Principal: "User:" + principal, PermissionType: "Allow", Operation: operation, Host: "*"}
+	if err != nil && err != zk.ErrNoNode {
 		return err
 	}
-	a := acl{Principal: "User:" + principal, PermissionType: "Allow", Operation: operation, Host: "*"}
+	acls = append(acls, a)
+	return setAcl(path, acls)
+}
+
+func setAcl(path string, acls []acl) error {
 	data, err := json.Marshal(aclNode{
 		Version: 1,
-		Acls:    append(acls, a),
+		Acls:    acls,
 	})
 	if err != nil {
 		return err
@@ -103,4 +108,31 @@ func CreateAcl(principal, resource, resourceType string, perm Permission) error 
 		_, err = conn.Create(path, data, 0, zk.WorldACL(zk.PermAll))
 	}
 	return err
+}
+
+func DeleteAcls(user string) error {
+	permissions := PermissionsFor(user)
+	for g, _ := range permissions.Groups {
+		acls, _ := GroupAcl(g)
+		setAcl(fmt.Sprintf("%s/%s", gPath, g), rejectAclFor(user, acls))
+	}
+	for t, _ := range permissions.Topics {
+		acls, _ := TopicAcl(t)
+		setAcl(fmt.Sprintf("%s/%s", tPath, t), rejectAclFor(user, acls))
+	}
+	acls, err := ClusterAcl()
+	if err != nil {
+		return err
+	}
+	return setAcl(cPath, rejectAclFor(user, acls))
+}
+
+func rejectAclFor(user string, acls []acl) []acl {
+	var filtered []acl
+	for _, a := range acls {
+		if a.Principal != "User:"+user {
+			filtered = append(filtered, a)
+		}
+	}
+	return filtered
 }
