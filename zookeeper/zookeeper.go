@@ -3,6 +3,7 @@ package zookeeper
 import (
 	"github.com/samuel/go-zookeeper/zk"
 
+	"encoding/json"
 	"fmt"
 	"net"
 	"time"
@@ -57,4 +58,12 @@ func all(path string, fn permissionFunc) ([]string, error) {
 		}
 	}
 	return rows, nil
+}
+
+func get(path string, v interface{}) error {
+	data, _, err := conn.Get(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, v)
 }

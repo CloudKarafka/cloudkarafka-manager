@@ -17,9 +17,18 @@ var (
 	topicDoesNotExist          = errors.New("ERROR: topic doesn't exist")
 )
 
-type partition struct {
-	Number   string
-	Replicas []int
+type T struct {
+	Name       string                 `json:"name,omitempty"`
+	Config     map[string]interface{} `json:"config"`
+	Partitions map[string][]int       `json:"partitions"`
+}
+
+type P struct {
+	Number   string `json:"number"`
+	Topic    string `json:"topic"`
+	Leader   int    `json:"leader"`
+	Replicas []int  `json:"replicas"`
+	Isr      []int  `json:"isr"`
 }
 
 type leaderCount struct {
@@ -51,12 +60,11 @@ func Topics(p Permissions) ([]string, error) {
 	return all("/brokers/topics", p.TopicRead)
 }
 
-func Topic(name string) ([]byte, error) {
-	topic, _, err := conn.Get("/brokers/topics/" + name)
-	if err != nil && err != zk.ErrNoNode {
-		connect("localhost:2181")
-	}
-	return topic, err
+func Topic(name string) (T, error) {
+	var t T
+	err := get("/brokers/topics/"+name, &t)
+	t.Name = name
+	return t, err
 }
 
 func Config(name string) ([]byte, error) {
@@ -65,13 +73,12 @@ func Config(name string) ([]byte, error) {
 	return d, err
 }
 
-func Partition(topic, partition string) ([]byte, error) {
-	path := fmt.Sprintf("/brokers/topics/%s/partitions/%s/state", topic, partition)
-	state, _, err := conn.Get(path)
-	if err != nil {
-		connect("localhost:2181")
-	}
-	return state, err
+func Partition(t, num string) (P, error) {
+	var p P
+	err := get(fmt.Sprintf("/brokers/topics/%s/partitions/%s/state", t, num), &p)
+	p.Topic = t
+	p.Number = num
+	return p, err
 }
 
 func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[string]interface{}) error {
@@ -88,20 +95,20 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	if partitionCount < len(parts) {
 		return onlyIncreasePartitionCount
 	}
-	partitions := make([]partition, partitionCount)
+	partitions := make([]P, partitionCount)
 	i := 0
 	for p, r := range parts {
 		parts := make([]int, len(r.([]interface{})))
 		for i, pr := range r.([]interface{}) {
 			parts[i] = int(pr.(float64))
 		}
-		partitions[i] = partition{
+		partitions[i] = P{
 			Number:   p,
 			Replicas: parts,
 		}
 		i++
 	}
-	ids := Brokers()
+	ids, _ := Brokers()
 	topic["partitions"] = genPartitions(len(parts), partitionCount, replicationFactor, ids, partitions)
 	raw, _ = json.Marshal(topic)
 	_, err := conn.Set(path, raw, stat.Version)
@@ -112,10 +119,11 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 }
 
 func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[string]interface{}) error {
-	if replicationFactor > len(Brokers()) {
+	ids, _ := Brokers()
+	if replicationFactor > len(ids) {
 		return invalidReplicationFactor
 	}
-	topic := topic(name, partitionCount, replicationFactor)
+	topic := newTopic(name, partitionCount, replicationFactor)
 	j, _ := json.Marshal(topic)
 	path := topicPath(name)
 	if exists, _, _ := conn.Exists(path); exists {
@@ -156,19 +164,19 @@ func topicPath(name string) string {
 	return "/brokers/topics/" + name
 }
 
-func topic(name string, partitionCount, replicationFactor int) map[string]interface{} {
+func newTopic(name string, partitionCount, replicationFactor int) map[string]interface{} {
 	topic := make(map[string]interface{})
 	topic["version"] = 1
-	ids := Brokers()
-	partitions := genPartitions(0, partitionCount, replicationFactor, ids, make([]partition, partitionCount))
+	ids, _ := Brokers()
+	partitions := genPartitions(0, partitionCount, replicationFactor, ids, make([]P, partitionCount))
 	topic["partitions"] = partitions
 	return topic
 }
 
-func genPartitions(i, p, r int, ids []string, partitions []partition) map[string][]int {
+func genPartitions(i, p, r int, ids []string, partitions []P) map[string][]int {
 	for ; i < p; i++ {
 		replicas := leastPartitions(r, ids, partitions)
-		partitions[i] = partition{
+		partitions[i] = P{
 			Number:   strconv.Itoa(i),
 			Replicas: replicas,
 		}
@@ -181,7 +189,7 @@ func genPartitions(i, p, r int, ids []string, partitions []partition) map[string
 	return parts
 }
 
-func leastPartitions(r int, ids []string, partitions []partition) []int {
+func leastPartitions(r int, ids []string, partitions []P) []int {
 	lc := make(map[string]leaderCount)
 	for _, l := range ids {
 		b, _ := strconv.Atoi(l)

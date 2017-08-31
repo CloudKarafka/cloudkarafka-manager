@@ -4,16 +4,23 @@ import (
 	"fmt"
 )
 
-func Brokers() []string {
-	ids, _, err := conn.Children("/brokers/ids")
-	if err != nil {
-		fmt.Println(err)
-		connect("localhost:2181")
-	}
-	return ids
+type B struct {
+	Version   int      `json:"-"`
+	JmxPort   int      `json:"jmx_port"`
+	Timestamp string   `json:"timestamp"`
+	Endpoints []string `json:"endpoints"`
+	Host      string   `json:"host"`
+	Port      int      `json:"port"`
+	Id        string   `json:"id"`
 }
 
-func Broker(id string) []byte {
-	broker, _, _ := conn.Get(fmt.Sprintf("/brokers/ids/%s", id))
-	return broker
+func Brokers() ([]string, error) {
+	return all("/brokers/ids", func(string) bool { return true })
+}
+
+func Broker(id string) (B, error) {
+	var b B
+	err := get(fmt.Sprintf("/brokers/ids/%s", id), &b)
+	b.Id = id
+	return b, err
 }

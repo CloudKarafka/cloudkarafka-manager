@@ -12,12 +12,12 @@ import (
 	"strconv"
 )
 
-type consumerView struct {
-	Name   string              `json:"name"`
-	Topics []consumedTopicView `json:"topics"`
+type consumerVM struct {
+	Name   string            `json:"name"`
+	Topics []consumedTopicVM `json:"topics"`
 }
 
-type consumedTopicView struct {
+type consumedTopicVM struct {
 	Name         string `json:"name"`
 	ConsumeRatio int    `json:"consume_ratio"`
 	Lag          int    `json:"lag"`
@@ -34,7 +34,7 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		http.NotFound(w, r)
 		return
 	}
-	var topics []consumedTopicView
+	var topics []consumedTopicVM
 	for t, cps := range cts {
 		if p.TopicRead(t) {
 			lag := 0
@@ -45,12 +45,13 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 				}
 				lag += (e - off.Offset)
 			}
-			topics = append(topics, consumedTopicView{
+			topic, _ := zookeeper.Topic(t)
+			topics = append(topics, consumedTopicVM{
 				Name:         t,
 				Lag:          lag,
-				ConsumeRatio: int((len(cps) / 10) * 100),
+				ConsumeRatio: int((len(cps) / len(topic.Partitions)) * 100),
 			})
 		}
 	}
-	writeJson(w, consumerView{Name: vars["name"], Topics: topics})
+	writeJson(w, consumerVM{Name: vars["name"], Topics: topics})
 }

@@ -17,22 +17,17 @@ var (
 	partitionsRequired        = errors.New("ERROR: must suply partitions and it must be numeric")
 )
 
-type topic struct {
-	Name              string                 `json:"name,omitempty"`
+type topicVM struct {
+	zookeeper.T
 	PartitionCount    int                    `json:"partition_count,1"`
 	ReplicationFactor int                    `json:"replication_factor,1"`
-	Config            map[string]interface{} `json:"config"`
 	Metrics           map[string]interface{} `json:"metrics"`
-	Partitions        map[string][]int       `json:"partitions"`
 }
 
-type partition struct {
-	Number         string `json:"number"`
-	Topic          string `json:"topic"`
-	Leader         int    `json:"leader"`
-	Isr            []int  `json:"isr"`
-	LogEndOffset   int    `json:"log_end_offset"`
-	LogStartOffset int    `json:"log_start_offset"`
+type partitionVM struct {
+	zookeeper.P
+	LogEndOffset   int `json:"log_end_offset"`
+	LogStartOffset int `json:"log_start_offset"`
 }
 
 func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -103,13 +98,12 @@ func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 
 func Partition(w http.ResponseWriter, r *http.Request, perms zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	p := partition{Topic: vars["topic"], Number: vars["partition"]}
-	part, err := zookeeper.Partition(p.Topic, p.Number)
+	part, err := zookeeper.Partition(vars["Topic"], vars["Number"])
 	if err != nil {
-		internalError(w, p)
+		http.NotFound(w, r)
 		return
 	}
-	json.Unmarshal(part, &p)
+	p := partitionVM{P: part}
 
 	p.LogStartOffset, err = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
 	if err != nil {
@@ -130,9 +124,9 @@ func Partition(w http.ResponseWriter, r *http.Request, perms zookeeper.Permissio
 	}
 }
 
-func decodeTopic(r *http.Request) (topic, error) {
+func decodeTopic(r *http.Request) (topicVM, error) {
 	var (
-		t   topic
+		t   topicVM
 		err error
 	)
 	switch r.Header.Get("content-type") {
@@ -151,18 +145,12 @@ func decodeTopic(r *http.Request) (topic, error) {
 }
 
 func getTopic(w http.ResponseWriter, name string) {
-	t := topic{Name: name}
 	top, err := zookeeper.Topic(name)
-	if len(top) == 0 {
+	if err != nil {
 		http.NotFound(w, nil)
 		return
 	}
-	err = json.Unmarshal(top, &t)
-	if err != nil {
-		fmt.Println(err)
-		internalError(w, t)
-		return
-	}
+	t := topicVM{T: top}
 	t.PartitionCount = len(t.Partitions)
 	t.ReplicationFactor = len(t.Partitions["0"])
 
@@ -204,7 +192,7 @@ func topics(w http.ResponseWriter, p zookeeper.Permissions) {
 	}
 }
 
-func createTopic(w http.ResponseWriter, t topic) {
+func createTopic(w http.ResponseWriter, t topicVM) {
 	err := zookeeper.CreateTopic(t.Name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
 		internalError(w, err.Error())
@@ -213,7 +201,7 @@ func createTopic(w http.ResponseWriter, t topic) {
 	getTopic(w, t.Name)
 }
 
-func updateTopic(w http.ResponseWriter, name string, t topic) {
+func updateTopic(w http.ResponseWriter, name string, t topicVM) {
 	err := zookeeper.UpdateTopic(name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
 		fmt.Println(err)
