@@ -1,6 +1,7 @@
 package zookeeper
 
 import (
+	"encoding/json"
 	"fmt"
 )
 
@@ -10,13 +11,54 @@ const (
 	R  Permission = 1 << iota // R == 1 (iota has been reset)
 	W  Permission = 1 << iota // W == 2
 	RW Permission = R + W     // RW == 4
+	N  Permission = 0
 )
 
+func (p *Permission) UnmarshalJSON(b []byte) error {
+	var s string
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	*p = ParsePermission(s)
+	return nil
+}
+
+func ParsePermission(s string) Permission {
+	switch s {
+	default:
+		return N
+	case "Read":
+		return R
+	case "Write":
+		return W
+	case "Read/Write":
+		return RW
+	}
+}
+
+func (p Permission) MarshalJSON() ([]byte, error) {
+	return json.Marshal(p.String())
+}
+func (p Permission) String() string {
+	var s string
+	switch {
+	case p >= RW:
+		s = "Read/Write"
+	case p >= W:
+		s = "Write"
+	case p >= R:
+		s = "Read"
+	default:
+		s = "None"
+	}
+	return s
+}
+
 type Permissions struct {
-	Username string
-	Cluster  Permission
-	Topics   map[string]Permission
-	Groups   map[string]Permission
+	Username string                `json:"username"`
+	Cluster  Permission            `json:"cluster"`
+	Topics   map[string]Permission `json:"topics"`
+	Groups   map[string]Permission `json:"groups"`
 }
 
 type permissionFunc func(string) bool

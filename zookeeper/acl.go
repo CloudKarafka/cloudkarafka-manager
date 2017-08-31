@@ -4,7 +4,6 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 
 	"encoding/json"
-	"io"
 )
 
 var (
@@ -21,7 +20,7 @@ type acl struct {
 }
 
 type aclNode struct {
-	Version int   `json:version`
+	Version int   `json:"version"`
 	Acls    []acl `json:"acls"`
 }
 
@@ -65,24 +64,43 @@ func AllAcls(all AllFunc, details AclFunc) map[string][]acl {
 	return acls
 }
 
-func CreateAcl(topic string, b io.Reader) error {
-	acls, err := TopicAcl(topic)
+func CreateAcl(principal, resource, resourceType string, perm Permission) error {
+	operation := perm.String()
+	if operation == "Read/Write" {
+		operation = "All"
+	}
+	var (
+		acls []acl
+		err  error
+	)
+	path := "/kafka-acl/" + resourceType
+	switch resourceType {
+	case "Group":
+		acls, err = GroupAcl(resource)
+		path = path + "/" + resource
+	case "Topic":
+		acls, err = TopicAcl(resource)
+		path = path + "/" + resource
+	case "Cluster":
+		acls, err = ClusterAcl()
+		path = path + "/kafka-cluster"
+	}
 	if err != nil {
 		return err
 	}
-	decoder := json.NewDecoder(b)
-	var a acl
-	err = decoder.Decode(&a)
-	if err != nil {
-		return err
-	}
-	n, err := json.Marshal(aclNode{
+	a := acl{Principal: "User:" + principal, PermissionType: "Allow", Operation: operation, Host: "*"}
+	data, err := json.Marshal(aclNode{
 		Version: 1,
 		Acls:    append(acls, a),
 	})
 	if err != nil {
 		return err
 	}
-	_, err = conn.Create(tPath, n, 0, zk.WorldACL(zk.PermAll))
+	ok, s, _ := conn.Exists(path)
+	if ok {
+		_, err = conn.Set(path, data, s.Version)
+	} else {
+		_, err = conn.Create(path, data, 0, zk.WorldACL(zk.PermAll))
+	}
 	return err
 }

@@ -16,8 +16,16 @@ type user struct {
 func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
+		if !p.ClusterRead() {
+			http.NotFound(w, r)
+			return
+		}
 		users(w)
 	case "POST":
+		if !p.ClusterWrite() {
+			http.NotFound(w, r)
+			return
+		}
 		u, err := decodeUser(r)
 		if err != nil {
 			internalError(w, err.Error())
@@ -30,7 +38,18 @@ func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 func User(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
+	case "GET":
+		if !p.ClusterRead() {
+			http.NotFound(w, r)
+			return
+		}
+		perms := zookeeper.PermissionsFor(vars["name"])
+		writeJson(w, perms)
 	case "DELETE":
+		if !p.ClusterWrite() {
+			http.NotFound(w, r)
+			return
+		}
 		zookeeper.DeleteUser(vars["name"])
 	}
 }
@@ -50,7 +69,6 @@ func decodeUser(r *http.Request) (user, error) {
 	}
 	return u, err
 }
-
 func getUser(w http.ResponseWriter, name string) {
 }
 

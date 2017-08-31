@@ -20,11 +20,16 @@ func main() {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	kafka.Start()
+	// Basic info
 	zookeeper.Start()
+	// Runtime metrics
 	jmx.Start()
+	// Consumer offsets
+	kafka.Start()
+	// HTTP server
 	go server.Start(port)
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
+	//Wait for term
 	<-signals
 	time.AfterFunc(2*time.Second, func() {
 		fmt.Println("[ERROR] could not exit in reasonable time")
@@ -33,5 +38,5 @@ func main() {
 	kafka.Stop()
 	zookeeper.Stop()
 	jmx.Exit()
-	fmt.Println("stopped")
+	fmt.Println("Stopped successfully")
 }

@@ -139,6 +139,9 @@
       <thead>
         <tr>
           <th> Name </th>
+          <th> Cluster </th>
+          <th> Topics </th>
+          <th> Consumer groups </th>
           <th> &nbsp; </th>
         </tr>
       </thead>
@@ -159,18 +162,60 @@
       <button type="submit" class="btn btn-default">Create</button>
     </form>
   </div>
+  <div>
+    <h3> Add permission </h2>
+    <form id="add-permission">
+      <div class="form-group">
+        <label for="name">Username</label>
+        <input type="text" class="form-control" name="username" placeholder="Username">
+      </div>
+      <div class="form-group">
+        <label for="resource">Resource name</label>
+        <input type="text" class="form-control" name="resource" placeholder="Resource (eg Topic name or Consumer group name">
+      </div>
+      <div class="form-group">
+        <label for="type">Type</label>
+        <select class="form-control" name="type">
+          <option value="Cluster"> Cluster </option>
+          <option value="Topic"> Topic </option>
+          <option value="Group"> Consumer Group</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="permission">Permission</label>
+        <select class="form-control" name="permission">
+          <option value="Read"> Read </option>
+          <option value="Write"> Write </option>
+          <option value="Read/Write"> Read/Write </option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-default">Create</button>
+    </form>
+  </div>
+</div>
 </div>
 
 <script id='tmpl-no-users' type='text/x-handlebars-template'>
-  <tr> <td colspan="4"> No users </td> </tr>
+  <tr> <td colspan="5"> No users </td> </tr>
 </script>
 
 <script id='tmpl-users' type='text/x-handlebars-template'>
 {{#users}}
     <tr>
-      <td> <a href="/users/{{this}}" > {{ this }} </a> </td>
+      <td> <a href="/users/{{username}}" > {{ username }} </a> </td>
+      <td> {{cluster}} </td>
       <td>
-        <form class="delete-user" action="/users/{{this}}" method="POST">
+      {{#each topics}}
+      {{@key}}
+      {{/each }}
+      </td>
+      <td>
+      {{#each groups}}
+      {{@key}}
+      {{/each }}
+      </td>
+      <td>
+        <form class="delete-user" action="/users/{{username}}" method="POST">
           <button type="submit" class="btn btn-danger">Delete </button>
         </form>
       </td>
@@ -255,7 +300,16 @@ var renderUsers = function() {
   var noUsersTmpl = Handlebars.compile($('#tmpl-no-users').html());
   $.get("/api/users", function(users) {
     if (users.length) {
-      $users.html(usersTmpl({ users: users }));
+      var l = users.length;
+      var result = [];
+      users.forEach(function(user){
+        $.get("/api/users/"+ user, function(res) {
+          result.push(res)
+          if (result.length == l) {
+            $users.html(usersTmpl({ users: result }));
+          }
+        })
+      })
     } else {
       $users.html(noUsersTmpl());
     }
@@ -272,6 +326,13 @@ $('#add-topic').submit(function(evt) {
 $('#add-user').submit(function(evt) {
   evt.preventDefault();
   $.post("/api/users", $(this).serialize(), function(clb) {
+    renderUsers();
+  })
+})
+
+$('#add-permission').submit(function(evt) {
+  evt.preventDefault();
+  $.post("/api/acls", $(this).serialize(), function(clb) {
     renderUsers();
   })
 })
