@@ -107,21 +107,13 @@ func Partition(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) 
 
 	partition.LogStartOffset, err = jmx.LogOffset("LogStartOffset", vars["topic"], vars["partition"])
 	if err != nil {
-		internalError(w, partition)
-		return
+		fmt.Println("[ERROR]", err)
 	}
 	partition.LogEndOffset, err = jmx.LogOffset("LogEndOffset", vars["topic"], vars["partition"])
 	if err != nil {
-		internalError(w, partition)
-		return
+		fmt.Println("[ERROR]", err)
 	}
-
-	if err != nil {
-		internalError(w, partition)
-		return
-	} else {
-		writeJson(w, partition)
-	}
+	writeJson(w, partition)
 }
 
 func decodeTopic(r *http.Request) (topicVM, error) {

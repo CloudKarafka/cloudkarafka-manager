@@ -6,6 +6,7 @@ import (
 	"cloudkarafka-mgmt/server"
 	"cloudkarafka-mgmt/zookeeper"
 
+	"flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -13,7 +14,9 @@ import (
 )
 
 var (
-	port = ":8080"
+	port = flag.Int("port", 8080, "Port to run HTTP server on")
+	key  = flag.String("key", "", "Path to CA key")
+	cert = flag.String("cert", "", "Path to CA cert")
 )
 
 func main() {
@@ -27,7 +30,7 @@ func main() {
 	// Consumer offsets
 	kafka.Start()
 	// HTTP server
-	go server.Start(port)
+	go server.Start(fmt.Sprintf(":%v", *port), *cert, *key)
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	//Wait for term
 	<-signals

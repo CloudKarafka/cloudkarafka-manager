@@ -23,17 +23,11 @@ var (
 )
 
 func Start() {
-	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n")
+	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-l", "localhost:9010")
 	stderr, _ = cmd.StderrPipe()
 	stdout, _ = cmd.StdoutPipe()
 	stdin, _ = cmd.StdinPipe()
-	//pid, err := exec.Command("ps", "-C", "java,kafka", "--sort", "cputime", "-o", "pid=", "|tail", "-1").Output()
-	//if err != nil {
-	//fmt.Println(err)
-	//return
-	//}
-	pid := "23124"
-	start(pid)
+	start()
 }
 
 func KafkaVersion(id string) (string, error) {
@@ -133,12 +127,19 @@ func read(reader io.ReadCloser) (string, error) {
 	return out, err
 }
 
-func start(pid string) {
-	cmd.Start()
-	read(stderr)
-	out, err := run(fmt.Sprintf("open %s", pid))
+func start() {
+	err := cmd.Start()
+	if err != nil {
+		fmt.Println("[ERROR] jmxterm failed to start", err)
+	}
+	out, err := read(stderr)
 	if err != nil {
 		fmt.Println(err)
+	} else {
+		fmt.Println(out)
 	}
-	fmt.Println(out)
+	//out, err := run(fmt.Sprintf("open %s", pid))
+	//if err != nil {
+	//fmt.Println(err)
+	//}
 }

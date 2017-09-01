@@ -5,6 +5,7 @@ import (
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -42,23 +43,20 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	b.Uptime = time.Since(t).String()
 	b.KafkaVersion, err = jmx.KafkaVersion(b.Id)
 	if err != nil {
-		internalError(w, b)
-		return
+		fmt.Println("[ERROR]", err)
 	}
 	b.BytesOutPerSec, err = jmx.BrokerTopicMetric("BytesOutPerSec", "")
 	if err != nil {
-		internalError(w, b)
-		return
+		fmt.Println("[ERROR]", err)
 	}
 	b.BytesInPerSec, err = jmx.BrokerTopicMetric("BytesInPerSec", "")
 	if err != nil {
-		internalError(w, b)
-		return
+		fmt.Println("[ERROR]", err)
 	}
 	b.MessagesInPerSec, err = jmx.BrokerTopicMetric("MessagesInPerSec", "")
 	if err != nil {
-		internalError(w, b)
-		return
+		fmt.Println("[ERROR]", err)
+
 	}
 	writeJson(w, b)
 }

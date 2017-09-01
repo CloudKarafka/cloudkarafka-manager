@@ -6,6 +6,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -42,33 +43,35 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/users/{name}", ah(api.User))
 }
 
-func Start(port string) {
+func Start(port, cert, key string) {
 	r := mux.NewRouter()
 	apiRoutes(r)
 
 	r.HandleFunc("/", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "server/views/home.html")
+		http.ServeFile(w, req, "static/html/home.html")
 	}))
 
 	r.HandleFunc("/topics/{topic}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "server/views/topic.html")
+		http.ServeFile(w, req, "static/html/topic.html")
 	}))
 
 	r.HandleFunc("/brokers/{id}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "server/views/broker.html")
+		http.ServeFile(w, req, "static/html/broker.html")
 	}))
 
 	r.HandleFunc("/users/{name}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "server/views/user.html")
+		http.ServeFile(w, req, "static/html/user.html")
 	}))
 
-	http.Handle("/js/", http.FileServer(http.Dir("server/public/")))
-	http.Handle("/css/", http.FileServer(http.Dir("server/public/")))
+	http.Handle("/js/", http.FileServer(http.Dir("static/")))
+	http.Handle("/css/", http.FileServer(http.Dir("static/")))
+	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
 	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         port,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	s.ListenAndServe()
+	fmt.Println("Listening on Port", port)
+	fmt.Println(s.ListenAndServe())
 }
