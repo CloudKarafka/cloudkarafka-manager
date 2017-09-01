@@ -2,8 +2,10 @@ package kafka
 
 import (
 	"cloudkarafka-mgmt/zookeeper"
+	"log"
 
 	"sync"
+	"time"
 )
 
 var (
@@ -59,4 +61,37 @@ func store(msg message) {
 	}
 }
 
-//Clean up old consumers
+func purgeOldConsumers() {
+	l.Lock()
+	defer l.Unlock()
+	activeConsumers := make(map[string]ConsumerGroup)
+	for c, cg := range OffsetStore {
+		for t, cp := range cg {
+			for p, off := range cp {
+				if 1*time.Minute <= time.Since(time.Unix(off.Timestamp/1000, 0)) {
+					continue
+				}
+				if _, ok := activeConsumers[c]; !ok {
+					activeConsumers[c] = make(map[string]ConsumedPartition)
+				}
+				if _, ok := activeConsumers[c][t]; !ok {
+					activeConsumers[c][t] = make(ConsumedPartition)
+				}
+				activeConsumers[c][t][p] = off
+			}
+		}
+	}
+	OffsetStore = activeConsumers
+}
+
+func init() {
+	go func() {
+		for {
+			time.Sleep(1 * time.Minute)
+			start := time.Now()
+			log.Println("[INFO] Purge offset store started")
+			purgeOldConsumers()
+			log.Printf("[INFO] Purge offset store ended, it took %s", time.Since(start))
+		}
+	}()
+}
