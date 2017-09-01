@@ -5,7 +5,6 @@ import (
 	"github.com/gorilla/mux"
 
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -24,11 +23,11 @@ func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 			internalError(w, err)
 			return
 		}
-		fmt.Println(acl)
 		err = zookeeper.CreateAcl(acl.Username, acl.Resource, acl.Type, acl.Permission)
 		if err != nil {
 			internalError(w, err)
 		}
+		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.NotFound(w, r)
 	}
@@ -38,17 +37,20 @@ func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 func Acl(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
-	case "GET":
+	/*case "GET":
+	switch vars["type"] {
+	case "Cluster":
+	case "Group":
 		zookeeper.TopicAcl(vars["topic"])
-	/*case "POST":
-	acl, err := decodeAcl(r)
-	if err != nil {
-		internalError(w, err.Error())
-		return
-	}
-	if err = createAcl(a); err != nil {
-		internalError(w, err)
+	case "Topic":
+		zookeeper.TopicAcl(vars["topic"])
 	}*/
+	case "DELETE":
+		err := zookeeper.DeleteAcl(vars["username"], vars["resource"], vars["type"])
+		if err != nil {
+			internalError(w, err)
+		}
+		w.WriteHeader(http.StatusNoContent)
 	default:
 		http.NotFound(w, r)
 	}
@@ -71,7 +73,6 @@ func decodeAcl(r *http.Request) (aclVM, error) {
 			acl.Resource = r.PostForm.Get("resource")
 			acl.Type = r.PostForm.Get("type")
 			acl.Permission = zookeeper.ParsePermission(r.PostForm.Get("permission"))
-			//t.Config = r.PostForm.Get("config")
 		}
 	}
 	return acl, err

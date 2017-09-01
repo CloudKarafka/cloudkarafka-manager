@@ -110,6 +110,29 @@ func setAcl(path string, acls []acl) error {
 	return err
 }
 
+func DeleteAcl(user, resource, resourceType string) error {
+	var (
+		err  error
+		acls []acl
+	)
+	path := "/kafka-acl/" + resourceType
+	switch resourceType {
+	case "Group":
+		acls, err = GroupAcl(resource)
+		path = fmt.Sprintf("%s/%s", path, resource)
+		setAcl(path, rejectAclFor(user, acls))
+	case "Topic":
+		acls, err = TopicAcl(resource)
+		path = fmt.Sprintf("%s/%s", path, resource)
+		setAcl(path, rejectAclFor(user, acls))
+	case "Cluster":
+		acls, err = ClusterAcl()
+		path = fmt.Sprintf("%s/%s", path, "kafka-cluster")
+		setAcl(path, rejectAclFor(user, acls))
+	}
+	return err
+}
+
 func DeleteAcls(user string) error {
 	permissions := PermissionsFor(user)
 	for g, _ := range permissions.Groups {

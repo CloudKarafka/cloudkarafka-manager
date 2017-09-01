@@ -29,6 +29,7 @@ func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
 	a.HandleFunc("/acls", ah(api.Acls))
 	a.HandleFunc("/acls/{topic}", ah(api.Acl))
+	a.HandleFunc("/acls/{type}/{resource}/{username}", ah(api.Acl))
 	a.HandleFunc("/brokers", ah(api.Brokers))
 	a.HandleFunc("/brokers/{id}", ah(api.Broker))
 	a.HandleFunc("/topics", ah(api.Topics))
@@ -55,6 +56,10 @@ func Start(port string) {
 
 	r.HandleFunc("/brokers/{id}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "server/views/broker.html")
+	}))
+
+	r.HandleFunc("/users/{name}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+		http.ServeFile(w, req, "server/views/user.html")
 	}))
 
 	http.Handle("/js/", http.FileServer(http.Dir("server/public/")))

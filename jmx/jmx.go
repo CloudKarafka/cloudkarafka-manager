@@ -32,7 +32,7 @@ func Start() {
 	//fmt.Println(err)
 	//return
 	//}
-	pid := "36609"
+	pid := "23124"
 	start(pid)
 }
 
@@ -48,9 +48,7 @@ func BrokerTopicMetric(name, t string) (float64, error) {
 	}
 	c = c + " OneMinuteRate"
 	raw, err := run(c)
-	if err == ReadTimeout && t != "" {
-		return 0, nil
-	} else if err != nil {
+	if err != nil {
 		return 0, err
 	}
 	in, err := strconv.ParseFloat(raw, 64)
@@ -79,6 +77,9 @@ func LogOffset(n, t, p string) (int, error) {
 }
 
 func Exit() {
+	if cmd == nil {
+		return
+	}
 	run("exit")
 	cmd.Wait()
 }

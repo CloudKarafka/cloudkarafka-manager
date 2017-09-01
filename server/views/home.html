@@ -341,8 +341,6 @@ $('#add-permission').submit(function(evt) {
 
 $('#users-rows').on('submit', '.delete-user', function(evt) {
   evt.preventDefault();
-  console.log($(this));
-  console.log($(this).action);
   $.ajax({
     url: "/api" + $(this).attr("action"),
     type: "delete",
