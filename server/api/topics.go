@@ -81,6 +81,9 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	}
 }
 
+func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+}
+
 func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	if !(p.ClusterRead() || p.TopicRead(vars["topic"])) {

@@ -5,19 +5,19 @@ import (
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 )
 
+var client = http.Client{}
+
 type brokerVM struct {
 	zookeeper.B
-	KafkaVersion     string  `json:"kafka_version"`
-	Uptime           string  `json:"uptime"`
-	BytesInPerSec    float64 `json:"bytes_in_per_sec"`
-	BytesOutPerSec   float64 `json:"bytes_out_per_sec"`
-	MessagesInPerSec float64 `json:"messages_in_per_sec"`
+	jmx.BrokerMetric
+	Uptime string `json:"uptime"`
 }
 
 func Brokers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -32,31 +32,45 @@ func Brokers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	broker, err := zookeeper.Broker(vars["id"])
-	b := brokerVM{B: broker}
-
-	ts, err := strconv.ParseInt(b.Timestamp, 10, 64)
 	if err != nil {
-		internalError(w, b)
+		return
+	}
+	var (
+		bm  jmx.BrokerMetric
+		bvm brokerVM
+	)
+	bm, err = jmx.BrokerMetrics(vars["id"])
+
+	if err != nil {
+		req, err := http.NewRequest("get", fmt.Sprintf("http://%s:8080/api/brokers/%s/metrics", broker.Host, vars["id"]), nil)
+		u, p, _ := r.BasicAuth()
+		req.SetBasicAuth(u, p)
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			dec := json.NewDecoder(res.Body)
+			defer res.Body.Close()
+			fmt.Println(dec.Decode(&bm))
+		}
+	}
+	bvm = brokerVM{B: broker, BrokerMetric: bm}
+	ts, err := strconv.ParseInt(bvm.Timestamp, 10, 64)
+	if err != nil {
+		internalError(w, bvm)
 		return
 	}
 	t := time.Unix(ts/1000, 0)
-	b.Uptime = time.Since(t).String()
-	b.KafkaVersion, err = jmx.KafkaVersion(b.Id)
-	if err != nil {
-		fmt.Println("[ERROR]", err)
-	}
-	b.BytesOutPerSec, err = jmx.BrokerTopicMetric("BytesOutPerSec", "")
-	if err != nil {
-		fmt.Println("[ERROR]", err)
-	}
-	b.BytesInPerSec, err = jmx.BrokerTopicMetric("BytesInPerSec", "")
-	if err != nil {
-		fmt.Println("[ERROR]", err)
-	}
-	b.MessagesInPerSec, err = jmx.BrokerTopicMetric("MessagesInPerSec", "")
-	if err != nil {
-		fmt.Println("[ERROR]", err)
+	bvm.Uptime = time.Since(t).String()
+	writeJson(w, bvm)
+}
 
+func BrokerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	vars := mux.Vars(r)
+	bm, err := jmx.BrokerMetrics(vars["id"])
+	if err != nil {
+		internalError(w, err)
+	} else {
+		writeJson(w, bm)
 	}
-	writeJson(w, b)
 }

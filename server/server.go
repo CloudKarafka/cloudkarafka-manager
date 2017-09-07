@@ -13,6 +13,7 @@ import (
 
 func ah(fn aclScopedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("[INFO] method=%s route=%s\n", r.Method, r.URL.Path)
 		user, pass, _ := r.BasicAuth()
 		if zookeeper.ValidateScramLogin(user, pass) {
 			p := zookeeper.PermissionsFor(user)
@@ -33,8 +34,9 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/acls/{type}/{resource}/{username}", ah(api.Acl))
 	a.HandleFunc("/brokers", ah(api.Brokers))
 	a.HandleFunc("/brokers/{id}", ah(api.Broker))
+	a.HandleFunc("/brokers/{id}/metrics", ah(api.BrokerMetrics))
 	a.HandleFunc("/topics", ah(api.Topics))
-	a.HandleFunc("/topics/{topic}", ah(api.Topic))
+	a.HandleFunc("/topics/{topic}/metrics", ah(api.TopicMetrics))
 	a.HandleFunc("/topics/{topic}/config", ah(api.Config))
 	a.HandleFunc("/topics/{topic}/{partition}", ah(api.Partition))
 	a.HandleFunc("/consumers", ah(api.Consumers))

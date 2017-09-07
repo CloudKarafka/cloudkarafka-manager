@@ -30,7 +30,41 @@ func Start() {
 	start()
 }
 
-func KafkaVersion(id string) (string, error) {
+type BrokerMetric struct {
+	KafkaVersion     string  `json:"kafka_version"`
+	BytesInPerSec    float64 `json:"bytes_in_per_sec"`
+	BytesOutPerSec   float64 `json:"bytes_out_per_sec"`
+	MessagesInPerSec float64 `json:"messages_in_per_sec"`
+}
+
+func BrokerMetrics(id string) (BrokerMetric, error) {
+	var bm BrokerMetric
+	kv, err := kafkaVersion(id)
+	if err != nil {
+		return bm, err
+	}
+	bi, err := BrokerTopicMetric("BytesInPerSec", "")
+	if err != nil {
+		return bm, err
+	}
+	bo, err := BrokerTopicMetric("BytesOutPerSec", "")
+	if err != nil {
+		return bm, err
+	}
+	mi, err := BrokerTopicMetric("MessagesInPerSec", "")
+	if err != nil {
+		return bm, err
+	}
+	bm = BrokerMetric{
+		KafkaVersion:     kv,
+		BytesInPerSec:    bi,
+		BytesOutPerSec:   bo,
+		MessagesInPerSec: mi,
+	}
+	return bm, nil
+}
+
+func kafkaVersion(id string) (string, error) {
 	return run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", id))
 }
 
