@@ -6,6 +6,8 @@ import (
 	"net/http"
 )
 
+var client = http.Client{}
+
 func internalError(w http.ResponseWriter, bytes interface{}) {
 	fmt.Println(bytes)
 	w.WriteHeader(http.StatusInternalServerError)
@@ -15,4 +17,18 @@ func internalError(w http.ResponseWriter, bytes interface{}) {
 func writeJson(w http.ResponseWriter, bytes interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(bytes)
+}
+
+func fetchRemote(path string, r *http.Request, out interface{}) error {
+	req, err := http.NewRequest("get", path, nil)
+	u, p, _ := r.BasicAuth()
+	req.SetBasicAuth(u, p)
+	res, err := client.Do(req)
+	if err != nil {
+		return err
+	} else {
+		dec := json.NewDecoder(res.Body)
+		defer res.Body.Close()
+		return dec.Decode(&out)
+	}
 }

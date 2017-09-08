@@ -5,14 +5,11 @@ import (
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 )
-
-var client = http.Client{}
 
 type brokerVM struct {
 	zookeeper.B
@@ -42,17 +39,8 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	bm, err = jmx.BrokerMetrics(vars["id"])
 
 	if err != nil {
-		req, err := http.NewRequest("get", fmt.Sprintf("http://%s:8080/api/brokers/%s/metrics", broker.Host, vars["id"]), nil)
-		u, p, _ := r.BasicAuth()
-		req.SetBasicAuth(u, p)
-		res, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-		} else {
-			dec := json.NewDecoder(res.Body)
-			defer res.Body.Close()
-			fmt.Println(dec.Decode(&bm))
-		}
+		path := fmt.Sprintf("http://%s:8080/api/brokers/%s/metrics", broker.Host, vars["id"])
+		fetchRemote(path, r, &bm)
 	}
 	bvm = brokerVM{B: broker, BrokerMetric: bm}
 	ts, err := strconv.ParseInt(bvm.Timestamp, 10, 64)

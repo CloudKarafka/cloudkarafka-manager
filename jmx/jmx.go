@@ -30,11 +30,15 @@ func Start() {
 	start()
 }
 
-type BrokerMetric struct {
-	KafkaVersion     string  `json:"kafka_version"`
+type TransferMetric struct {
 	BytesInPerSec    float64 `json:"bytes_in_per_sec"`
 	BytesOutPerSec   float64 `json:"bytes_out_per_sec"`
 	MessagesInPerSec float64 `json:"messages_in_per_sec"`
+}
+
+type BrokerMetric struct {
+	TransferMetric
+	KafkaVersion string `json:"kafka_version"`
 }
 
 func BrokerMetrics(id string) (BrokerMetric, error) {
@@ -56,10 +60,12 @@ func BrokerMetrics(id string) (BrokerMetric, error) {
 		return bm, err
 	}
 	bm = BrokerMetric{
-		KafkaVersion:     kv,
-		BytesInPerSec:    bi,
-		BytesOutPerSec:   bo,
-		MessagesInPerSec: mi,
+		TransferMetric: TransferMetric{
+			BytesInPerSec:    bi,
+			BytesOutPerSec:   bo,
+			MessagesInPerSec: mi,
+		},
+		KafkaVersion: kv,
 	}
 	return bm, nil
 }

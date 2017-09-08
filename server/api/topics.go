@@ -19,9 +19,9 @@ var (
 
 type topicVM struct {
 	zookeeper.T
-	PartitionCount    int                    `json:"partition_count,1"`
-	ReplicationFactor int                    `json:"replication_factor,1"`
-	Metrics           map[string]interface{} `json:"metrics"`
+	PartitionCount    int                `json:"partition_count,1"`
+	ReplicationFactor int                `json:"replication_factor,1"`
+	Metrics           jmx.TransferMetric `json:"metrics"`
 }
 
 type partitionVM struct {
@@ -54,7 +54,7 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		if !(p.ClusterRead() || p.TopicRead(vars["topic"])) {
+		if !p.TopicRead(vars["topic"]) {
 			http.NotFound(w, r)
 			return
 		}
@@ -82,6 +82,13 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 }
 
 func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	vars := mux.Vars(r)
+	bm, err := jmx.TopicMetrics(vars["topic"])
+	if err != nil {
+		internalError(w, err)
+	} else {
+		writeJson(w, bm)
+	}
 }
 
 func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -145,27 +152,17 @@ func getTopic(w http.ResponseWriter, name string) {
 		http.NotFound(w, nil)
 		return
 	}
+
 	t := topicVM{T: top}
 	t.PartitionCount = len(t.Partitions)
 	t.ReplicationFactor = len(t.Partitions["0"])
 
-	metrics := make(map[string]interface{})
-	if d, err := jmx.BrokerTopicMetric("BytesOutPerSec", t.Name); err != nil {
+	m, err := jmx.TopicMetrics(name)
+	if err != nil {
 		fmt.Println(err)
 	} else {
-		metrics["bytes_out_per_sec"] = d
+		t.Metrics = m
 	}
-	if d, err := jmx.BrokerTopicMetric("BytesInPerSec", t.Name); err != nil {
-		fmt.Println(err)
-	} else {
-		metrics["bytes_in_per_sec"] = d
-	}
-	if d, err := jmx.BrokerTopicMetric("MessagesInPerSec", t.Name); err != nil {
-		fmt.Println(err)
-	} else {
-		metrics["messages_in_per_sec"] = d
-	}
-	t.Metrics = metrics
 	writeJson(w, t)
 }
 
