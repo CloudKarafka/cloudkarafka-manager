@@ -1,370 +1,377 @@
-<link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
-<h1> CloudKarafka's Apache Kafka Management Interface </h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
+  </head>
+  <body>
+    <h1> CloudKarafka's Apache Kafka Management Interface </h1>
 
-<div>
-  <h2> Brokers </h2>
-  <table class="table">
-    <thead>
-      <tr>
-        <th> Id </th>
-        <th> Version </th>
-        <th> Endpoints </th>
-        <th> Uptime </th>
-        <th> Messages in/s </th>
-        <th> Bytes in/s </th>
-        <th> Bytes out/s </th>
-      </tr>
-    </thead>
-    <tbody id="broker-rows"> </tbody>
-  </table>
-</div>
+    <div>
+      <h2> Brokers </h2>
+      <table class="table">
+        <thead>
+          <tr>
+            <th> Id </th>
+            <th> Version </th>
+            <th> Endpoints </th>
+            <th> Uptime </th>
+            <th> Messages in/s </th>
+            <th> Bytes in/s </th>
+            <th> Bytes out/s </th>
+          </tr>
+        </thead>
+        <tbody id="broker-rows"> </tbody>
+      </table>
+    </div>
 
-<script id='tmpl-brokers' type='text/x-handlebars-template'>
-  {{#brokers}}
-    <tr>
-      <td> <a href="/brokers/{{id}}" > {{id}} </a> </td>
-      <td> {{kafka_version}}</td>
-      <td> {{endpoints}} </td>
-      <td> {{uptime}} </td>
-      <td> {{messages_in_per_sec}} </td>
-      <td> {{bytes_in_per_sec}} </td>
-      <td> {{bytes_out_per_sec}} </td>
-    </tr>
-  {{/brokers}}
-</script>
-
-<script id='tmpl-no-brokers' type='text/x-handlebars-template'>
-  <tr> <td colspan="4"> No online brokers </td> </tr>
-</script>
-
-<div>
-  <div>
-    <h2> Topics </h2>
-    <table class=table>
-      <thead>
+    <script id='tmpl-brokers' type='text/x-handlebars-template'>
+      {{#brokers}}
         <tr>
-          <th> Name </th>
-          <th> Partitions </th>
-          <th> ReplicationFactor </th>
-          <th> Messages in/s </th>
-          <th> Bytes in/s </th>
-          <th> Bytes out/s </th>
+          <td> <a href="/brokers/{{id}}" > {{id}} </a> </td>
+          <td> {{kafka_version}}</td>
+          <td> {{endpoints}} </td>
+          <td> {{uptime}} </td>
+          <td> {{messages_in_per_sec}} </td>
+          <td> {{bytes_in_per_sec}} </td>
+          <td> {{bytes_out_per_sec}} </td>
         </tr>
-      </thead>
-      <tbody id="topic-rows"> </tbody>
-    </table>
-  </div>
-  <div>
-    <h3> Add topic </h2>
-    <form id="add-topic">
-      <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" class="form-control" name="name" placeholder="Topic name">
-      </div>
-      <div class="form-group">
-        <label for="partitions">Partitions</label>
-        <input type="number" class="form-control" name="partition_count" value="10" step=1 min=0>
-      </div>
-      <div class="form-group">
-        <label for="name">Replication factor</label>
-        <input type="text" class="form-control" name="replication_factor" value="1" step="1" min="1">
-      </div>
-      <button type="submit" class="btn btn-default">Create</button>
-    </form>
-  </div>
-</div>
+      {{/brokers}}
+    </script>
 
-<script id='tmpl-no-topics' type='text/x-handlebars-template'>
-  <tr> <td colspan="4"> No topics </td> </tr>
-</script>
+    <script id='tmpl-no-brokers' type='text/x-handlebars-template'>
+      <tr> <td colspan="4"> No online brokers </td> </tr>
+    </script>
 
-<script id='tmpl-topics' type='text/x-handlebars-template'>
-{{#topics}}
-    <tr>
-      <td> <a href="/topics/{{name}}" > {{name}} </a> </td>
-      <td> {{partition_count}} </td>
-      <td> {{replication_factor}} </td>
-      <td> {{metrics.messages_in_per_sec}} </td>
-      <td> {{metrics.bytes_in_per_sec}} </td>
-      <td> {{metrics.bytes_out_per_sec}} </td>
-    </tr>
-  {{/topics}}
-</script>
-
-<div>
-  <div>
-    <h2> Consumers </h2>
-    <table class=table>
-      <thead>
-        <tr>
-          <th> Name </th>
-          <th> Consumed topics </th>
-        </tr>
-      </thead>
-      <tbody id="consumer-rows"> </tbody>
-    </table>
-  </div>
-</div>
-
-<script id='tmpl-no-consumers' type='text/x-handlebars-template'>
-  <tr> <td colspan="2"> No consumers </td> </tr>
-</script>
-
-<script id='tmpl-consumers' type='text/x-handlebars-template'>
-{{#consumers}}
-    <tr>
-      <td> <a href="/consumers/{{name}}" > {{name}} </a> </td>
-      <td>
-        {{#topics}}
-        <dl>
-          <dt>
-            {{name}}
-          </dt>
-          <dd>
-            Lag: {{lag}}
-            <br/>
-            Coverage: {{consume_ratio}}
-          </dd>
-        </dl>
-        {{/topics}}
-      </td>
-    </tr>
-  {{/consumers}}
-</script>
-
-<div>
-  <div>
-    <h2> Users </h2>
-    <table class=table>
-      <thead>
-        <tr>
-          <th> Name </th>
-          <th> Cluster </th>
-          <th> Topics </th>
-          <th> Consumer groups </th>
-          <th> &nbsp; </th>
-        </tr>
-      </thead>
-      <tbody id="users-rows"> </tbody>
-    </table>
-  </div>
-  <div>
-    <h3> Add user </h2>
-    <form id="add-user">
-      <div class="form-group">
-        <label for="name">Name</label>
-        <input type="text" class="form-control" name="name" placeholder="Username">
+    <div>
+      <div>
+        <h2> Topics </h2>
+        <table class=table>
+          <thead>
+            <tr>
+              <th> Name </th>
+              <th> Partitions </th>
+              <th> ReplicationFactor </th>
+              <th> Messages in/s </th>
+              <th> Bytes in/s </th>
+              <th> Bytes out/s </th>
+            </tr>
+          </thead>
+          <tbody id="topic-rows"> </tbody>
+        </table>
       </div>
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" class="form-control" name="password">
-      </div>
-      <button type="submit" class="btn btn-default">Create</button>
-    </form>
-  </div>
-  <div>
-    <h3> Add permission </h2>
-    <form id="add-permission">
-      <div class="form-group">
-        <label for="name">Username</label>
-        <input type="text" class="form-control" name="username" placeholder="Username">
-      </div>
-      <div class="form-group">
-        <label for="resource">Resource name</label>
-        <input type="text" class="form-control" name="resource" placeholder="Resource (eg Topic name or Consumer group name">
-      </div>
-      <div class="form-group">
-        <label for="type">Type</label>
-        <select class="form-control" name="type">
-          <option value="Cluster"> Cluster </option>
-          <option value="Topic"> Topic </option>
-          <option value="Group"> Consumer Group</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="permission">Permission</label>
-        <select class="form-control" name="permission">
-          <option value="Read"> Read </option>
-          <option value="Write"> Write </option>
-          <option value="Read/Write"> Read/Write </option>
-        </select>
-      </div>
-      <button type="submit" class="btn btn-default">Create</button>
-    </form>
-  </div>
-</div>
-</div>
-
-<script id='tmpl-no-users' type='text/x-handlebars-template'>
-  <tr> <td colspan="5"> No users </td> </tr>
-</script>
-
-<script id='tmpl-users' type='text/x-handlebars-template'>
-{{#users}}
-    <tr>
-      <td> <a href="/users/{{username}}" > {{ username }} </a> </td>
-      <td> {{cluster}} </td>
-      <td>
-      {{#each topics}}
-      {{@key}}
-      {{ this }}
-      {{/each }}
-      </td>
-      <td>
-      {{#each groups}}
-      {{@key}}
-      {{ this }}
-      {{/each }}
-      </td>
-      <td>
-        <form class="delete-user" action="/users/{{username}}" method="POST">
-          <button type="submit" class="btn btn-danger">Delete </button>
+      <div>
+        <h3> Add topic </h2>
+        <form id="add-topic">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" class="form-control" name="name" placeholder="Topic name">
+          </div>
+          <div class="form-group">
+            <label for="partitions">Partitions</label>
+            <input type="number" class="form-control" name="partition_count" value="10" step=1 min=0>
+          </div>
+          <div class="form-group">
+            <label for="name">Replication factor</label>
+            <input type="text" class="form-control" name="replication_factor" value="1" step="1" min="1">
+          </div>
+          <button type="submit" class="btn btn-default">Create</button>
         </form>
-      </td>
-    </tr>
-  {{/users}}
-</script>
+      </div>
+    </div>
 
-<script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
-<script src='/js/handlebars.min.js' type="text/javascript" ></script>
-<script type="text/javascript">
+    <script id='tmpl-no-topics' type='text/x-handlebars-template'>
+      <tr> <td colspan="4"> No topics </td> </tr>
+    </script>
 
-var renderTopics = function() {
-  var $topics = $('#topic-rows');
-  var topicsTmpl = Handlebars.compile($('#tmpl-topics').html());
-  var noTopicsTmpl = Handlebars.compile($('#tmpl-no-topics').html());
+    <script id='tmpl-topics' type='text/x-handlebars-template'>
+    {{#topics}}
+        <tr>
+          <td> <a href="/topics/{{name}}" > {{name}} </a> </td>
+          <td> {{partition_count}} </td>
+          <td> {{replication_factor}} </td>
+          <td> {{metrics.messages_in_per_sec}} </td>
+          <td> {{metrics.bytes_in_per_sec}} </td>
+          <td> {{metrics.bytes_out_per_sec}} </td>
+        </tr>
+      {{/topics}}
+    </script>
 
-  $.get("/api/topics", function(topics) {
-    if (topics.length) {
-      var l = topics.length;
-      var result = [];
-      topics.forEach(function(topic) {
-        $.get("/api/topics/"+ topic, function(res) {
-          result.push(res)
-          if (result.length == l) {
-            result.sort(function(a, b) {
-              return a.name > b.name
+    <div>
+      <div>
+        <h2> Consumers </h2>
+        <table class=table>
+          <thead>
+            <tr>
+              <th> Name </th>
+              <th> Consumed topics </th>
+            </tr>
+          </thead>
+          <tbody id="consumer-rows"> </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script id='tmpl-no-consumers' type='text/x-handlebars-template'>
+      <tr> <td colspan="2"> No consumers </td> </tr>
+    </script>
+
+    <script id='tmpl-consumers' type='text/x-handlebars-template'>
+    {{#consumers}}
+        <tr>
+          <td> <a href="/consumers/{{name}}" > {{name}} </a> </td>
+          <td>
+            {{#topics}}
+            <dl>
+              <dt>
+                {{name}}
+              </dt>
+              <dd>
+                Lag: {{lag}}
+                <br/>
+                Coverage: {{consume_ratio}}
+              </dd>
+            </dl>
+            {{/topics}}
+          </td>
+        </tr>
+      {{/consumers}}
+    </script>
+
+    <div>
+      <div>
+        <h2> Users </h2>
+        <table class=table>
+          <thead>
+            <tr>
+              <th> Name </th>
+              <th> Cluster </th>
+              <th> Topics </th>
+              <th> Consumer groups </th>
+              <th> &nbsp; </th>
+            </tr>
+          </thead>
+          <tbody id="users-rows"> </tbody>
+        </table>
+      </div>
+      <div>
+        <h3> Add user </h2>
+        <form id="add-user">
+          <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" class="form-control" name="name" placeholder="Username">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" name="password">
+          </div>
+          <button type="submit" class="btn btn-default">Create</button>
+        </form>
+      </div>
+      <div>
+        <h3> Add permission </h2>
+        <form id="add-permission">
+          <div class="form-group">
+            <label for="name">Username</label>
+            <input type="text" class="form-control" name="username" placeholder="Username">
+          </div>
+          <div class="form-group">
+            <label for="resource">Resource name</label>
+            <input type="text" class="form-control" name="resource" placeholder="Resource (eg Topic name or Consumer group name">
+          </div>
+          <div class="form-group">
+            <label for="type">Type</label>
+            <select class="form-control" name="type">
+              <option value="Cluster"> Cluster </option>
+              <option value="Topic"> Topic </option>
+              <option value="Group"> Consumer Group</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="permission">Permission</label>
+            <select class="form-control" name="permission">
+              <option value="Read"> Read </option>
+              <option value="Write"> Write </option>
+              <option value="Read/Write"> Read/Write </option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-default">Create</button>
+        </form>
+      </div>
+    </div>
+    </div>
+
+    <script id='tmpl-no-users' type='text/x-handlebars-template'>
+      <tr> <td colspan="5"> No users </td> </tr>
+    </script>
+
+    <script id='tmpl-users' type='text/x-handlebars-template'>
+    {{#users}}
+        <tr>
+          <td> <a href="/users/{{username}}" > {{ username }} </a> </td>
+          <td> {{cluster}} </td>
+          <td>
+          {{#each topics}}
+          {{@key}}
+          {{ this }}
+          {{/each }}
+          </td>
+          <td>
+          {{#each groups}}
+          {{@key}}
+          {{ this }}
+          {{/each }}
+          </td>
+          <td>
+            <form class="delete-user" action="/users/{{username}}" method="POST">
+              <button type="submit" class="btn btn-danger">Delete </button>
+            </form>
+          </td>
+        </tr>
+      {{/users}}
+    </script>
+
+    <script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
+    <script src='/js/handlebars.min.js' type="text/javascript" ></script>
+    <script type="text/javascript">
+
+    var renderTopics = function() {
+      var $topics = $('#topic-rows');
+      var topicsTmpl = Handlebars.compile($('#tmpl-topics').html());
+      var noTopicsTmpl = Handlebars.compile($('#tmpl-no-topics').html());
+
+      $.get("/api/topics", function(topics) {
+        if (topics.length) {
+          var l = topics.length;
+          var result = [];
+          topics.forEach(function(topic) {
+            $.get("/api/topics/"+ topic, function(res) {
+              result.push(res)
+              if (result.length == l) {
+                result.sort(function(a, b) {
+                  return a.name > b.name
+                })
+                $topics.html(topicsTmpl({ topics: result }));
+              }
             })
-            $topics.html(topicsTmpl({ topics: result }));
-          }
-        })
+          })
+        } else {
+          $topics.html(noTopicsTmpl());
+        }
       })
-    } else {
-      $topics.html(noTopicsTmpl());
     }
-  })
-}
 
-var renderBrokers = function() {
-  var $brokers = $('#broker-rows');
-  var brokersTmpl = Handlebars.compile($('#tmpl-brokers').html());
-  var noBrokersTmpl = Handlebars.compile($('#tmpl-no-brokers').html());
-  $.get("/api/brokers", function(brokers) {
-    if (brokers.length) {
-      var l = brokers.length;
-      var result = [];
-      brokers.forEach(function(broker) {
-        $.get("/api/brokers/"+ broker, function(res) {
-          result.push(res)
-          if (result.length == l) {
-            result.sort(function(a, b) {
-              return a.id - b.id
+    var renderBrokers = function() {
+      var $brokers = $('#broker-rows');
+      var brokersTmpl = Handlebars.compile($('#tmpl-brokers').html());
+      var noBrokersTmpl = Handlebars.compile($('#tmpl-no-brokers').html());
+      $.get("/api/brokers", function(brokers) {
+        if (brokers.length) {
+          var l = brokers.length;
+          var result = [];
+          brokers.forEach(function(broker) {
+            $.get("/api/brokers/"+ broker, function(res) {
+              result.push(res)
+              if (result.length == l) {
+                result.sort(function(a, b) {
+                  return a.id - b.id
+                })
+                $brokers.html(brokersTmpl({ brokers: result }));
+              }
             })
-            $brokers.html(brokersTmpl({ brokers: result }));
-          }
-        })
+          })
+        } else {
+          $topics.html(noTopicsTmpl());
+        }
       })
-    } else {
-      $topics.html(noTopicsTmpl());
     }
-  })
-}
 
-var renderConsumers = function() {
-  var $consumers = $('#consumer-rows');
-  var consumersTmpl = Handlebars.compile($('#tmpl-consumers').html());
-  var noConsumersTmpl = Handlebars.compile($('#tmpl-no-consumers').html());
-  $.get("/api/consumers", function(consumers) {
-    if (consumers.length) {
-      var l = consumers.length;
-      var result = [];
-      consumers.forEach(function(consumer) {
-        $.get("/api/consumers/"+ consumer, function(res) {
-          result.push(res)
-          if (result.length == l) {
-            result.sort(function(a, b) {
-              return a.name > b.name
+    var renderConsumers = function() {
+      var $consumers = $('#consumer-rows');
+      var consumersTmpl = Handlebars.compile($('#tmpl-consumers').html());
+      var noConsumersTmpl = Handlebars.compile($('#tmpl-no-consumers').html());
+      $.get("/api/consumers", function(consumers) {
+        if (consumers.length) {
+          var l = consumers.length;
+          var result = [];
+          consumers.forEach(function(consumer) {
+            $.get("/api/consumers/"+ consumer, function(res) {
+              result.push(res)
+              if (result.length == l) {
+                result.sort(function(a, b) {
+                  return a.name > b.name
+                })
+                $consumers.html(consumersTmpl({ consumers: result }));
+              }
             })
-            $consumers.html(consumersTmpl({ consumers: result }));
-          }
-        })
+          })
+        } else {
+          $consumers.html(noConsumersTmpl());
+        }
       })
-    } else {
-      $consumers.html(noConsumersTmpl());
     }
-  })
-}
 
-var renderUsers = function() {
-  var $users = $('#users-rows');
-  var usersTmpl = Handlebars.compile($('#tmpl-users').html());
-  var noUsersTmpl = Handlebars.compile($('#tmpl-no-users').html());
-  $.get("/api/users", function(users) {
-    if (users.length) {
-      var l = users.length;
-      var result = [];
-      users.forEach(function(user){
-        $.get("/api/users/"+ user, function(res) {
-          result.push(res)
-          if (result.length == l) {
-            result.sort(function(a, b) {
-              return a.name > b.name
+    var renderUsers = function() {
+      var $users = $('#users-rows');
+      var usersTmpl = Handlebars.compile($('#tmpl-users').html());
+      var noUsersTmpl = Handlebars.compile($('#tmpl-no-users').html());
+      $.get("/api/users", function(users) {
+        if (users.length) {
+          var l = users.length;
+          var result = [];
+          users.forEach(function(user){
+            $.get("/api/users/"+ user, function(res) {
+              result.push(res)
+              if (result.length == l) {
+                result.sort(function(a, b) {
+                  return a.name > b.name
+                })
+                $users.html(usersTmpl({ users: result }));
+              }
             })
-            $users.html(usersTmpl({ users: result }));
-          }
-        })
+          })
+        } else {
+          $users.html(noUsersTmpl());
+        }
       })
-    } else {
-      $users.html(noUsersTmpl());
     }
-  })
-}
 
-$('#add-topic').submit(function(evt) {
-  evt.preventDefault();
-  $.post("/api/topics", $(this).serialize(), function(clb) {
+    $('#add-topic').submit(function(evt) {
+      evt.preventDefault();
+      $.post("/api/topics", $(this).serialize(), function(clb) {
+        renderTopics();
+      })
+    })
+
+    $('#add-user').submit(function(evt) {
+      evt.preventDefault();
+      $.post("/api/users", $(this).serialize(), function(clb) {
+        renderUsers();
+      })
+    })
+
+    $('#add-permission').submit(function(evt) {
+      evt.preventDefault();
+      $.post("/api/acls", $(this).serialize(), function(clb) {
+        renderUsers();
+      })
+    })
+
+    $('#users-rows').on('submit', '.delete-user', function(evt) {
+      evt.preventDefault();
+      $.ajax({
+        url: "/api" + $(this).attr("action"),
+        type: "delete",
+        success: function() {
+          renderUsers();
+        }
+      })
+    })
+
+
+    renderBrokers();
     renderTopics();
-  })
-})
-
-$('#add-user').submit(function(evt) {
-  evt.preventDefault();
-  $.post("/api/users", $(this).serialize(), function(clb) {
+    renderConsumers();
     renderUsers();
-  })
-})
-
-$('#add-permission').submit(function(evt) {
-  evt.preventDefault();
-  $.post("/api/acls", $(this).serialize(), function(clb) {
-    renderUsers();
-  })
-})
-
-$('#users-rows').on('submit', '.delete-user', function(evt) {
-  evt.preventDefault();
-  $.ajax({
-    url: "/api" + $(this).attr("action"),
-    type: "delete",
-    success: function() {
-      renderUsers();
-    }
-  })
-})
-
-
-renderBrokers();
-renderTopics();
-renderConsumers();
-renderUsers();
-</script>
+    </script>
+  </body>
+</html>
