@@ -41,6 +41,11 @@ type BrokerMetric struct {
 	KafkaVersion string `json:"kafka_version"`
 }
 
+type OffsetMetric struct {
+	LogEndOffset   int `json:"log_end_offset"`
+	LogStartOffset int `json:"log_start_offset"`
+}
+
 func BrokerMetrics(id string) (BrokerMetric, error) {
 	var bm BrokerMetric
 	kv, err := kafkaVersion(id)

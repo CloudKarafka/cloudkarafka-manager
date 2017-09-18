@@ -79,6 +79,14 @@ func Topic(name string) (T, error) {
 	return t, err
 }
 
+func LeaderFor(t, p string) (B, error) {
+	partition, err := Partition(t, p)
+	if err != nil {
+		return B{}, err
+	}
+	return Broker(strconv.Itoa(partition.Leader))
+}
+
 func Config(name string) ([]byte, error) {
 	path := "/config/topics/" + name
 	d, _, err := conn.Get(path)

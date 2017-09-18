@@ -40,6 +40,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/topics/{topic}/metrics", ah(api.TopicMetrics))
 	a.HandleFunc("/topics/{topic}/config", ah(api.Config))
 	a.HandleFunc("/topics/{topic}/{partition}", ah(api.Partition))
+	a.HandleFunc("/topics/{topic}/{partition}/metrics", ah(api.PartitionMetrics))
 	a.HandleFunc("/consumers", ah(api.Consumers))
 	a.HandleFunc("/consumers/{name}", ah(api.Consumer))
 	a.HandleFunc("/users", ah(api.Users))
