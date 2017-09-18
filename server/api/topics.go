@@ -60,7 +60,7 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		}
 		getTopic(w, vars["topic"])
 	case "PUT":
-		if !(p.ClusterWrite() || p.TopicWrite(vars["topic"])) {
+		if !p.TopicWrite(vars["topic"]) {
 			http.NotFound(w, r)
 			return
 		}

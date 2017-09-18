@@ -31,6 +31,18 @@ type P struct {
 	Isr      []int  `json:"isr"`
 }
 
+func (p P) String() string {
+	return fmt.Sprintf("Number=%s Topic=%s Replicas=%v", p.Number, p.Topic, p.Replicas)
+}
+
+func (p P) ReplicasInclude(id int) bool {
+	included := false
+	for _, r := range p.Replicas {
+		included = included || r == id
+	}
+	return included
+}
+
 type leaderCount struct {
 	Broker   int
 	Leader   int
@@ -102,19 +114,43 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 		for i, pr := range r.([]interface{}) {
 			parts[i] = int(pr.(float64))
 		}
-		partitions[i] = P{
+		partition := P{
 			Number:   p,
 			Replicas: parts,
 		}
+		partitions[i] = partition
 		i++
 	}
 	ids, _ := Brokers()
-	topic["partitions"] = genPartitions(len(parts), partitionCount, replicationFactor, ids, partitions)
+	var expandedPartitions map[string][]int
+	topic["partitions"], expandedPartitions = spreadReplicas(partitionCount, replicationFactor, ids, partitions)
+	ReassignPartitions(name, expandedPartitions)
 	raw, _ = json.Marshal(topic)
-	_, err := conn.Set(path, raw, stat.Version)
+	fmt.Printf("[INFO] partition_count=%v replication_factor=%v\n", partitionCount, replicationFactor)
+	stat, err := conn.Set(path, raw, stat.Version)
 	if cfg != nil {
 		createOrSetConfig(name, cfg)
 	}
+	return err
+}
+
+func ReassignPartitions(topic string, partitions map[string][]int) error {
+	var reasignment []map[string]interface{}
+	for part, replicas := range partitions {
+		p, _ := strconv.Atoi(part)
+		reasignment = append(reasignment, map[string]interface{}{
+			"topic":     topic,
+			"partition": p,
+			"replicas":  replicas,
+		})
+	}
+	node := map[string]interface{}{
+		"version":    1,
+		"partitions": reasignment,
+	}
+
+	data, _ := json.Marshal(node)
+	_, err := conn.Create("/admin/reassign_partitions", data, 0, zk.WorldACL(zk.PermAll))
 	return err
 }
 
@@ -168,60 +204,72 @@ func newTopic(name string, partitionCount, replicationFactor int) map[string]int
 	topic := make(map[string]interface{})
 	topic["version"] = 1
 	ids, _ := Brokers()
-	partitions := genPartitions(0, partitionCount, replicationFactor, ids, make([]P, partitionCount))
+	partitions, _ := spreadReplicas(partitionCount, replicationFactor, ids, make([]P, partitionCount))
 	topic["partitions"] = partitions
 	return topic
 }
 
-func genPartitions(i, p, r int, ids []string, partitions []P) map[string][]int {
-	for ; i < p; i++ {
-		replicas := leastPartitions(r, ids, partitions)
-		partitions[i] = P{
-			Number:   strconv.Itoa(i),
-			Replicas: replicas,
+func spreadReplicas(partitionCount, replicationFactor int, ids []string, partitions []P) (map[string][]int, map[string][]int) {
+	var expand []P
+	for i := 0; i < partitionCount; i++ {
+		lc := replicaSpread(ids, partitions)
+		partition := partitions[i]
+		if partition.Number == "" {
+			partition.Number = strconv.Itoa(i)
 		}
-		fmt.Println(partitions)
+		if len(partition.Replicas) == 0 {
+			partitions[i] = assignReplicas(replicationFactor, partition, lc)
+		} else {
+			expand = append(expand, assignReplicas(replicationFactor, partition, lc))
+		}
 	}
 	parts := make(map[string][]int)
 	for _, part := range partitions {
 		parts[part.Number] = part.Replicas
 	}
-	return parts
+	expanded := make(map[string][]int)
+	for _, part := range expand {
+		expanded[part.Number] = part.Replicas
+	}
+	fmt.Println(expanded)
+	return parts, expanded
 }
 
-func leastPartitions(r int, ids []string, partitions []P) []int {
-	lc := make(map[string]leaderCount)
-	for _, l := range ids {
+func assignReplicas(replicationFactor int, partition P, lc []leaderCount) P {
+	for len(partition.Replicas) < replicationFactor {
+		if len(partition.Replicas) == 0 {
+			sort.Sort(byLeader{lc})
+			partition.Replicas = append(partition.Replicas, lc[0].Broker)
+		} else {
+			sort.Sort(byFollower{lc})
+			for _, b := range lc {
+				if partition.ReplicasInclude(b.Broker) {
+					continue
+				}
+				partition.Replicas = append(partition.Replicas, b.Broker)
+				break
+			}
+		}
+	}
+	return partition
+}
+
+func replicaSpread(ids []string, partitions []P) []leaderCount {
+	lc := make([]leaderCount, len(ids))
+	for i, l := range ids {
 		b, _ := strconv.Atoi(l)
-		lc[l] = leaderCount{Broker: b, Leader: 0, Follower: 0}
+		lc[i] = leaderCount{Leader: 0, Follower: 0, Broker: b}
 	}
 	for _, p := range partitions {
-		for i, b := range p.Replicas {
-			l := strconv.Itoa(b)
-			entry := lc[l]
+		for i, id := range p.Replicas {
+			entry := lc[id]
 			if i == 0 {
 				entry.Leader += 1
 			} else {
 				entry.Follower += 1
 			}
-			lc[l] = entry
+			lc[id] = entry
 		}
 	}
-
-	count := make([]leaderCount, len(lc))
-	i := 0
-	for _, k := range lc {
-		count[i] = k
-		i++
-	}
-
-	replicas := make([]int, r)
-	sort.Sort(byLeader{count})
-	replicas[0] = count[0].Broker
-	count = count[1:]
-	sort.Sort(byFollower{count})
-	for i = 0; i < (r - 1); i++ {
-		replicas[i+1] = count[i].Broker
-	}
-	return replicas
+	return lc
 }
