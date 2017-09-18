@@ -4,8 +4,34 @@
     <link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
   </head>
   <body>
-    <h2> Topic </h2>
+    <h1> Topic </h1>
     <div>
+      <div>
+        <h2> Overview </h2>
+        <table class="table">
+          <thead>
+            <tr>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="overview"> </tbody>
+        </table>
+        <script id='tmpl-overview' type='text/x-handlebars-template'>
+          <tr>
+            <td> <strong> Messages in/s </strong> </td>
+            <td> {{messages_in_per_sec}} </td>
+          </tr>
+          <tr>
+            <td> <strong> Bytes in/s </strong> </td>
+            <td> {{bytes_in_per_sec}} </td>
+          </tr>
+          <tr>
+            <td> <strong> Bytes out/s </strong> </td>
+            <td> {{bytes_out_per_sec}} </td>
+          </tr>
+        </script>
+      </div>
       <div>
         <h2> Partitions </h2>
         <table class="table">
@@ -58,11 +84,15 @@
     <script type="text/javascript">
       var topicName = document.location.pathname.replace("/topics/", "");
       document.title = "Topic: "+ topicName;
+
       var renderPartitions = function() {
         var $partitions = $('#partition-rows');
+        var $overview = $('#overview');
         var partitionsTmpl = Handlebars.compile($('#tmpl-partitions').html());
+        var overviewTmpl = Handlebars.compile($('#tmpl-overview').html());
         var path = "/api/topics/"+ topicName;
         $.get(path, function(topic) {
+          $overview.html(overviewTmpl(topic));
           var l = Object.keys(topic.partitions).length;
           var res = [];
           Object.keys(topic.partitions).forEach(function(p) {

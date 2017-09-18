@@ -19,9 +19,9 @@ var (
 
 type topicVM struct {
 	zookeeper.T
-	PartitionCount    int                `json:"partition_count,1"`
-	ReplicationFactor int                `json:"replication_factor,1"`
-	Metrics           jmx.TransferMetric `json:"metrics"`
+	jmx.TransferMetric
+	PartitionCount    int `json:"partition_count,1"`
+	ReplicationFactor int `json:"replication_factor,1"`
 }
 
 type partitionVM struct {
@@ -163,16 +163,18 @@ func getTopic(w http.ResponseWriter, name string) {
 		return
 	}
 
-	t := topicVM{T: top}
-	t.PartitionCount = len(t.Partitions)
-	t.ReplicationFactor = len(t.Partitions["0"])
+	var (
+		t topicVM
+		m jmx.TransferMetric
+	)
 
-	m, err := jmx.TopicMetrics(name)
+	m, err = jmx.TopicMetrics(name)
 	if err != nil {
 		fmt.Println(err)
-	} else {
-		t.Metrics = m
 	}
+	t = topicVM{T: top, TransferMetric: m}
+	t.PartitionCount = len(t.Partitions)
+	t.ReplicationFactor = len(t.Partitions["0"])
 	writeJson(w, t)
 }
 
