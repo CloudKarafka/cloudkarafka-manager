@@ -242,6 +242,9 @@ var renderTopics = function() {
         $.get("/api/topics/"+ topic, function(res) {
           result.push(res)
           if (result.length == l) {
+            result.sort(function(a, b) {
+              return a.name > b.name
+            })
             $topics.html(topicsTmpl({ topics: result }));
           }
         })
@@ -264,6 +267,9 @@ var renderBrokers = function() {
         $.get("/api/brokers/"+ broker, function(res) {
           result.push(res)
           if (result.length == l) {
+            result.sort(function(a, b) {
+              return a.id - b.id
+            })
             $brokers.html(brokersTmpl({ brokers: result }));
           }
         })
@@ -286,6 +292,9 @@ var renderConsumers = function() {
         $.get("/api/consumers/"+ consumer, function(res) {
           result.push(res)
           if (result.length == l) {
+            result.sort(function(a, b) {
+              return a.name > b.name
+            })
             $consumers.html(consumersTmpl({ consumers: result }));
           }
         })
@@ -308,6 +317,9 @@ var renderUsers = function() {
         $.get("/api/users/"+ user, function(res) {
           result.push(res)
           if (result.length == l) {
+            result.sort(function(a, b) {
+              return a.name > b.name
+            })
             $users.html(usersTmpl({ users: result }));
           }
         })

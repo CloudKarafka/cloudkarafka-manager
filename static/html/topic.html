@@ -65,6 +65,9 @@
         $.get(path + "/" + p, function(partition) {
           res.push(partition)
           if (res.length == l) {
+            res.sort(function(a, b) {
+              return a.number - b.number
+            })
             $partitions.html(partitionsTmpl({ partitions: res }));
           }
         })
