@@ -7,8 +7,13 @@ import (
 
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
+)
+
+var (
+	userAlreadyExists = errors.New("ERROR: user already exists.")
 )
 
 func Users(p Permissions) ([]string, error) {
@@ -31,6 +36,9 @@ func CreateUser(name, password string) error {
 		return nil
 	}
 	_, err = conn.Create("/config/users/"+name, config, 0, zk.WorldACL(zk.PermAll))
+	if err == zk.ErrNodeExists {
+		err = userAlreadyExists
+	}
 	return err
 }
 

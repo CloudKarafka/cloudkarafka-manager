@@ -45,6 +45,7 @@
       <div>
         <div>
           <h2> Topics </h2>
+          <div id="topic-msg" class="hidden" role="alert"></div>
           <table class=table>
             <thead>
               <tr>
@@ -60,7 +61,7 @@
           </table>
         </div>
         <div>
-          <h2> Add topic </h2>
+          <h3> Add topic </h3>
           <form id="add-topic">
             <div class="form-group">
               <label for="name">Name</label>
@@ -137,6 +138,7 @@
       <div>
         <div>
           <h2> Users </h2>
+          <div id="user-msg" class="hidden" role="alert"></div>
           <table class=table>
             <thead>
               <tr>
@@ -151,7 +153,7 @@
           </table>
         </div>
         <div>
-          <h3> Add user </h2>
+          <h3> Add user </h3>
           <form id="add-user">
             <div class="form-group">
               <label for="name">Name</label>
@@ -165,7 +167,8 @@
           </form>
         </div>
         <div>
-          <h3> Add permission </h2>
+          <h3> Add permission </h3>
+          <p id="add-permission-msg" class="hidden"></p>
           <form id="add-permission">
             <div class="form-group">
               <label for="username">Username</label>
@@ -339,34 +342,82 @@
         })
       }
 
+      var hide = function(elem) {
+        elem.removeClass().addClass("hidden");
+      }
+
+      var show = function(elem, clz, text) {
+        elem.removeClass().addClass("alert alert-" + clz);
+        elem.text(text);
+        setTimeout(function() {
+          hide(elem);
+        }, 3000)
+      }
+
+      var topicMsg = $("#topic-msg");
       $('#add-topic').submit(function(evt) {
         evt.preventDefault();
-        $.post("/api/topics", $(this).serialize(), function(clb) {
-          renderTopics();
+        $.ajax({
+          type: "POST",
+          url: "/api/topics",
+          data: $(this).serialize(),
+          success: function() {
+            renderTopics();
+            show(topicMsg, "success", "Topic added");
+          },
+          error: function(resp) {
+            show(topicMsg, "danger", resp.responseText);
+          }
         })
       })
 
+      var userMsg = $("#user-msg");
       $('#add-user').submit(function(evt) {
         evt.preventDefault();
-        $.post("/api/users", $(this).serialize(), function(clb) {
-          renderUsers();
+        $.ajax({
+          type: "POST",
+          url: "/api/users",
+          data: $(this).serialize(),
+          success: function(clb) {
+            renderUsers();
+            show(userMsg, "success", "User added");
+          },
+          error: function(resp) {
+            show(userMsg, "danger", resp.responseText);
+          }
         })
       })
 
+      var permissionMsg = $("#add-permission-msg");
       $('#add-permission').submit(function(evt) {
         evt.preventDefault();
-        $.post("/api/acls", $(this).serialize(), function(clb) {
-          renderUsers();
+        show(permissionMsg);
+        $.ajax({
+          url: "/api/acls",
+          data: $(this).serialize(),
+          type: "post",
+          error: function() {
+            permissionMsg.addClass("bg-danger")
+          },
+          success: function() {
+            renderUsers();
+            permissionMsg.addClass("bg-success")
+          }
         })
       })
 
       $('#users-rows').on('submit', '.delete-user', function(evt) {
         evt.preventDefault();
+        var username = $(this).attr("action").match(/\/.*\/(.*)$/)[1];
         $.ajax({
           url: "/api" + $(this).attr("action"),
           type: "delete",
           success: function() {
             renderUsers();
+            show(userMsg, "success", "User " + username + " deleted");
+          },
+          error: function(resp) {
+            show(userMsg, "danger", resp.responseText);
           }
         })
       })
