@@ -20,6 +20,14 @@
           </table>
           <script id='tmpl-overview' type='text/x-handlebars-template'>
             <tr>
+              <td> <strong> Partitions </strong> </td>
+              <td> {{partition_count}} </td>
+            </tr>
+            <tr>
+              <td> <strong> Replication factor </strong> </td>
+              <td> {{replication_factor}} </td>
+            </tr>
+            <tr>
               <td> <strong> Messages in/s </strong> </td>
               <td> {{messages_in_per_sec}} </td>
             </tr>
@@ -94,6 +102,8 @@
           var path = "/api/topics/"+ topicName;
           $.get(path, function(topic) {
             $overview.html(overviewTmpl(topic));
+            $("input[name='partition_count']").attr("value", topic.partition_count)
+            $("input[name='replication_factor']").attr("value", topic.replication_factor)
             var l = Object.keys(topic.partitions).length;
             var res = [];
             Object.keys(topic.partitions).forEach(function(p) {
@@ -109,29 +119,30 @@
             })
           })
         }
-      $('#update-topic').submit(function(evt) {
-        evt.preventDefault();
-        console.log($(this).serializeArray());
-        $.ajax({
-          url: "/api" + document.location.pathname,
-          type: "PUT",
-          data: $(this).serialize(),
-          success: function(blk) {
-            renderPartitions();
-          }
+
+        $('#update-topic').submit(function(evt) {
+          evt.preventDefault();
+          console.log($(this).serializeArray());
+          $.ajax({
+            url: "/api" + document.location.pathname,
+            type: "PUT",
+            data: $(this).serialize(),
+            success: function(blk) {
+              renderPartitions();
+            }
+          })
         })
-      })
-      $('#delete-topic').submit(function(evt) {
-        evt.preventDefault();
-        console.log($(this).serializeArray());
-        $.ajax({
-          url: "/api" + document.location.pathname,
-          type: "DELETE",
-          success: function(blk) {
-            document.location.pathname = "/"
-          }
+        $('#delete-topic').submit(function(evt) {
+          evt.preventDefault();
+          console.log($(this).serializeArray());
+          $.ajax({
+            url: "/api" + document.location.pathname,
+            type: "DELETE",
+            success: function(blk) {
+              document.location.pathname = "/"
+            }
+          })
         })
-      })
 
         renderPartitions();
       </script>
