@@ -7,39 +7,61 @@
     <div class="container">
       <h1> Topic </h1>
       <div>
-        <div>
-          <h2> Overview </h2>
-          <table class="table">
-            <thead>
+        <div class="row">
+          <div class="col-md-6">
+            <h2> Overview </h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="overview"> </tbody>
+            </table>
+            <script id='tmpl-overview' type='text/x-handlebars-template'>
               <tr>
-                <th></th>
-                <th></th>
+                <td> <strong> Partitions </strong> </td>
+                <td> {{partition_count}} </td>
               </tr>
-            </thead>
-            <tbody id="overview"> </tbody>
-          </table>
-          <script id='tmpl-overview' type='text/x-handlebars-template'>
-            <tr>
-              <td> <strong> Partitions </strong> </td>
-              <td> {{partition_count}} </td>
-            </tr>
-            <tr>
-              <td> <strong> Replication factor </strong> </td>
-              <td> {{replication_factor}} </td>
-            </tr>
-            <tr>
-              <td> <strong> Messages in/s </strong> </td>
-              <td> {{messages_in_per_sec}} </td>
-            </tr>
-            <tr>
-              <td> <strong> Bytes in/s </strong> </td>
-              <td> {{bytes_in_per_sec}} </td>
-            </tr>
-            <tr>
-              <td> <strong> Bytes out/s </strong> </td>
-              <td> {{bytes_out_per_sec}} </td>
-            </tr>
-          </script>
+              <tr>
+                <td> <strong> Replication factor </strong> </td>
+                <td> {{replication_factor}} </td>
+              </tr>
+              <tr>
+                <td> <strong> Messages in/s </strong> </td>
+                <td> {{messages_in_per_sec}} </td>
+              </tr>
+              <tr>
+                <td> <strong> Bytes in/s </strong> </td>
+                <td> {{bytes_in_per_sec}} </td>
+              </tr>
+              <tr>
+                <td> <strong> Bytes out/s </strong> </td>
+                <td> {{bytes_out_per_sec}} </td>
+              </tr>
+            </script>
+          </div>
+          <div class="col-md-6">
+            <h2> Config </h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="config"> </tbody>
+            </table>
+            <script id='tmpl-config' type='text/x-handlebars-template'>
+              {{#each config}}
+              <tr>
+                <td> <strong> {{@key}} </strong> </td>
+                <td> {{this}} </td>
+              </tr>
+              {{/each}}
+            </script>
+          </div>
         </div>
         <div>
           <h2> Partitions </h2>
@@ -97,11 +119,14 @@
         var renderPartitions = function() {
           var $partitions = $('#partition-rows');
           var $overview = $('#overview');
+          var $config = $('#config');
           var partitionsTmpl = Handlebars.compile($('#tmpl-partitions').html());
           var overviewTmpl = Handlebars.compile($('#tmpl-overview').html());
+          var configTmpl = Handlebars.compile($('#tmpl-config').html());
           var path = "/api/topics/"+ topicName;
           $.get(path, function(topic) {
             $overview.html(overviewTmpl(topic));
+            $config.html(configTmpl(topic));
             $("input[name='partition_count']").attr("value", topic.partition_count)
             $("input[name='replication_factor']").attr("value", topic.replication_factor)
             var l = Object.keys(topic.partitions).length;

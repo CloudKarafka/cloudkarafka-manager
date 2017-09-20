@@ -27,7 +27,7 @@
         <script id='tmpl-brokers' type='text/x-handlebars-template'>
           {{#brokers}}
             <tr>
-              <td> <a href="/brokers/{{id}}" > {{id}} </a> </td>
+              <td> <a href="/brokers/{{id}}"> {{id}} </a> </td>
               <td> {{kafka_version}}</td>
               <td> {{endpoints}} </td>
               <td> {{uptime}} </td>
@@ -74,6 +74,11 @@
             <div class="form-group">
               <label for="name">Replication factor</label>
               <input type="text" class="form-control" name="replication_factor" value="1" step="1" min="1" />
+            </div>
+            <div class="form-group">
+              <label for="name">Config</label>
+              <textarea placeholder="retention.bytes=52428800" class="form-control" name="config"></textarea>
+              <p class="help-block">Config options must be one option per row and with the format "name=value".</p>
             </div>
             <button type="submit" class="btn btn-default">Create</button>
           </form>
