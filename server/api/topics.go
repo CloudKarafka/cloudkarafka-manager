@@ -81,6 +81,25 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	}
 }
 
+func ReassigningTopic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	if !p.ClusterWrite() {
+		http.NotFound(w, r)
+	}
+	vars := mux.Vars(r)
+	switch r.Method {
+	case "GET":
+		rp, err := zookeeper.ReassigningPartitions(vars["topic"])
+		if err != nil {
+			internalError(w, err.Error())
+			return
+		}
+		writeJson(w, rp)
+	default:
+		http.NotFound(w, r)
+	}
+
+}
+
 func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	bm, err := jmx.TopicMetrics(vars["topic"])

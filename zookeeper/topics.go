@@ -15,6 +15,7 @@ var (
 	invalidReplicationFactor   = errors.New("ERROR: replication factor can not be larger than number of online brokers.")
 	topicAlreadyExists         = errors.New("ERROR: topic already exists")
 	topicDoesNotExist          = errors.New("ERROR: topic doesn't exist")
+	unexpectedFormat           = errors.New("ERROR: unexpected format encountered in ZooKeeper node")
 )
 
 type T struct {
@@ -29,6 +30,12 @@ type P struct {
 	Leader   int    `json:"leader"`
 	Replicas []int  `json:"replicas"`
 	Isr      []int  `json:"isr"`
+}
+
+type Reassignment struct {
+	Topic     string `json:"topic"`
+	Partition int    `json:"partition"`
+	Replicas  []int  `json:"replicas"`
 }
 
 func (p P) String() string {
@@ -154,19 +161,44 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	return err
 }
 
+func ReassigningPartitions(topic string) ([]Reassignment, error) {
+	var (
+		node = make(map[string]interface{})
+		rs   = []Reassignment{}
+	)
+	err := get("/admin/reassign_partitions", &node)
+	if err == zk.ErrNoNode {
+		return rs, nil
+	} else if err != nil {
+		return rs, err
+	}
+	rs, ok := node["partitions"].([]Reassignment)
+	if !ok {
+		return rs, unexpectedFormat
+	}
+	flt := rs[:0]
+	for _, r := range rs {
+		if r.Topic == topic {
+			flt = append(flt, r)
+		}
+	}
+	fmt.Println(rs)
+	return rs, nil
+}
+
 func ReassignPartitions(topic string, partitions map[string][]int) error {
-	var reasignment []map[string]interface{}
+	var reasignments []Reassignment
 	for part, replicas := range partitions {
 		p, _ := strconv.Atoi(part)
-		reasignment = append(reasignment, map[string]interface{}{
-			"topic":     topic,
-			"partition": p,
-			"replicas":  replicas,
+		reasignments = append(reasignments, Reassignment{
+			Topic:     topic,
+			Partition: p,
+			Replicas:  replicas,
 		})
 	}
 	node := map[string]interface{}{
 		"version":    1,
-		"partitions": reasignment,
+		"partitions": reasignments,
 	}
 
 	data, _ := json.Marshal(node)
