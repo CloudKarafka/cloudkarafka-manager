@@ -74,9 +74,21 @@ func Topics(p Permissions) ([]string, error) {
 
 func Topic(name string) (T, error) {
 	var t T
-	err := get("/brokers/topics/"+name, &t)
 	t.Name = name
-	return t, err
+	err := get("/brokers/topics/"+name, &t)
+	if err != nil {
+		return t, err
+	}
+	cfg, err := Config(name)
+	if err != nil {
+		return t, nil
+	}
+	config := make(map[string]interface{})
+	json.Unmarshal(cfg, &config)
+	if config, ok := config["config"].(map[string]interface{}); ok {
+		t.Config = config
+	}
+	return t, nil
 }
 
 func LeaderFor(t, p string) (B, error) {
@@ -239,7 +251,6 @@ func spreadReplicas(partitionCount, replicationFactor int, ids []string, partiti
 	for _, part := range expand {
 		expanded[part.Number] = part.Replicas
 	}
-	fmt.Println(expanded)
 	return parts, expanded
 }
 

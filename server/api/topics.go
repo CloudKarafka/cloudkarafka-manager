@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -92,7 +93,7 @@ func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permission
 
 func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	if !(p.ClusterRead() || p.TopicRead(vars["topic"])) {
+	if !p.TopicRead(vars["topic"]) {
 		http.NotFound(w, r)
 		return
 	}
@@ -151,7 +152,17 @@ func decodeTopic(r *http.Request) (topicVM, error) {
 		t.Name = r.PostForm.Get("name")
 		t.PartitionCount, err = strconv.Atoi(r.PostForm.Get("partition_count"))
 		t.ReplicationFactor, err = strconv.Atoi(r.PostForm.Get("replication_factor"))
-		//t.Config = r.PostForm.Get("config")
+		if r.PostForm.Get("config") != "" {
+			rows := strings.Split(r.PostForm.Get("config"), "\n")
+			cfg := make(map[string]interface{})
+			for _, r := range rows {
+				cols := strings.Split(r, "=")
+				key := strings.Trim(cols[0], " \n\r")
+				val := strings.Trim(cols[1], " \n\r")
+				cfg[key] = val
+			}
+			t.Config = cfg
+		}
 	}
 	return t, err
 }
