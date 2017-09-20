@@ -14,6 +14,10 @@ type user struct {
 	Name, Password string
 }
 
+func Whoami(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	writeJson(w, p)
+}
+
 func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
