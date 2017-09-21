@@ -241,15 +241,8 @@
 
       <script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
       <script src='/js/handlebars.min.js' type="text/javascript" ></script>
+      <script src='/js/whoami.js' type="text/javascript" ></script>
       <script type="text/javascript">
-
-      var whoami = function() {
-        $.get("/api/whoami", function(res) {
-          if (res.cluster.includes("Write")) {
-            $("[role='cluster-write']").removeClass("hidden");
-          }
-        })
-      }
 
       var renderTopics = function() {
         var $topics = $('#topic-rows');

@@ -60,7 +60,7 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		}
 		getTopic(w, vars["topic"])
 	case "PUT":
-		if !p.TopicWrite(vars["topic"]) {
+		if !p.ClusterWrite() {
 			http.NotFound(w, r)
 			return
 		}
@@ -71,7 +71,7 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 			updateTopic(w, vars["topic"], t)
 		}
 	case "DELETE":
-		if !(p.ClusterWrite() || p.TopicWrite(vars["topic"])) {
+		if !p.ClusterWrite() {
 			http.NotFound(w, r)
 			return
 		}

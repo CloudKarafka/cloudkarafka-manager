@@ -78,7 +78,7 @@
             <tbody id="partition-rows"></tbody>
           </table>
         </div>
-        <div>
+        <div role="cluster-write" class="cluster-write hidden">
           <h3> Update topic </h3>
           <form id="update-topic" action="">
             <div class="form-group">
@@ -92,7 +92,7 @@
             <button type="submit" class="btn btn-default">Update</button>
           </form>
         </div>
-        <div>
+        <div role="cluster-write" class="cluster-write hidden">
           <h3> Delete topic </h3>
           <form id="delete-topic" action="">
             <button type="submit" class="btn btn-danger">Delete</button>
@@ -112,6 +112,7 @@
       </script>
       <script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
       <script src='/js/handlebars.min.js' type="text/javascript" ></script>
+      <script src='/js/whoami.js' type="text/javascript" ></script>
       <script type="text/javascript">
         var topicName = document.location.pathname.replace("/topics/", "");
         document.title = "Topic: "+ topicName;
@@ -169,6 +170,7 @@
           })
         })
 
+        whoami();
         renderPartitions();
       </script>
     </div>
