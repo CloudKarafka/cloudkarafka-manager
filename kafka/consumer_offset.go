@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -20,10 +21,11 @@ type message struct {
 	Timestamp int64
 }
 
-func consumerOffsets() error {
+func consumerOffsets(hostname string) error {
 	config := sarama.NewConfig()
-	config.ClientID = "CloudKarafka-mgmt-consumer-offsets-monitor"
-	client, err := sarama.NewClient([]string{"localhost:9092"}, config)
+	h, _ := os.Hostname()
+	config.ClientID = fmt.Sprintf("CloudKarafka-co-monitor-%s", h)
+	client, err := sarama.NewClient([]string{hostname}, config)
 	if err != nil {
 		return err
 	}

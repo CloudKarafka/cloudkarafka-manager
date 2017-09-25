@@ -2,8 +2,8 @@ package kafka
 
 import (
 	"cloudkarafka-mgmt/zookeeper"
-	"log"
 
+	"fmt"
 	"sync"
 	"time"
 )
@@ -27,10 +27,18 @@ func Consumers(p zookeeper.Permissions) []string {
 	defer l.Unlock()
 	consumers := make([]string, len(OffsetStore))
 	i := 0
-	for c, _ := range OffsetStore {
+	for c, ts := range OffsetStore {
 		if p.GroupRead(c) {
 			consumers[i] = c
 			i += 1
+			continue
+		}
+		for t, _ := range ts {
+			if p.TopicRead(t) {
+				consumers[i] = c
+				i += 1
+			}
+			break
 		}
 	}
 	return consumers
@@ -39,11 +47,20 @@ func Consumers(p zookeeper.Permissions) []string {
 func Consumer(c string, p zookeeper.Permissions) ConsumerGroup {
 	l.Lock()
 	defer l.Unlock()
-	var os ConsumerGroup
+	var cg ConsumerGroup
 	if p.GroupRead(c) {
-		os = OffsetStore[c]
+		cg = OffsetStore[c]
+	} else {
+		cg = ConsumerGroup{}
+		for _, ts := range OffsetStore {
+			for t, cp := range ts {
+				if p.TopicRead(t) {
+					cg[t] = cp
+				}
+			}
+		}
 	}
-	return os
+	return cg
 }
 
 func store(msg message) {
@@ -89,9 +106,9 @@ func init() {
 		for {
 			time.Sleep(1 * time.Minute)
 			start := time.Now()
-			log.Println("[INFO] Purge offset store started")
+			fmt.Println("[INFO] Purge offset store started")
 			purgeOldConsumers()
-			log.Printf("[INFO] Purge offset store ended, it took %s", time.Since(start))
+			fmt.Printf("[INFO] Purge offset store ended, it took %s\n", time.Since(start))
 		}
 	}()
 }

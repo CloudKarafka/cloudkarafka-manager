@@ -15,11 +15,13 @@ import (
 
 var (
 	port = flag.Int("port", 8080, "Port to run HTTP server on")
+	kh   = flag.String("kafka", "localhost:9292", "Hostname and port that the Kafka client should connect to")
 	key  = flag.String("key", "", "Path to CA key")
 	cert = flag.String("cert", "", "Path to CA cert")
 )
 
 func main() {
+	flag.Parse()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
@@ -28,7 +30,10 @@ func main() {
 	// Runtime metrics
 	jmx.Start()
 	// Consumer offsets
-	kafka.Start()
+	if err := kafka.Start(*kh); err != nil {
+		fmt.Println("[WARN] Kakfa client failed to start no consumer info i shown")
+		fmt.Println(err)
+	}
 	// HTTP server
 	go server.Start(fmt.Sprintf(":%v", *port), *cert, *key)
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")

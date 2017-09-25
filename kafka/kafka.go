@@ -9,9 +9,8 @@ var (
 	broker *sarama.Broker
 )
 
-func Start() error {
-	consumerOffsets()
-	return nil
+func Start(hostname string) error {
+	return consumerOffsets(hostname)
 }
 
 func Stop() {
