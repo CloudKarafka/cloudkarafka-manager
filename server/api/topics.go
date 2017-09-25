@@ -23,6 +23,7 @@ type topicVM struct {
 	jmx.TransferMetric
 	PartitionCount    int `json:"partition_count,1"`
 	ReplicationFactor int `json:"replication_factor,1"`
+	MessageCount      int `json:"message_count"`
 }
 
 type partitionVM struct {
@@ -205,6 +206,11 @@ func getTopic(w http.ResponseWriter, name string) {
 	t = topicVM{T: top, TransferMetric: m}
 	t.PartitionCount = len(t.Partitions)
 	t.ReplicationFactor = len(t.Partitions["0"])
+	var parts []string
+	for p, _ := range top.Partitions {
+		parts = append(parts, p)
+	}
+	t.MessageCount = jmx.TopicMessageCount(top.Name, parts)
 	writeJson(w, t)
 }
 

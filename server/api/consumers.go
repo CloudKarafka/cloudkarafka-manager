@@ -7,9 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"fmt"
 	"net/http"
-	"strconv"
 )
 
 type consumerVM struct {
@@ -37,18 +35,18 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	var topics []consumedTopicVM
 	for t, cps := range cts {
 		if p.TopicRead(t) {
-			lag := 0
-			for part, off := range cps {
-				e, err := jmx.LogOffset("LogEndOffset", t, strconv.Itoa(part))
-				if err != nil {
-					fmt.Println(err)
-				}
-				lag += (e - off.Offset)
+			consumedMessages := 0
+			for _, off := range cps {
+				consumedMessages += off.Offset
 			}
 			topic, _ := zookeeper.Topic(t)
+			var parts []string
+			for p, _ := range topic.Partitions {
+				parts = append(parts, p)
+			}
 			topics = append(topics, consumedTopicVM{
 				Name:         t,
-				Lag:          lag,
+				Lag:          consumedMessages - jmx.TopicMessageCount(t, parts),
 				ConsumeRatio: int((len(cps) / len(topic.Partitions)) * 100),
 			})
 		}

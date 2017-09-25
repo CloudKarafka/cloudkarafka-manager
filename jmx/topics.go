@@ -1,5 +1,9 @@
 package jmx
 
+import (
+	"fmt"
+)
+
 func TopicMetrics(t string) (TransferMetric, error) {
 	var tm TransferMetric
 	bi, err := BrokerTopicMetric("BytesInPerSec", t)
@@ -37,4 +41,20 @@ func LogOffsetMetric(t, p string) (OffsetMetric, error) {
 		LogEndOffset:   eo,
 	}
 	return om, nil
+}
+
+func TopicMessageCount(topic string, partitions []string) int {
+	msgs := 0
+	for _, p := range partitions {
+		s, err := LogOffset("LogStartOffset", topic, p)
+		if err != nil {
+			fmt.Println(err)
+		}
+		e, err := LogOffset("LogEndOffset", topic, p)
+		if err != nil {
+			fmt.Println(err)
+		}
+		msgs += e - s
+	}
+	return msgs
 }
