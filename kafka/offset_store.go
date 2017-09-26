@@ -25,20 +25,17 @@ type Offset struct {
 func Consumers(p zookeeper.Permissions) []string {
 	l.Lock()
 	defer l.Unlock()
-	consumers := make([]string, len(OffsetStore))
-	i := 0
+	consumers := make([]string, 0)
 	for c, ts := range OffsetStore {
 		if p.GroupRead(c) {
-			consumers[i] = c
-			i += 1
+			consumers = append(consumers, c)
 			continue
 		}
 		for t, _ := range ts {
 			if p.TopicRead(t) {
-				consumers[i] = c
-				i += 1
+				consumers = append(consumers, c)
+				break
 			}
-			break
 		}
 	}
 	return consumers
@@ -104,7 +101,7 @@ func purgeOldConsumers() {
 func init() {
 	go func() {
 		for {
-			time.Sleep(1 * time.Minute)
+			time.Sleep(5 * time.Minute)
 			start := time.Now()
 			fmt.Println("[INFO] Purge offset store started")
 			purgeOldConsumers()

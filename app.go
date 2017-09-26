@@ -15,7 +15,7 @@ import (
 
 var (
 	port = flag.Int("port", 8080, "Port to run HTTP server on")
-	kh   = flag.String("kafka", "localhost:9292", "Hostname and port that the Kafka client should connect to")
+	kh   = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
 	key  = flag.String("key", "", "Path to CA key")
 	cert = flag.String("cert", "", "Path to CA cert")
 )
