@@ -30,7 +30,6 @@ type aclScopedHandler func(http.ResponseWriter, *http.Request, zookeeper.Permiss
 func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
 	a.HandleFunc("/acls", ah(api.Acls))
-	a.HandleFunc("/acls/{topic}", ah(api.Acl))
 	a.HandleFunc("/acls/{type}/{resource}/{username}", ah(api.Acl))
 	a.HandleFunc("/brokers", ah(api.Brokers))
 	a.HandleFunc("/brokers/{id}", ah(api.Broker))
@@ -56,6 +55,10 @@ func Start(port, cert, key string) {
 	r.HandleFunc("/", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "static/html/home.html")
 	}))
+
+	r.HandleFunc("/api", func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "static/html/docs.html")
+	})
 
 	r.HandleFunc("/topics/{topic}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "static/html/topic.html")

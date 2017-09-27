@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
+    <title> CloudKarafka mgmt API docs </title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <h1>CloudKarafka Management HTTP API </h1>
+      </div>
+      <div class="row">
+        <h3>Introduction</h3>
+        <div>
+          <p>
+            Apart from this help page, all URIs will serve only resources of type application/json, and will require HTTP basic authentication (using SASL SCRAM-SHA-512 stored in ZooKeeper).
+          </p>
+          <p>
+            For all PUT/POST/DELETE actions the user need to have the cluster write ACL rule.
+          </p>
+        </div>
+      </div>
+      <div class="row">
+        <h3>Routes</h3>
+        <table class="table table-bordered">
+          <thead>
+            <tr>
+              <th>GET</th>
+              <th>PUT</th>
+              <th>DELETE</th>
+              <th>POST</th>
+              <th>Path</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/brokers </td>
+              <td> List of online broker ids. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/brokers/{id} </td>
+              <td> Detaild info about the broker. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/brokers/{id}/metrics </td>
+              <td> Runtime metrics gathered via JMX for given broker id. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td>*</td>
+              <td> /api/topics </td>
+              <td> List of topics. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td>*</td>
+              <td>*</td>
+              <td></td>
+              <td> /api/topics/{name} </td>
+              <td> Detais about given topic. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/topics/{name}/metrics </td>
+              <td> Runtime metrics gathered via JMX for given topic. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td> /api/topics/{name}/config </td>
+              <td> Configs for given topic. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/topics/{name}/reassigning </td>
+              <td> Return status of reassigning partitions if there is any. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/topics/{name}/{partition} </td>
+              <td> Detais about given topic partition. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/topics/{name}/{partition}/metrics </td>
+              <td> Runtime metrics gathered from JMX for given topic partition. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/consumers </td>
+              <td> List of active consumers. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/consumers/{name} </td>
+              <td> Details about given consumer. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/whoami </td>
+              <td> List of permissions for authenticated user. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td>*</td>
+              <td> /api/users </td>
+              <td> List users. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td>*</td>
+              <td></td>
+              <td> /api/users/{name} </td>
+              <td> Details for given user. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td></td>
+              <td></td>
+              <td> /api/acls </td>
+              <td> List of all Acl rules. </td>
+            </tr>
+            <tr>
+              <td>*</td>
+              <td></td>
+              <td>*</td>
+              <td></td>
+              <td> /api/acls/{type}/{resource}/{username} </td>
+              <td> Get specific Acl rule. </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>
+
