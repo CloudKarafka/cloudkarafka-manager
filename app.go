@@ -18,6 +18,7 @@ var (
 	kh   = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
 	key  = flag.String("key", "", "Path to CA key")
 	cert = flag.String("cert", "", "Path to CA cert")
+	auth = flag.String("authentication", "scram", "Valid values are (none|scram)")
 )
 
 func main() {
@@ -27,6 +28,9 @@ func main() {
 
 	// Basic info
 	zookeeper.Start()
+	// Set authentication method for HTTP api
+	fmt.Printf("[INFO] authentication-method=%s\n", *auth)
+	zookeeper.SetAuthentication(*auth)
 	// Runtime metrics
 	jmx.Start()
 	// Consumer offsets

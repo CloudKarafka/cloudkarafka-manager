@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	conn *zk.Conn
+	conn                *zk.Conn
+	authenticaionMethod string
 )
 
 type AllFunc func(Permissions) ([]string, error)
@@ -24,6 +25,13 @@ func Stop() {
 	if conn != nil {
 		conn.Close()
 	}
+}
+
+func SetAuthentication(method string) {
+	authenticaionMethod = method
+}
+func SkipAuthentication() bool {
+	return authenticaionMethod == "none"
 }
 
 func connect(url string) error {

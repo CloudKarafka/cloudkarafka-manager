@@ -13,8 +13,12 @@ import (
 
 func ah(fn aclScopedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, pass, _ := r.BasicAuth()
-		if zookeeper.ValidateScramLogin(user, pass) {
+		user, pass, ok := r.BasicAuth()
+		if zookeeper.SkipAuthentication() {
+			p := zookeeper.Permissions{Cluster: zookeeper.R, Username: "default"}
+			fn(w, r, p)
+			fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
+		} else if ok && zookeeper.ValidateScramLogin(user, pass) {
 			p := zookeeper.PermissionsFor(user)
 			fn(w, r, p)
 			fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
