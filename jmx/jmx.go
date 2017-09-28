@@ -36,6 +36,11 @@ type TransferMetric struct {
 	MessagesInPerSec float64 `json:"messages_in_per_sec"`
 }
 
+type TopicMetric struct {
+	TransferMetric
+	MessageCount int `json:"message_count"`
+}
+
 type BrokerMetric struct {
 	TransferMetric
 	KafkaVersion string `json:"kafka_version"`

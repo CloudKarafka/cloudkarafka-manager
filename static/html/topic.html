@@ -8,7 +8,7 @@
       <h1> Topic </h1>
       <div>
         <div class="row">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <h2> Overview </h2>
             <table class="table">
               <thead>
@@ -29,6 +29,28 @@
                 <td> {{replication_factor}} </td>
               </tr>
               <tr>
+                <td> <strong> Broker spread </strong> </td>
+                <td> {{broker_spread}} </td>
+              </tr>
+            </script>
+          </div>
+          <div class="col-md-4">
+            <h2> Metrics </h2>
+            <table class="table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="metrics">
+                <tr>
+                  <td colspan=2> Loading... </td>
+                </tr>
+              </tbody>
+            </table>
+            <script id='tmpl-metrics' type='text/x-handlebars-template'>
+              <tr>
                 <td> <strong> Message count </strong> </td>
                 <td> {{message_count}} </td>
               </tr>
@@ -46,7 +68,7 @@
               </tr>
             </script>
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
             <h2> Config </h2>
             <table class="table">
               <thead>
@@ -55,7 +77,11 @@
                   <th></th>
                 </tr>
               </thead>
-              <tbody id="config"> </tbody>
+              <tbody id="config">
+                <tr>
+                  <td colspan=2> Loading... </td>
+                </tr>
+              </tbody>
             </table>
             <script id='tmpl-config' type='text/x-handlebars-template'>
               {{#each config}}
@@ -79,7 +105,11 @@
                 <th>End Offset</th>
               </tr>
             </thead>
-            <tbody id="partition-rows"></tbody>
+            <tbody id="partition-rows">
+                <tr>
+                  <td colspan=5> Loading... </td>
+                </tr>
+            </tbody>
           </table>
         </div>
         <div role="cluster-write" class="cluster-write hidden">
@@ -125,10 +155,15 @@
           var $partitions = $('#partition-rows');
           var $overview = $('#overview');
           var $config = $('#config');
+          var $metric = $('#metrics');
           var partitionsTmpl = Handlebars.compile($('#tmpl-partitions').html());
           var overviewTmpl = Handlebars.compile($('#tmpl-overview').html());
           var configTmpl = Handlebars.compile($('#tmpl-config').html());
+          var metricTmpl = Handlebars.compile($('#tmpl-metrics').html());
           var path = "/api/topics/"+ topicName;
+          $.get(path + "/metrics", function(m) {
+            $metric.html(metricTmpl(m));
+          })
           $.get(path, function(topic) {
             $overview.html(overviewTmpl(topic));
             $config.html(configTmpl(topic));

@@ -1,27 +1,28 @@
 package jmx
 
 import (
+	"cloudkarafka-mgmt/zookeeper"
+
 	"fmt"
 )
 
-func TopicMetrics(t string) (TransferMetric, error) {
-	var tm TransferMetric
-	bi, err := BrokerTopicMetric("BytesInPerSec", t)
-	if err != nil {
-		return tm, err
+func TopicMetrics(t string) (TopicMetric, error) {
+	var tm TopicMetric
+	bi, _ := BrokerTopicMetric("BytesInPerSec", t)
+	bo, _ := BrokerTopicMetric("BytesOutPerSec", t)
+	mi, _ := BrokerTopicMetric("MessagesInPerSec", t)
+	topic, _ := zookeeper.Topic(t)
+	var partitions []string
+	for p, _ := range topic.Partitions {
+		partitions = append(partitions, p)
 	}
-	bo, err := BrokerTopicMetric("BytesOutPerSec", t)
-	if err != nil {
-		return tm, err
-	}
-	mi, err := BrokerTopicMetric("MessagesInPerSec", t)
-	if err != nil {
-		return tm, err
-	}
-	tm = TransferMetric{
-		BytesInPerSec:    bi,
-		BytesOutPerSec:   bo,
-		MessagesInPerSec: mi,
+	tm = TopicMetric{
+		TransferMetric: TransferMetric{
+			BytesInPerSec:    bi,
+			BytesOutPerSec:   bo,
+			MessagesInPerSec: mi,
+		},
+		MessageCount: TopicMessageCount(t, partitions),
 	}
 	return tm, nil
 }
