@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link href='/css/bootstrap.min.css' rel='stylesheet' type="text/css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1> Consumer </h1>
+      <div>
+        <table class="table">
+          <thead>
+            <tr>
+              <th> Topic </th>
+              <th> Coverage </th>
+            </tr>
+          </thead>
+          <tbody id="overview">
+            <tr>
+              <td colspan="2"> Loading... </td>
+            </tr>
+          </tbody>
+        </table>
+        <script id='tmpl-overview' type='text/x-handlebars-template'>
+          {{#topics}}
+            <tr>
+              <td> {{name}} </td>
+              <td> {{coverage}}% </td>
+            </tr>
+          {{/topics}}
+        </script>
+      </div>
+      <div>
+        <h2> Consumed partitions </h2>
+        <table class="table">
+          <tbody id="consumed-partitions">
+              <tr>
+                <td colspan=2> Loading... </td>
+              </tr>
+          </tbody>
+        </table>
+        <script id='tmpl-consumed-partitions' type='text/x-handlebars-template'>
+          {{#each topics}}
+            <tr>
+              <td colspan="2">{{@key}}</td>
+            </tr>
+            <tr>
+              <td> <strong> Partition </strong> </td>
+              <td> <strong> Lag </strong> </td>
+            </tr>
+            {{#each this}}
+              <tr>
+                <td> {{@key}} </td>
+                <td> {{this}} </td>
+              </tr>
+            {{/each}}
+          {{/each}}
+        </script>
+      </div>
+      <script src='/js/jquery-3.1.1.min.js' type="text/javascript" ></script>
+      <script src='/js/handlebars.min.js' type="text/javascript" ></script>
+      <script src='/js/whoami.js' type="text/javascript" ></script>
+      <script type="text/javascript">
+        var consumerName = document.location.pathname.replace("/consumers/", "");
+        document.title = "Consumer: "+ consumerName;
+
+        var renderConsumer = function() {
+          var $overview = $('#overview');
+          var $consumedPartitons = $('#consumed-partitions');
+          var overviewTmpl = Handlebars.compile($('#tmpl-overview').html());
+          var cpTmpl = Handlebars.compile($('#tmpl-consumed-partitions').html());
+          var path = "/api/consumers/"+ consumerName;
+          $.get(path + "/metrics", function(metrics) {
+            $consumedPartitons.html(cpTmpl(metrics));
+          })
+          $.get(path, function(consumer) {
+            $overview.html(overviewTmpl(consumer));
+          })
+        }
+
+        whoami();
+        renderConsumer();
+      </script>
+    </div>
+  </body>
+</html>
+

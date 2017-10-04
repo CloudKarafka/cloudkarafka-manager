@@ -47,15 +47,11 @@ func LogOffsetMetric(t, p string) (OffsetMetric, error) {
 func TopicMessageCount(topic string, partitions []string) int {
 	msgs := 0
 	for _, p := range partitions {
-		s, err := LogOffset("LogStartOffset", topic, p)
+		lo, err := LogOffsetMetric(topic, p)
 		if err != nil {
 			fmt.Println(err)
 		}
-		e, err := LogOffset("LogEndOffset", topic, p)
-		if err != nil {
-			fmt.Println(err)
-		}
-		msgs += e - s
+		msgs += lo.LogEndOffset - lo.LogStartOffset
 	}
 	return msgs
 }

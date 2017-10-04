@@ -1,6 +1,7 @@
 package server
 
 import (
+	"cloudkarafka-mgmt/config"
 	"cloudkarafka-mgmt/server/api"
 	"cloudkarafka-mgmt/zookeeper"
 
@@ -47,12 +48,13 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/topics/{topic}/{partition}/metrics", ah(api.PartitionMetrics))
 	a.HandleFunc("/consumers", ah(api.Consumers))
 	a.HandleFunc("/consumers/{name}", ah(api.Consumer))
+	a.HandleFunc("/consumers/{name}/metrics", ah(api.ConsumerMetrics))
 	a.HandleFunc("/whoami", ah(api.Whoami))
 	a.HandleFunc("/users", ah(api.Users))
 	a.HandleFunc("/users/{name}", ah(api.User))
 }
 
-func Start(port, cert, key string) {
+func Start(cert, key string) {
 	r := mux.NewRouter()
 	apiRoutes(r)
 
@@ -76,15 +78,19 @@ func Start(port, cert, key string) {
 		http.ServeFile(w, req, "static/html/user.html")
 	}))
 
+	r.HandleFunc("/consumers/{name}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+		http.ServeFile(w, req, "static/html/consumer.html")
+	}))
+
 	http.Handle("/js/", http.FileServer(http.Dir("static/")))
 	http.Handle("/css/", http.FileServer(http.Dir("static/")))
 	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
 	http.Handle("/", r)
 	s := &http.Server{
-		Addr:         port,
+		Addr:         fmt.Sprintf(":%s", config.Port),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
-	fmt.Println("Listening on Port", port)
+	fmt.Println("Listening on Port", config.Port)
 	fmt.Println(s.ListenAndServe())
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cloudkarafka-mgmt/config"
 	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/kafka"
 	"cloudkarafka-mgmt/server"
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	port = flag.Int("port", 8080, "Port to run HTTP server on")
+	port = flag.String("port", "8080", "Port to run HTTP server on")
 	kh   = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
 	key  = flag.String("key", "", "Path to CA key")
 	cert = flag.String("cert", "", "Path to CA cert")
@@ -39,7 +40,8 @@ func main() {
 		fmt.Println(err)
 	}
 	// HTTP server
-	go server.Start(fmt.Sprintf(":%v", *port), *cert, *key)
+	config.Port = *port
+	go server.Start(*cert, *key)
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	//Wait for term
 	<-signals

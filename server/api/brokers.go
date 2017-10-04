@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cloudkarafka-mgmt/config"
 	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
@@ -39,7 +40,7 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	bm, err = jmx.BrokerMetrics(vars["id"])
 
 	if err != nil {
-		path := fmt.Sprintf("http://%s:8080/api/brokers/%s/metrics", broker.Host, vars["id"])
+		path := fmt.Sprintf("http://%s:%s/api/brokers/%s/metrics", broker.Host, config.Port, vars["id"])
 		fetchRemote(path, r, &bm)
 	}
 	bvm = brokerVM{B: broker, BrokerMetric: bm}

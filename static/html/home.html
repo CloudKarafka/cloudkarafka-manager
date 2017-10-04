@@ -115,7 +115,9 @@
         <script id='tmpl-consumers' type='text/x-handlebars-template'>
         {{#consumers}}
             <tr>
-              <td> {{name}} </td>
+              <td> 
+              <a href="/consumers/{{name}}"> {{name}} </a>
+              </td>
               <td>
                 {{#topics}}
                 <dl>
@@ -123,9 +125,7 @@
                     {{name}}
                   </dt>
                   <dd>
-                    Lag: {{lag}}
-                    <br/>
-                    Coverage: {{consume_ratio}}
+                    Coverage: {{coverage}}%
                   </dd>
                 </dl>
                 {{/topics}}

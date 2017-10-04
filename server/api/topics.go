@@ -132,24 +132,20 @@ func Partition(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) 
 		http.NotFound(w, r)
 		return
 	}
-	var (
-		om jmx.OffsetMetric
-	)
-	om, err = jmx.LogOffsetMetric(vars["topic"], vars["partition"])
+	om, err := fetchOffsetMetric(vars["topic"], vars["partition"], r)
 	if err != nil {
-		broker, _ := zookeeper.LeaderFor(vars["topic"], vars["partition"])
-		path := fmt.Sprintf("http://%s:8080/api/topics/%s/%s/metrics", broker.Host, vars["topic"], vars["partition"])
-		fetchRemote(path, r, &om)
+		fmt.Println(err)
 	}
 	partition := partitionVM{P: part, OffsetMetric: om}
-
 	writeJson(w, partition)
 }
 
 func PartitionMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
+	fmt.Println(vars["topic"], vars["partition"])
 	om, err := jmx.LogOffsetMetric(vars["topic"], vars["partition"])
 	if err != nil {
+		fmt.Println("[ERROR]", err)
 		internalError(w, err)
 	} else {
 		writeJson(w, om)
