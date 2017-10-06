@@ -22,7 +22,11 @@
               <th> Bytes out/s </th>
             </tr>
           </thead>
-          <tbody id="broker-rows"> </tbody>
+          <tbody id="broker-rows">
+            <tr>
+              <td colspan="7"> Loading... </td>
+            </tr>
+          </tbody>
         </table>
 
         <script id='tmpl-brokers' type='text/x-handlebars-template'>
@@ -55,7 +59,11 @@
                 <th> ReplicationFactor </th>
               </tr>
             </thead>
-            <tbody id="topic-rows"> </tbody>
+            <tbody id="topic-rows">
+              <tr>
+                <td colspan="3"> Loading... </td>
+              </tr>
+            </tbody>
           </table>
 
           <script id='tmpl-no-topics' type='text/x-handlebars-template'>
@@ -106,7 +114,11 @@
                 <th> Consumed topics </th>
               </tr>
             </thead>
-            <tbody id="consumer-rows"> </tbody>
+            <tbody id="consumer-rows">
+              <tr>
+                <td colspan="3"> Loading... </td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <script id='tmpl-no-consumers' type='text/x-handlebars-template'>
@@ -149,7 +161,11 @@
                 <th> &nbsp; </th>
               </tr>
             </thead>
-            <tbody id="users-rows"> </tbody>
+            <tbody id="users-rows">
+              <tr>
+                <td colspan="5"> Loading... </td>
+              </tr>
+            </tbody>
           </table>
         </div>
         <div>
