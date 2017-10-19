@@ -5,7 +5,19 @@
   </head>
   <body>
     <div class="container">
-      <h1> Consumer </h1>
+      <div class="row">
+        <div class="col-md-10">
+          <h1>
+            Consumer
+            <small id="consumer-name"> </small>
+          </h1>
+        </div>
+        <div class="col-md-2">
+          <h3>
+            <a class="btn btn-default" href="/"> overview </a>
+          </h3>
+        </div>
+      </div>
       <div>
         <table class="table">
           <thead>
@@ -62,6 +74,7 @@
       <script type="text/javascript">
         var consumerName = document.location.pathname.replace("/consumers/", "");
         document.title = "Consumer: "+ consumerName;
+        $('#consumer-name').text(consumerName);
 
         var renderConsumer = function() {
           var $overview = $('#overview');

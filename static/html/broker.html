@@ -5,7 +5,19 @@
   </head>
   <body>
     <div class="container">
-      <h1>Broker</h1>
+      <div class="row">
+        <div class="col-md-10">
+          <h1>
+            Broker
+            <small id="broker-id"> </small>
+          </h1>
+        </div>
+        <div class="col-md-2">
+          <h3>
+            <a class="btn btn-default" href="/"> overview </a>
+          </h3>
+        </div>
+      </div>
       <h3>Summary</h3>
       <table class="table">
         <thead>
@@ -41,6 +53,7 @@
       <script type="text/javascript">
         var brokerId = document.location.pathname.replace("/brokers/", "");
         document.title = "Broker: "+ brokerId;
+        $('#broker-id').text(brokerId);
         var renderSummary = function() {
           var $summary = $('#broker-summary');
           var summaryTmpl = Handlebars.compile($('#tmpl-summary').html());

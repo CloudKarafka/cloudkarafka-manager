@@ -5,7 +5,19 @@
   </head>
   <body>
     <div class="container">
-      <h1> User </h1>
+      <div class="row">
+        <div class="col-md-10">
+          <h1>
+            User
+            <small id="username-heading"> </small>
+          </h1>
+        </div>
+        <div class="col-md-2">
+          <h3>
+            <a class="btn btn-default" href="/"> overview </a>
+          </h3>
+        </div>
+      </div>
       <div>
         <div>
           <h2> Permissions </h2>
@@ -81,6 +93,7 @@
         var username = document.location.pathname.replace("/users/", "");
         document.title = "User: "+ username;
         $("#username").attr('value', username);
+        $('#username-heading').text(username);
         var renderUser = function() {
           var $user = $('#user-rows');
           var userTmpl = Handlebars.compile($('#tmpl-user').html());

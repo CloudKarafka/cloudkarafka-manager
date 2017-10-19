@@ -5,7 +5,19 @@
   </head>
   <body>
     <div class="container">
-      <h1> Topic </h1>
+      <div class="row">
+        <div class="col-md-10">
+          <h1>
+            Topic
+            <small id="topic-name"> </small>
+          </h1>
+        </div>
+        <div class="col-md-2">
+          <h1>
+            <a class="btn btn-default" href="/"> overview </a>
+          </h1>
+        </div>
+      </div>
       <div>
         <div class="row">
           <div class="col-md-4">
@@ -150,6 +162,7 @@
       <script type="text/javascript">
         var topicName = document.location.pathname.replace("/topics/", "");
         document.title = "Topic: "+ topicName;
+        $('#topic-name').text(topicName);
 
         var renderPartitions = function() {
           var $partitions = $('#partition-rows');
