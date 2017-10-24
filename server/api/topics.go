@@ -102,10 +102,21 @@ func ReassigningTopic(w http.ResponseWriter, r *http.Request, p zookeeper.Permis
 
 func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
+	topic, err := zookeeper.Topic(vars["topic"])
+	if err != nil {
+		internalError(w, err)
+		return
+	}
+	messages := 0
+	for partition, _ := range topic.Partitions {
+		om, _ := fetchOffsetMetric(vars["topic"], partition, r)
+		messages += (om.LogEndOffset - om.LogStartOffset)
+	}
 	bm, err := jmx.TopicMetrics(vars["topic"])
 	if err != nil {
 		internalError(w, err)
 	} else {
+		bm.MessageCount = messages
 		writeJson(w, bm)
 	}
 }

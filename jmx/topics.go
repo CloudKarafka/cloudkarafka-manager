@@ -22,9 +22,20 @@ func TopicMetrics(t string) (TopicMetric, error) {
 			BytesOutPerSec:   bo,
 			MessagesInPerSec: mi,
 		},
-		MessageCount: TopicMessageCount(t, partitions),
 	}
 	return tm, nil
+}
+
+func TopicMessageCount(topic string, partitions []string) int {
+	msgs := 0
+	for _, p := range partitions {
+		lo, err := LogOffsetMetric(topic, p)
+		if err != nil {
+			fmt.Println(err)
+		}
+		msgs += lo.LogEndOffset - lo.LogStartOffset
+	}
+	return msgs
 }
 
 func LogOffsetMetric(t, p string) (OffsetMetric, error) {
@@ -42,16 +53,4 @@ func LogOffsetMetric(t, p string) (OffsetMetric, error) {
 		LogEndOffset:   eo,
 	}
 	return om, nil
-}
-
-func TopicMessageCount(topic string, partitions []string) int {
-	msgs := 0
-	for _, p := range partitions {
-		lo, err := LogOffsetMetric(topic, p)
-		if err != nil {
-			fmt.Println(err)
-		}
-		msgs += lo.LogEndOffset - lo.LogStartOffset
-	}
-	return msgs
 }
