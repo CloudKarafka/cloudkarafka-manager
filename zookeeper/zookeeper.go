@@ -33,6 +33,9 @@ func SetAuthentication(method string) {
 func SkipAuthentication() bool {
 	return authenticaionMethod == "none"
 }
+func SkipAuthenticationWithWrite() bool {
+	return authenticaionMethod == "none-with-write"
+}
 
 func connect(url string) error {
 	var err error
