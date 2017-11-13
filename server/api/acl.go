@@ -17,6 +17,14 @@ type aclVM struct {
 
 func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	switch r.Method {
+	case "GET":
+		topics := zookeeper.AllAcls(zookeeper.Topics, zookeeper.TopicAcl)
+		groups := zookeeper.AllAcls(zookeeper.Groups, zookeeper.GroupAcl)
+		resp := map[string]interface{}{
+			"topics": topics,
+			"groups": groups,
+		}
+		writeJson(w, resp)
 	case "POST":
 		acl, err := decodeAcl(r)
 		if err != nil {
