@@ -154,9 +154,12 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	ReassignPartitions(name, expandedPartitions)
 	raw, _ = json.Marshal(topic)
 	fmt.Printf("[INFO] partition_count=%v replication_factor=%v\n", partitionCount, replicationFactor)
-	stat, err := conn.Set(path, raw, stat.Version)
+	_, err := conn.Set(path, raw, stat.Version)
+	if err != nil {
+		return err
+	}
 	if cfg != nil {
-		createOrSetConfig(name, cfg)
+		err = createOrSetConfig(name, cfg)
 	}
 	return err
 }
