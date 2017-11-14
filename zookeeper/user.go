@@ -17,9 +17,13 @@ var (
 )
 
 func Users(p Permissions) ([]string, error) {
-	return all("/config/users", func(usr string) bool {
+	users, err := all("/config/users", func(usr string) bool {
 		return p.ClusterRead() || usr == p.Username
 	})
+	if err == zk.ErrNoNode {
+		return []string{}, nil
+	}
+	return users, err
 }
 
 func User(name string) ([]byte, error) {
