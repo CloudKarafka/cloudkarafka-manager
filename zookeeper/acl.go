@@ -102,7 +102,9 @@ func setAcl(path string, acls []acl) error {
 		return err
 	}
 	ok, s, _ := conn.Exists(path)
-	if ok {
+	if ok && acls == nil {
+		err = conn.Delete(path, s.Version)
+	} else if ok {
 		_, err = conn.Set(path, data, s.Version)
 	} else {
 		_, err = conn.Create(path, data, 0, zk.WorldACL(zk.PermAll))
@@ -119,16 +121,25 @@ func DeleteAcl(user, resource, resourceType string) error {
 	switch resourceType {
 	case "Group":
 		acls, err = GroupAcl(resource)
+		if err != nil {
+			return err
+		}
 		path = fmt.Sprintf("%s/%s", path, resource)
-		setAcl(path, rejectAclFor(user, acls))
+		err = setAcl(path, rejectAclFor(user, acls))
 	case "Topic":
 		acls, err = TopicAcl(resource)
+		if err != nil {
+			return err
+		}
 		path = fmt.Sprintf("%s/%s", path, resource)
-		setAcl(path, rejectAclFor(user, acls))
+		err = setAcl(path, rejectAclFor(user, acls))
 	case "Cluster":
 		acls, err = ClusterAcl()
+		if err != nil {
+			return err
+		}
 		path = fmt.Sprintf("%s/%s", path, "kafka-cluster")
-		setAcl(path, rejectAclFor(user, acls))
+		err = setAcl(path, rejectAclFor(user, acls))
 	}
 	return err
 }
