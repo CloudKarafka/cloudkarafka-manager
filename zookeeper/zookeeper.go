@@ -58,7 +58,7 @@ func connect(url string) error {
 }
 
 func all(path string, fn permissionFunc) ([]string, error) {
-	var rows []string
+	rows := make([]string, 0)
 	children, _, err := conn.Children(path)
 	if err != nil {
 		return rows, err

@@ -5,17 +5,21 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
-	l      sync.Mutex
-	cmd    *exec.Cmd
-	stdin  io.WriteCloser
-	stdout io.ReadCloser
-	stderr io.ReadCloser
+	l            sync.Mutex
+	cmd          *exec.Cmd
+	stdin        io.WriteCloser
+	stdout       io.ReadCloser
+	stderr       io.ReadCloser
+	BrokerId     string
+	KafkaVersion string
 
 	ReadTimeout  = errors.New("JmxTerm didn't send any response in time")
 	NoSuchBean   = errors.New("No such Bean")
@@ -23,6 +27,10 @@ var (
 )
 
 func Start() {
+	if err := brokerId(); err != nil {
+		fmt.Println("[ERROR]", err)
+		return
+	}
 	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-l", "localhost:9010")
 	stderr, _ = cmd.StderrPipe()
 	stdout, _ = cmd.StdoutPipe()
@@ -44,6 +52,7 @@ type TopicMetric struct {
 type BrokerMetric struct {
 	TransferMetric
 	KafkaVersion string `json:"kafka_version"`
+	BrokerId     string `json:"broker_id"`
 }
 
 type OffsetMetric struct {
@@ -52,10 +61,9 @@ type OffsetMetric struct {
 }
 
 func BrokerMetrics(id string) (BrokerMetric, error) {
-	var bm BrokerMetric
-	kv, err := kafkaVersion(id)
-	if err != nil {
-		return bm, err
+	bm := BrokerMetric{
+		KafkaVersion: KafkaVersion,
+		BrokerId:     BrokerId,
 	}
 	bi, err := BrokerTopicMetric("BytesInPerSec", "")
 	if err != nil {
@@ -75,13 +83,10 @@ func BrokerMetrics(id string) (BrokerMetric, error) {
 			BytesOutPerSec:   bo,
 			MessagesInPerSec: mi,
 		},
-		KafkaVersion: kv,
+		KafkaVersion: KafkaVersion,
+		BrokerId:     BrokerId,
 	}
 	return bm, nil
-}
-
-func kafkaVersion(id string) (string, error) {
-	return run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", id))
 }
 
 // If t is empty string BrokerTopicMetric for entire cluster is returned
@@ -149,32 +154,48 @@ func run(str string) (string, error) {
 }
 
 func read(reader io.ReadCloser) (string, error) {
-	var (
-		m    = 0
-		n    = 0
-		buff = make([]byte, 128)
-		err  error
-	)
-	for {
-		b := make([]byte, 32)
-		n, err = reader.Read(b)
-		if b[n-1] == '\n' && n == 1 {
-			break
-		} else if err == io.EOF && n == 0 {
-			break
-		} else if n == 0 {
-			break
-		} else if b[n-1] == '\n' {
-			m += n - 1
-			buff = append(buff[:], b[:n-1]...)
-			break
-		} else {
-			m += n
-			buff = append(buff[:], b[:n]...)
+	timeout := make(chan error, 1)
+	result := make(chan string, 1)
+	go func() {
+		var (
+			m    = 0
+			n    = 0
+			buff = make([]byte, 128)
+			err  error
+		)
+		for {
+			b := make([]byte, 32)
+			n, err = reader.Read(b)
+			if b[n-1] == '\n' && n == 1 {
+				break
+			} else if err == io.EOF && n == 0 {
+				break
+			} else if n == 0 {
+				break
+			} else if err != nil {
+				timeout <- err
+			} else if b[n-1] == '\n' {
+				m += n - 1
+				buff = append(buff[:], b[:n-1]...)
+				break
+			} else {
+				m += n
+				buff = append(buff[:], b[:n]...)
+			}
 		}
+		out := string(buff[len(buff)-m:])
+		result <- out
+	}()
+	go func() {
+		time.Sleep(2 * time.Second)
+		timeout <- ReadTimeout
+	}()
+	select {
+	case res := <-result:
+		return res, nil
+	case err := <-timeout:
+		return "", err
 	}
-	out := string(buff[len(buff)-m:])
-	return out, err
 }
 
 func start() {
@@ -182,14 +203,30 @@ func start() {
 	if err != nil {
 		fmt.Println("[ERROR] jmxterm failed to start", err)
 	}
-	out, err := read(stderr)
+	out := make([]byte, 128)
+	_, err = stderr.Read(out)
 	if err != nil {
 		fmt.Println(err)
 	} else {
-		fmt.Println(out)
+		fmt.Println(string(out))
 	}
-	//out, err := run(fmt.Sprintf("open %s", pid))
-	//if err != nil {
-	//fmt.Println(err)
-	//}
+	KafkaVersion, _ = run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", BrokerId))
+}
+
+func brokerId() error {
+	appInfo := exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-l", "localhost:9010")
+	in, err := appInfo.StdinPipe()
+	if err != nil {
+		return err
+	}
+	go func() {
+		defer in.Close()
+		io.WriteString(in, "beans -d kafka.server")
+	}()
+	out, err := appInfo.Output()
+	if err != nil {
+		return err
+	}
+	BrokerId = regexp.MustCompile("id=(\\d+)").FindStringSubmatch(string(out))[1]
+	return nil
 }
