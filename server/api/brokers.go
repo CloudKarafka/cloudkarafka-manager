@@ -41,9 +41,13 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		bm, err = jmx.BrokerMetrics(vars["id"])
 	} else {
 		path := fmt.Sprintf("http://%s:%s/api/brokers/%s/metrics", broker.Host, config.Port, vars["id"])
-		fetchRemote(path, r, &bm)
+		err = fetchRemote(path, r, &bm)
 	}
-	bvm = brokerVM{B: broker, BrokerMetric: bm}
+	if err != nil {
+		bvm = brokerVM{B: broker}
+	} else {
+		bvm = brokerVM{B: broker, BrokerMetric: bm}
+	}
 	ts, err := strconv.ParseInt(bvm.Timestamp, 10, 64)
 	if err != nil {
 		internalError(w, bvm)

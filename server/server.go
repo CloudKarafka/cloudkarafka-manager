@@ -18,15 +18,15 @@ func ah(fn aclScopedHandler) http.HandlerFunc {
 		if zookeeper.SkipAuthentication() {
 			p := zookeeper.Permissions{Cluster: zookeeper.R, Username: "default"}
 			fn(w, r, p)
-			fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
+			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else if zookeeper.SkipAuthenticationWithWrite() {
 			p := zookeeper.Permissions{Cluster: zookeeper.W, Username: "default"}
 			fn(w, r, p)
-			fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
+			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else if ok && zookeeper.ValidateScramLogin(user, pass) {
 			p := zookeeper.PermissionsFor(user)
 			fn(w, r, p)
-			fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
+			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else {
 			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
 			w.WriteHeader(http.StatusUnauthorized)

@@ -144,16 +144,18 @@ func Partition(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) 
 		return
 	}
 	om, err := fetchOffsetMetric(vars["topic"], vars["partition"], r)
+	var partition partitionVM
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("[ERROR]", err)
+		partition = partitionVM{P: part}
+	} else {
+		partition = partitionVM{P: part, OffsetMetric: om}
 	}
-	partition := partitionVM{P: part, OffsetMetric: om}
 	writeJson(w, partition)
 }
 
 func PartitionMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	fmt.Println(vars["topic"], vars["partition"])
 	om, err := jmx.LogOffsetMetric(vars["topic"], vars["partition"])
 	if err != nil {
 		fmt.Println("[ERROR]", err)

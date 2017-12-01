@@ -32,9 +32,16 @@ func User(name string) ([]byte, error) {
 }
 
 func CreateUser(name, password string) error {
-	salt, storedKey, serverKey, itr := auth.CreateScramLogin(name, password)
-	scramSha512 := fmt.Sprintf("salt=%s,stored_key=%s,server_key=%s,iterations=%v", salt, storedKey, serverKey, itr)
-	node := map[string]interface{}{"version": 1, "config": map[string]string{"SCRAM-SHA-512": scramSha512}}
+	cryptos := []string{"SCRAM-SHA-256", "SCRAM-SHA-512"}
+	cfg := make(map[string]string)
+	for _, crypto := range cryptos {
+		salt, storedKey, serverKey, itr := auth.CreateScramLogin(name, password, crypto)
+		cfg[crypto] = fmt.Sprintf("salt=%s,stored_key=%s,server_key=%s,iterations=%v", salt, storedKey, serverKey, itr)
+	}
+	node := map[string]interface{}{
+		"version": 1,
+		"config":  cfg,
+	}
 	config, err := json.Marshal(node)
 	if err != nil {
 		return nil
@@ -77,7 +84,7 @@ func ValidateScramLogin(user, pass string) bool {
 	enc := base64.StdEncoding.Strict()
 	s, sk := UserCredentials(user)
 	salt, _ := enc.DecodeString(s)
-	clientKey := enc.EncodeToString(auth.CalculateKey([]byte(pass), []byte("Client Key"), salt, 4096))
+	clientKey := enc.EncodeToString(auth.CalculateSha512Key([]byte(pass), []byte("Client Key"), salt, 4096))
 	return clientKey == sk
 }
 
