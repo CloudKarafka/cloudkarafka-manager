@@ -1,15 +1,15 @@
 package api
 
 import (
-	"cloudkarafka-mgmt/kafka"
+	//"cloudkarafka-mgmt/kafka"
+	"cloudkarafka-mgmt/store"
 	"cloudkarafka-mgmt/zookeeper"
 
 	"github.com/gorilla/mux"
 
-	"fmt"
 	"math"
 	"net/http"
-	"strconv"
+	//"strconv"
 )
 
 type consumerVM struct {
@@ -29,23 +29,33 @@ type consumerMetric struct {
 type partitionLag map[int]int
 
 func Consumers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	writeJson(w, kafka.Consumers(p))
+	groups := store.Store.GroupBy(func(d store.Data) string {
+		return d.Id["group"]
+	})
+	var consumers []string
+	for c, _ := range groups {
+		consumers = append(consumers, c)
+	}
+	writeJson(w, consumers)
 }
 
 func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	cts := kafka.Consumer(vars["name"], p)
-	if cts == nil {
+	cts := store.Store.Select(func(d store.Data) bool {
+		return d.Id["group"] == vars["name"]
+	})
+	if len(cts) == 0 {
 		http.NotFound(w, r)
 		return
 	}
 	var topics []consumedTopicVM
-	for t, cps := range cts {
-		if p.TopicRead(t) {
-			topic, _ := zookeeper.Topic(t)
+	groups := cts.GroupByTopic()
+	for topic, data := range groups {
+		if p.TopicRead(topic) {
+			t, _ := zookeeper.Topic(topic)
 			topics = append(topics, consumedTopicVM{
-				Name:     t,
-				Coverage: int(math.Trunc(float64(len(cps)) / float64(len(topic.Partitions)) * 100)),
+				Name:     topic,
+				Coverage: int(math.Trunc(float64(len(data)) / float64(len(t.Partitions)) * 100)),
 			})
 		}
 	}
@@ -53,13 +63,13 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 }
 
 func ConsumerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	lag := make(map[string]partitionLag)
+	/*cts := kafka.Consumer(vars["name"], p)
 	vars := mux.Vars(r)
-	cts := kafka.Consumer(vars["name"], p)
 	if cts == nil {
 		http.NotFound(w, r)
 		return
 	}
-	lag := make(map[string]partitionLag)
 	for t, cps := range cts {
 		if p.TopicRead(t) {
 			pl := make(partitionLag)
@@ -72,6 +82,6 @@ func ConsumerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permiss
 			}
 			lag[t] = pl
 		}
-	}
+	}*/
 	writeJson(w, consumerMetric{Topics: lag})
 }

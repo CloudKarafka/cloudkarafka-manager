@@ -1,0 +1,10 @@
+goos: darwin
+goarch: amd64
+
+BenchmarkStore1-4       	 5000000	       332 ns/op
+BenchmarkStore10-4      	 1000000	      2383 ns/op
+BenchmarkStore100-4     	  100000	     22304 ns/op
+BenchmarkStore1000-4    	   10000	    243787 ns/op
+BenchmarkStore10000-4   	     500	   2657844 ns/op
+PASS
+ok  	command-line-arguments	11.004s

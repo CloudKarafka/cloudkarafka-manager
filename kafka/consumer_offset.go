@@ -1,6 +1,8 @@
 package kafka
 
 import (
+	"cloudkarafka-mgmt/store"
+
 	"github.com/Shopify/sarama"
 
 	"bytes"
@@ -12,11 +14,10 @@ import (
 )
 
 type message struct {
-	Metric    string
 	Topic     string
 	Type      string
 	Group     string
-	Partition int
+	Partition string
 	Offset    int
 	Timestamp int64
 }
@@ -69,7 +70,11 @@ func consumePartition(topic string, partition int32, consumer sarama.Consumer) {
 			if m.Topic == "__consumer_offsets" {
 				continue
 			}
-			store(m)
+			store.Put(map[string]string{
+				"group":     m.Group,
+				"topic":     m.Topic,
+				"partition": m.Partition,
+			}, m.Offset)
 		}
 	}
 }
@@ -125,7 +130,7 @@ func processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) (message, error)
 	m = message{
 		Topic:     topic,
 		Group:     group,
-		Partition: int(partition),
+		Partition: fmt.Sprintf("%v", partition),
 		Timestamp: int64(timestamp),
 		Offset:    int(offset),
 	}
