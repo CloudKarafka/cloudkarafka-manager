@@ -7,9 +7,9 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"fmt"
 	"math"
 	"net/http"
-	//"strconv"
 )
 
 type consumerVM struct {
@@ -26,36 +26,28 @@ type consumerMetric struct {
 	Topics map[string]partitionLag `json:"topics"`
 }
 
-type partitionLag map[int]int
+type partitionLag map[string]int
 
 func Consumers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	groups := store.Store.GroupBy(func(d store.Data) string {
-		return d.Id["group"]
-	})
-	var consumers []string
-	for c, _ := range groups {
-		consumers = append(consumers, c)
-	}
+	consumers := store.IndexedNames("group")
 	writeJson(w, consumers)
 }
 
 func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	cts := store.Store.Select(func(d store.Data) bool {
-		return d.Id["group"] == vars["name"]
-	})
+	cts := store.SelectWithIndex(vars["name"]).GroupByTopic()
 	if len(cts) == 0 {
 		http.NotFound(w, r)
 		return
 	}
 	var topics []consumedTopicVM
-	groups := cts.GroupByTopic()
-	for topic, data := range groups {
+	for topic, data := range cts {
+		partitions := data.GroupByPartition()
 		if p.TopicRead(topic) {
 			t, _ := zookeeper.Topic(topic)
 			topics = append(topics, consumedTopicVM{
 				Name:     topic,
-				Coverage: int(math.Trunc(float64(len(data)) / float64(len(t.Partitions)) * 100)),
+				Coverage: int(math.Trunc(float64(len(partitions)) / float64(len(t.Partitions)) * 100)),
 			})
 		}
 	}
@@ -64,24 +56,27 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 
 func ConsumerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	lag := make(map[string]partitionLag)
-	/*cts := kafka.Consumer(vars["name"], p)
 	vars := mux.Vars(r)
+	cts := store.SelectWithIndex(vars["name"]).GroupByTopic()
 	if cts == nil {
 		http.NotFound(w, r)
 		return
 	}
-	for t, cps := range cts {
+	for t, topics := range cts {
 		if p.TopicRead(t) {
+			partitions := topics.GroupByPartition()
 			pl := make(partitionLag)
-			for part, off := range cps {
-				om, err := fetchOffsetMetric(t, strconv.Itoa(part), r)
+			for part, offsets := range partitions {
+				sorted := offsets.Sort()
+				off := sorted[len(offsets)-1]
+				om, err := fetchOffsetMetric(t, part, r)
 				if err != nil {
 					fmt.Println("[ERROR]", err)
 				}
-				pl[part] = om.LogEndOffset - off.Offset
+				pl[part] = om.LogEndOffset - off.Value
 			}
 			lag[t] = pl
 		}
-	}*/
+	}
 	writeJson(w, consumerMetric{Topics: lag})
 }

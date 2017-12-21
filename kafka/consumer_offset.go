@@ -70,11 +70,17 @@ func consumePartition(topic string, partition int32, consumer sarama.Consumer) {
 			if m.Topic == "__consumer_offsets" {
 				continue
 			}
-			store.Put(map[string]string{
-				"group":     m.Group,
-				"topic":     m.Topic,
-				"partition": m.Partition,
-			}, m.Offset)
+			data := store.Data{
+				Id: map[string]string{
+					"group":     m.Group,
+					"topic":     m.Topic,
+					"partition": m.Partition,
+					"type":      "consumer",
+				},
+				Value:     m.Offset,
+				Timestamp: m.Timestamp,
+			}
+			store.Put(data, []string{"group", "topic", "type"})
 		}
 	}
 }

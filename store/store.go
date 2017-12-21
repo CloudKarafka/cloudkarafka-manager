@@ -4,17 +4,17 @@ import (
 	//"cloudkarafka-mgmt/zookeeper"
 
 	"errors"
-	"fmt"
+	"sort"
 	"strconv"
 	"sync"
-	"time"
+	//"time"
 )
 
 type storageType int
 
 const (
 	JMX storageType = 1 + iota
-	Group
+	ConsumerOffset
 )
 
 func (me storageType) String() string {
@@ -25,11 +25,13 @@ var (
 	Store store
 	l     sync.RWMutex
 
-	NotFound = errors.New("Element not found")
+	NotFound     = errors.New("Element not found")
+	indexes      = make(map[string][]int)
+	indexedNames = make(map[string][]string)
 )
 
 type store []Data
-type typeIndex map[storageType][]int
+type set map[string]bool
 
 type Data struct {
 	Value     int
@@ -37,16 +39,54 @@ type Data struct {
 	Id        map[string]string
 }
 
+func IndexedNames(name string) []string {
+	return indexedNames[name]
+}
+
+func Intersection(indexNames ...string) store {
+	var ints []int
+	for _, name := range indexNames {
+		ints = append(ints, indexes[name]...)
+	}
+	sort.Ints(ints)
+	var intersection []int
+	var prev int
+	prev, ints = ints[0], ints[1:]
+	for _, val := range ints {
+		if prev == val {
+			len := len(intersection)
+			if len == 0 || intersection[len-1] != val {
+				intersection = append(intersection, val)
+			}
+		}
+		prev = val
+	}
+	return selectWithIndex(intersection)
+}
+
+func SelectWithIndex(indexName string) store {
+	positions := indexes[indexName]
+	return selectWithIndex(positions)
+}
+
+func selectWithIndex(ints []int) store {
+	var selected []Data
+	for _, i := range ints {
+		selected = append(selected, Store[i])
+	}
+	return selected
+}
+
 func (me store) Select(fn func(Data) bool) store {
-	var reduced store
+	var selected store
 	l.RLock()
 	defer l.RUnlock()
 	for _, d := range me {
 		if fn(d) {
-			reduced = append(reduced, d)
+			selected = append(selected, d)
 		}
 	}
-	return reduced
+	return selected
 }
 
 func (me store) Find(fn func(Data) bool) (Data, error) {
@@ -60,6 +100,12 @@ func (me store) Find(fn func(Data) bool) (Data, error) {
 func (me store) GroupByTopic() map[string]store {
 	return me.GroupBy(func(d Data) string {
 		return d.Id["topic"]
+	})
+}
+
+func (me store) GroupByPartition() map[string]store {
+	return me.GroupBy(func(d Data) string {
+		return d.Id["partition"]
 	})
 }
 
@@ -87,13 +133,44 @@ func (me store) StringMap(fn func(Data) string) []string {
 	return strings
 }
 
-func Put(data map[string]string, val int) {
+func (me store) Sort() store {
+	sort.Sort(me)
+	return me
+}
+
+func (me store) Len() int {
+	return len(me)
+}
+
+func (me store) Less(i, j int) bool {
+	iElem, jElem := me[i], me[j]
+	return iElem.Timestamp < jElem.Timestamp
+}
+
+func (me store) Swap(i, j int) {
+	iElem, jElem := me[i], me[j]
+	me[j] = iElem
+	me[i] = jElem
+}
+
+func Put(data Data, indexOn []string) {
 	l.Lock()
 	defer l.Unlock()
-	fmt.Println(Store)
-	Store = append(Store, Data{
+	for _, n := range indexOn {
+		index, ok := data.Id[n]
+		if !ok {
+			continue
+		}
+		if _, ok = indexes[index]; !ok {
+			indexes[index] = make([]int, 0)
+			indexedNames[n] = append(indexedNames[n], index)
+		}
+		indexes[index] = append(indexes[index], len(Store))
+	}
+	Store = append(Store, data)
+	/*Data{
 		Value:     val,
 		Timestamp: time.Now().UTC().Unix(),
-		Id:        data,
-	})
+		Properties:        id,
+	})*/
 }
