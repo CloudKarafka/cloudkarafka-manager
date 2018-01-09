@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"sync"
-	//"time"
+	"time"
 )
 
 type storageType int
@@ -97,6 +97,12 @@ func (me store) Find(fn func(Data) bool) (Data, error) {
 	return data[0], nil
 }
 
+func (me store) GroupByMetric() map[string]store {
+	return me.GroupBy(func(d Data) string {
+		return d.Id["metric"]
+	})
+}
+
 func (me store) GroupByTopic() map[string]store {
 	return me.GroupBy(func(d Data) string {
 		return d.Id["topic"]
@@ -156,6 +162,9 @@ func (me store) Swap(i, j int) {
 func Put(data Data, indexOn []string) {
 	l.Lock()
 	defer l.Unlock()
+	if data.Timestamp == 0 {
+		data.Timestamp = time.Now().UTC().Unix()
+	}
 	for _, n := range indexOn {
 		index, ok := data.Id[n]
 		if !ok {

@@ -1,13 +1,14 @@
 package jmx
 
 import (
+	"cloudkarafka-mgmt/store"
+	"cloudkarafka-mgmt/zookeeper"
+
 	"bufio"
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +23,7 @@ var (
 	stderr       *bufio.Scanner
 	BrokerId     string
 	KafkaVersion string
+	loopInterval time.Duration
 
 	ReadTimeout  = errors.New("JmxTerm didn't send any response in time")
 	NoSuchBean   = errors.New("No such Bean")
@@ -32,80 +34,17 @@ var (
 	reconnecting = false
 )
 
-func Start() {
+func Start(interval int) {
 	fmt.Println("[INFO] JMX connecting")
+	loopInterval = time.Duration(interval) * time.Second
 	if err := connect(); err != nil {
-		go reconnect()
+		reconnect()
 		fmt.Println("[ERROR] JMX failed to start", err)
 	} else {
 		openPid()
 		fmt.Printf("[INFO] JMX connected BrokerId=%s KafkaVersion=%s\n", BrokerId, KafkaVersion)
+		loop()
 	}
-}
-
-func BrokerMetrics(id string) (BrokerMetric, error) {
-	bm := BrokerMetric{
-		KafkaVersion: KafkaVersion,
-		BrokerId:     BrokerId,
-	}
-	bi, err := BrokerTopicMetric("BytesInPerSec", "")
-	if err != nil {
-		return bm, err
-	}
-	bo, err := BrokerTopicMetric("BytesOutPerSec", "")
-	if err != nil {
-		return bm, err
-	}
-	mi, err := BrokerTopicMetric("MessagesInPerSec", "")
-	if err != nil {
-		return bm, err
-	}
-	bm = BrokerMetric{
-		TransferMetric: TransferMetric{
-			BytesInPerSec:    bi,
-			BytesOutPerSec:   bo,
-			MessagesInPerSec: mi,
-		},
-		KafkaVersion: KafkaVersion,
-		BrokerId:     BrokerId,
-	}
-	return bm, nil
-}
-
-// If t is empty string BrokerTopicMetric for entire cluster is returned
-func BrokerTopicMetric(name, t string) (float64, error) {
-	c := fmt.Sprintf("get -s -b kafka.server:type=BrokerTopicMetrics,name=%s", name)
-	if t != "" {
-		c = fmt.Sprintf("%s,topic=%s", c, t)
-	}
-	c = c + " OneMinuteRate"
-	raw, err := run(c, 2*time.Second)
-	if err != nil {
-		return 0, err
-	}
-	in, err := strconv.ParseFloat(raw, 64)
-	if err != nil {
-		return 0, err
-	}
-	f, err := strconv.ParseFloat(fmt.Sprintf("%.2f", in), 64)
-	if err != nil {
-		return 0, err
-	}
-	return f, nil
-}
-
-// Takes name, topic and partition as arguments
-func LogOffset(n, t, p string) (int, error) {
-	c := fmt.Sprintf("get -s -b kafka.log:type=Log,name=%s,topic=%s,partition=%s Value", n, t, p)
-	raw, err := run(c, 2*time.Second)
-	if err != nil {
-		return 0, err
-	}
-	o, err := strconv.Atoi(raw)
-	if err != nil {
-		return 0, err
-	}
-	return o, nil
 }
 
 func Exit() {
@@ -115,101 +54,122 @@ func Exit() {
 	disconnect()
 }
 
-func reconnect() {
-	fmt.Println("reconnect")
-	if reconnecting {
-		return
+// If t is empty string BrokerTopicMetrics for entire broker is returned
+func BrokerTopicMetrics(name, t string) (int, error) {
+	c := fmt.Sprintf("get -s -b kafka.server:type=BrokerTopicMetrics,name=%s", name)
+	if t != "" {
+		c = fmt.Sprintf("%s,topic=%s", c, t)
 	}
-	reconnecting = true
-	for {
-		err := connect()
-		if err == nil && openPid() == nil {
+	c = c + " OneMinuteRate"
+	raw, err := run(c, 2*time.Second)
+	if err != nil || raw == "" {
+		return 0, err
+	}
+	rate, err := strconv.ParseFloat(raw, 64)
+	if err != nil {
+		return 0, err
+	}
+	return int(rate), nil
+}
+
+// Takes name, topic and partition as arguments
+func LogOffset(n, t, p string) (int, error) {
+	c := fmt.Sprintf("get -s -b kafka.log:type=Log,name=%s,topic=%s,partition=%s Value", n, t, p)
+	raw, err := run(c, 2*time.Second)
+	if err != nil || raw == "" {
+		return 0, err
+	}
+	o, err := strconv.Atoi(raw)
+	if err != nil {
+		return 0, err
+	}
+	return o, nil
+}
+
+func jmxForAllTopics() error {
+	topics, err := zookeeper.Topics(zookeeper.Permissions{Cluster: zookeeper.RW})
+	if err != nil {
+		return nil
+	}
+	var returnErr error
+	for _, t := range topics {
+		topic, err := zookeeper.Topic(t)
+		if err != nil {
 			break
 		}
-		time.Sleep(10 * time.Second)
+		bis, err := BrokerTopicMetrics("BytesInPerSec", t)
+		if err != nil {
+			returnErr = err
+			break
+		}
+		put(map[string]string{"topic": t, "metric": "bytes_in_per_sec"}, bis, []string{"topic"})
+		bos, err := BrokerTopicMetrics("BytesOutPerSec", t)
+		if err != nil {
+			returnErr = err
+			break
+		}
+		put(map[string]string{"topic": t, "metric": "bytes_out_per_sec"}, bos, []string{"topic"})
+		mis, err := BrokerTopicMetrics("MessagesInPerSec", t)
+		if err != nil {
+			returnErr = err
+			break
+		}
+		put(map[string]string{"topic": t, "metric": "messages_in_per_sec"}, mis, []string{"topic"})
+		for p, _ := range topic.Partitions {
+			so, err := LogOffset("LogStartOffset", t, p)
+			if err != nil {
+				returnErr = err
+				break
+			}
+			put(map[string]string{"topic": t, "partition": p, "metric": "log_start_offset"}, so, []string{"topic"})
+			eo, err := LogOffset("LogEndOffset", t, p)
+			if err != nil {
+				returnErr = err
+				break
+			}
+			put(map[string]string{"topic": t, "partition": p, "metric": "log_end_offset"}, eo, []string{"topic"})
+		}
 	}
-	reconnecting = false
+	return returnErr
 }
 
-func kafkaPid() string {
-	ps, err := exec.Command("pgrep", "-f", "kafka").Output()
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-	pids := string(ps)
-	myPid := strconv.Itoa(os.Getpid())
-	pids = strings.Replace(pids, myPid, "", 1)
-	return strings.TrimSpace(pids)
-}
-
-func openPid() error {
-	pid := kafkaPid()
-	fmt.Println("open", pid)
-	out, err := run(fmt.Sprintf("open %s", pid), 20*time.Second)
-	fmt.Println(out, err)
-	if err != nil {
-		return err
-	}
-	KafkaVersion, err = run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", BrokerId), 2*time.Second)
-	fmt.Println(err)
-	return err
-}
-
-func connect() error {
-	pid := kafkaPid()
-	if pid == "" {
-		return NoKafka
-	}
-	l.Lock()
-	defer l.Unlock()
-	if err := brokerId(pid); err != nil {
-		return err
-	}
-	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n")
-	se, _ := cmd.StderrPipe()
-	stderr = bufio.NewScanner(se)
-	so, _ := cmd.StdoutPipe()
-	stdout = bufio.NewScanner(so)
-	stdin, _ = cmd.StdinPipe()
-	err := cmd.Start()
+func jmxForBroker() error {
+	bis, err := BrokerTopicMetrics("BytesInPerSec", "")
 	if err != nil {
 		return err
 	}
-	stderr.Scan()
+	put(map[string]string{"broker": BrokerId, "metric": "bytes_in_per_sec"}, bis, []string{"broker"})
+	bos, err := BrokerTopicMetrics("BytesOutPerSec", "")
+	if err != nil {
+		return err
+	}
+	put(map[string]string{"broker": BrokerId, "metric": "bytes_out_per_sec"}, bos, []string{"broker"})
+	mis, err := BrokerTopicMetrics("MessagesInPerSec", "")
+	if err != nil {
+		return err
+	}
+	put(map[string]string{"broker": BrokerId, "metric": "messages_in_per_sec"}, mis, []string{"broker"})
 	return nil
 }
 
-func disconnect() {
-	cmd.Process.Kill()
-	cmd.Wait()
-	cmd = nil
-	stdout = nil
-	stderr = nil
-	KafkaVersion = *new(string)
-	BrokerId = *new(string)
-}
-
-func brokerId(pid string) error {
-	appInfo := exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n")
-	in, err := appInfo.StdinPipe()
-	if err != nil {
-		return err
+func loop() {
+	for {
+		err := jmxForAllTopics()
+		if err != nil {
+			fmt.Println(err)
+			disconnect()
+			reconnect()
+			break
+		}
+		err = jmxForBroker()
+		if err != nil {
+			fmt.Println(err)
+			disconnect()
+			reconnect()
+			break
+		}
+		time.Sleep(loopInterval)
 	}
-	go func() {
-		defer in.Close()
-		io.WriteString(in, fmt.Sprintf("open %s\nbeans -d kafka.server", pid))
-	}()
-	out, err := appInfo.Output()
-	if err != nil {
-		return err
-	}
-	matches := regexp.MustCompile("id=(\\d+)").FindStringSubmatch(string(out))
-	if len(matches) != 2 {
-		return JmxNotLoaded
-	}
-	BrokerId = matches[1]
-	return nil
 }
 
 func run(str string, timeout time.Duration) (string, error) {
@@ -223,7 +183,7 @@ func run(str string, timeout time.Duration) (string, error) {
 	}
 	head, err := read(stderr, timeout)
 	if strings.HasPrefix(head, "#IllegalArgumentException") {
-		return "", fmt.Errorf("No such bean: %s", str)
+		return "", nil
 	} else if strings.HasPrefix(head, "#Connection") {
 		return "", nil
 	} else if err != nil && err != io.EOF {
@@ -249,4 +209,8 @@ func read(reader *bufio.Scanner, timeout time.Duration) (string, error) {
 		go reconnect()
 		return "", ReadTimeout
 	}
+}
+
+func put(key map[string]string, value int, indexOn []string) {
+	store.Put(store.Data{Id: key, Value: value}, indexOn)
 }

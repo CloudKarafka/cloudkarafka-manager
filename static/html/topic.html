@@ -176,31 +176,18 @@
           var path = "/api/topics/"+ topicName;
           $.get(path + "/metrics", function(m) {
             $metric.html(metricTmpl(m));
+            $partitions.html(partitionsTmpl({ partitions: m.partitions }));
           })
           $.get(path, function(topic) {
             $overview.html(overviewTmpl(topic));
             $config.html(configTmpl(topic));
             $("input[name='partition_count']").attr("value", topic.partition_count)
             $("input[name='replication_factor']").attr("value", topic.replication_factor)
-            var l = Object.keys(topic.partitions).length;
-            var res = [];
-            Object.keys(topic.partitions).forEach(function(p) {
-              $.get(path + "/" + p, function(partition) {
-                res.push(partition)
-                if (res.length == l) {
-                  res.sort(function(a, b) {
-                    return a.number - b.number
-                  })
-                  $partitions.html(partitionsTmpl({ partitions: res }));
-                }
-              })
-            })
           })
         }
 
         $('#update-topic').submit(function(evt) {
           evt.preventDefault();
-          console.log($(this).serializeArray());
           $.ajax({
             url: "/api" + document.location.pathname,
             type: "PUT",
@@ -212,7 +199,6 @@
         })
         $('#delete-topic').submit(function(evt) {
           evt.preventDefault();
-          console.log($(this).serializeArray());
           $.ajax({
             url: "/api" + document.location.pathname,
             type: "DELETE",

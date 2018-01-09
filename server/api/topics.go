@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cloudkarafka-mgmt/dm"
 	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
@@ -102,7 +103,7 @@ func ReassigningTopic(w http.ResponseWriter, r *http.Request, p zookeeper.Permis
 
 func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	topic, err := zookeeper.Topic(vars["topic"])
+	/*topic, err := zookeeper.Topic(vars["topic"])
 	if err != nil {
 		internalError(w, err)
 		return
@@ -111,14 +112,9 @@ func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permission
 	for partition, _ := range topic.Partitions {
 		om, _ := fetchOffsetMetric(vars["topic"], partition, r)
 		messages += (om.LogEndOffset - om.LogStartOffset)
-	}
-	bm, err := jmx.TopicMetrics(vars["topic"])
-	if err != nil {
-		internalError(w, err)
-	} else {
-		bm.MessageCount = messages
-		writeJson(w, bm)
-	}
+	}*/
+	tm := dm.TopicMetrics(vars["topic"])
+	writeJson(w, tm)
 }
 
 func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -133,35 +129,6 @@ func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprintf(w, string(cfg))
-	}
-}
-
-func Partition(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	part, err := zookeeper.Partition(vars["topic"], vars["partition"])
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	om, err := fetchOffsetMetric(vars["topic"], vars["partition"], r)
-	var partition partitionVM
-	if err != nil {
-		fmt.Println("[ERROR]", err)
-		partition = partitionVM{P: part}
-	} else {
-		partition = partitionVM{P: part, OffsetMetric: om}
-	}
-	writeJson(w, partition)
-}
-
-func PartitionMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	om, err := jmx.LogOffsetMetric(vars["topic"], vars["partition"])
-	if err != nil {
-		fmt.Println("[ERROR]", err)
-		internalError(w, err)
-	} else {
-		writeJson(w, om)
 	}
 }
 

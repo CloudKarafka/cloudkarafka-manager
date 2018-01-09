@@ -32,8 +32,8 @@ func main() {
 	// Set authentication method for HTTP api
 	fmt.Printf("[INFO] authentication-method=%s\n", *auth)
 	zookeeper.SetAuthentication(*auth)
-	// Runtime metrics
-	jmx.Start()
+	// Runtime metrics, collect metrics every 30s
+	go jmx.Start(30)
 	// Consumer offsets
 	if err := kafka.Start(*kh); err != nil {
 		fmt.Println("[WARN] Kakfa client failed to start no consumer info i shown")

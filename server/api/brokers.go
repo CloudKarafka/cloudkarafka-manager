@@ -2,6 +2,7 @@ package api
 
 import (
 	"cloudkarafka-mgmt/config"
+	"cloudkarafka-mgmt/dm"
 	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
@@ -13,8 +14,9 @@ import (
 )
 
 type brokerVM struct {
+	dm.BrokerMetric
 	zookeeper.B
-	jmx.BrokerMetric
+
 	Uptime string `json:"uptime"`
 }
 
@@ -34,11 +36,11 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		return
 	}
 	var (
-		bm  jmx.BrokerMetric
 		bvm brokerVM
+		bm  dm.BrokerMetric
 	)
 	if vars["id"] == jmx.BrokerId {
-		bm, err = jmx.BrokerMetrics(vars["id"])
+		bm = dm.BrokerMetrics(vars["id"])
 	} else {
 		path := fmt.Sprintf("http://%s:%s/api/brokers/%s/metrics", broker.Host, config.Port, vars["id"])
 		err = fetchRemote(path, r, &bm)
@@ -60,10 +62,5 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 
 func BrokerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	bm, err := jmx.BrokerMetrics(vars["id"])
-	if err != nil {
-		internalError(w, err)
-	} else {
-		writeJson(w, bm)
-	}
+	writeJson(w, dm.BrokerMetrics(vars["id"]))
 }
