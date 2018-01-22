@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -38,7 +37,7 @@ func Start() {
 		go reconnect()
 		fmt.Println("[ERROR] JMX failed to start", err)
 	} else {
-		openPid()
+		KafkaVersion, _ = run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", BrokerId), 5*time.Second)
 		fmt.Printf("[INFO] JMX connected BrokerId=%s KafkaVersion=%s\n", BrokerId, KafkaVersion)
 	}
 }
@@ -123,7 +122,7 @@ func reconnect() {
 	reconnecting = true
 	for {
 		err := connect()
-		if err == nil && openPid() == nil {
+		if err == nil {
 			break
 		}
 		time.Sleep(10 * time.Second)
@@ -131,48 +130,20 @@ func reconnect() {
 	reconnecting = false
 }
 
-func kafkaPid() string {
-	ps, err := exec.Command("pgrep", "-f", "kafka").Output()
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
-	pids := string(ps)
-	myPid := strconv.Itoa(os.Getpid())
-	pids = strings.Replace(pids, myPid, "", 1)
-	return strings.TrimSpace(pids)
-}
-
-func openPid() error {
-	pid := kafkaPid()
-	fmt.Println("open", pid)
-	out, err := run(fmt.Sprintf("open %s", pid), 20*time.Second)
-	fmt.Println(out, err)
-	if err != nil {
-		return err
-	}
-	KafkaVersion, err = run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", BrokerId), 2*time.Second)
-	fmt.Println(err)
-	return err
-}
-
 func connect() error {
-	pid := kafkaPid()
-	if pid == "" {
-		return NoKafka
-	}
 	l.Lock()
 	defer l.Unlock()
-	if err := brokerId(pid); err != nil {
+	if err := brokerId(); err != nil {
 		return err
 	}
-	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n")
+	var err error
+	cmd = exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-l", "localhost:9010")
 	se, _ := cmd.StderrPipe()
 	stderr = bufio.NewScanner(se)
 	so, _ := cmd.StdoutPipe()
 	stdout = bufio.NewScanner(so)
 	stdin, _ = cmd.StdinPipe()
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return err
 	}
@@ -190,21 +161,22 @@ func disconnect() {
 	BrokerId = *new(string)
 }
 
-func brokerId(pid string) error {
-	appInfo := exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n")
+func brokerId() error {
+	appInfo := exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-l", "localhost:9010")
 	in, err := appInfo.StdinPipe()
 	if err != nil {
 		return err
 	}
 	go func() {
 		defer in.Close()
-		io.WriteString(in, fmt.Sprintf("open %s\nbeans -d kafka.server", pid))
+		io.WriteString(in, fmt.Sprintf("beans -d kafka.server\n"))
 	}()
 	out, err := appInfo.Output()
 	if err != nil {
 		return err
 	}
-	matches := regexp.MustCompile("id=(\\d+)").FindStringSubmatch(string(out))
+	matches := regexp.MustCompile(".*app-info.*").FindStringSubmatch(string(out))
+	matches = regexp.MustCompile("id=(\\d+)").FindStringSubmatch(string(matches[0]))
 	if len(matches) != 2 {
 		return JmxNotLoaded
 	}
@@ -245,6 +217,7 @@ func read(reader *bufio.Scanner, timeout time.Duration) (string, error) {
 	case res := <-result:
 		return res, nil
 	case <-time.After(timeout):
+		fmt.Println("timeout")
 		disconnect()
 		go reconnect()
 		return "", ReadTimeout
