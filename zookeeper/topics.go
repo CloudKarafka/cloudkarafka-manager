@@ -248,6 +248,11 @@ func createOrSetConfig(name string, cfg map[string]interface{}) error {
 		raw, _ := json.Marshal(node)
 		_, err = conn.Create(path, raw, 0, zk.WorldACL(zk.PermAll))
 	}
+	change, _ := json.Marshal(map[string]interface{}{
+		"version":     2,
+		"entity_path": "topic/" + name,
+	})
+	_, err = conn.Create("/config/changes/config_change", change, zk.FlagSequence, zk.WorldACL(zk.PermAll))
 	return err
 }
 
