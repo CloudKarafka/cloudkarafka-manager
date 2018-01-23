@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -30,8 +31,6 @@ var (
 	NoJmxMetrics = errors.New("JMX metrics is not enabled")
 	NoKafka      = errors.New("No Kakfa process is running")
 	JmxNotLoaded = errors.New("Kafka is starting up but not ready")
-
-	reconnecting = false
 )
 
 func Start(interval int) {
@@ -41,7 +40,7 @@ func Start(interval int) {
 		reconnect()
 		fmt.Println("[ERROR] JMX failed to start", err)
 	} else {
-		openPid()
+		KafkaVersion, _ = run(fmt.Sprintf("get -s -b kafka.server:type=app-info,id=%s Version", BrokerId), 5*time.Second)
 		fmt.Printf("[INFO] JMX connected BrokerId=%s KafkaVersion=%s\n", BrokerId, KafkaVersion)
 		loop()
 	}
@@ -172,6 +171,28 @@ func loop() {
 	}
 }
 
+func brokerId() error {
+	appInfo := exec.Command("java", "-jar", "jars/jmxterm-1.0.0-uber.jar", "-n", "-l", "localhost:9010")
+	in, err := appInfo.StdinPipe()
+	if err != nil {
+		return err
+	}
+	go func() {
+		defer in.Close()
+		io.WriteString(in, fmt.Sprintf("beans -d kafka.server\n"))
+	}()
+	out, err := appInfo.Output()
+	if err != nil {
+		return err
+	}
+	matches := regexp.MustCompile(".*app-info.*").FindStringSubmatch(string(out))
+	matches = regexp.MustCompile("id=(\\d+)").FindStringSubmatch(string(matches[0]))
+	if len(matches) != 2 {
+		return JmxNotLoaded
+	}
+	return nil
+}
+
 func run(str string, timeout time.Duration) (string, error) {
 	l.Lock()
 	defer l.Unlock()
@@ -205,6 +226,7 @@ func read(reader *bufio.Scanner, timeout time.Duration) (string, error) {
 	case res := <-result:
 		return res, nil
 	case <-time.After(timeout):
+		fmt.Println("timeout")
 		disconnect()
 		go reconnect()
 		return "", ReadTimeout
