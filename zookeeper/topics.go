@@ -252,7 +252,7 @@ func createOrSetConfig(name string, cfg map[string]interface{}) error {
 		"version":     2,
 		"entity_path": "topic/" + name,
 	})
-	_, err = conn.Create("/config/changes/config_change", change, zk.FlagSequence, zk.WorldACL(zk.PermAll))
+	_, err = conn.Create("/config/changes/config_change_", change, zk.FlagSequence, zk.WorldACL(zk.PermAll))
 	return err
 }
 
