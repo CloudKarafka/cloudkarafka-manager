@@ -2,7 +2,6 @@ package main
 
 import (
 	"cloudkarafka-mgmt/config"
-	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/kafka"
 	"cloudkarafka-mgmt/server"
 	"cloudkarafka-mgmt/zookeeper"
@@ -33,7 +32,6 @@ func main() {
 	fmt.Printf("[INFO] authentication-method=%s\n", *auth)
 	zookeeper.SetAuthentication(*auth)
 	// Runtime metrics, collect metrics every 30s
-	go jmx.Start(30)
 	// Consumer offsets
 	if err := kafka.Start(*kh); err != nil {
 		fmt.Println("[WARN] Kakfa client failed to start no consumer info i shown")
@@ -42,6 +40,7 @@ func main() {
 	// HTTP server
 	config.Port = *port
 	go server.Start(*cert, *key)
+	go server.StartJMX()
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	//Wait for term
 	<-signals
@@ -51,6 +50,5 @@ func main() {
 	})
 	kafka.Stop()
 	zookeeper.Stop()
-	jmx.Exit()
 	fmt.Println("Stopped successfully")
 }
