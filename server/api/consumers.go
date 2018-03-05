@@ -7,7 +7,6 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"fmt"
 	"math"
 	"net/http"
 )
@@ -66,14 +65,9 @@ func ConsumerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permiss
 		if p.TopicRead(t) {
 			partitions := topics.GroupByPartition()
 			pl := make(partitionLag)
-			for part, offsets := range partitions {
-				sorted := offsets.Sort()
-				off := sorted[len(offsets)-1]
-				om, err := fetchOffsetMetric(t, part, r)
-				if err != nil {
-					fmt.Println("[ERROR]", err)
-				}
-				pl[part] = om.LogEndOffset - off.Value
+			for part, _ := range partitions {
+				pl[part] = -1
+				//pl[part] = om.LogEndOffset - off.Value
 			}
 			lag[t] = pl
 		}

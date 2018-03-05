@@ -67,16 +67,20 @@
                 <td> {{message_count}} </td>
               </tr>
               <tr>
+                <td> <strong> Size </strong> </td>
+                <td> {{size}} </td>
+              </tr>
+              <tr>
                 <td> <strong> Messages in/s </strong> </td>
-                <td> {{messages_in_per_sec}} </td>
+                <td> {{messages_in_per_sec}} msgs/s </td>
               </tr>
               <tr>
                 <td> <strong> Bytes in/s </strong> </td>
-                <td> {{bytes_in_per_sec}} </td>
+                <td> {{bytes_in_per_sec}}/s </td>
               </tr>
               <tr>
                 <td> <strong> Bytes out/s </strong> </td>
-                <td> {{bytes_out_per_sec}} </td>
+                <td> {{bytes_out_per_sec}}/s </td>
               </tr>
             </script>
           </div>
@@ -113,6 +117,7 @@
                 <th>Number</th>
                 <th>Leader</th>
                 <th>In sync replicas</th>
+                <th>Size</th>
                 <th>Start offset</th>
                 <th>End Offset</th>
               </tr>
@@ -151,8 +156,9 @@
             <td> {{number}} </td>
             <td> {{leader}} </td>
             <td> {{isr}} </td>
-            <td>{{log_start_offset}}</td>
-            <td>{{log_end_offset}}</td>
+            <td> {{size}} </td>
+            <td> {{log_start_offset}} </td>
+            <td> {{log_end_offset}} </td>
           < /tr >
         {{/partitions}}
       </script>
@@ -176,7 +182,7 @@
           var path = "/api/topics/"+ topicName;
           $.get(path + "/metrics", function(m) {
             $metric.html(metricTmpl(m));
-            $partitions.html(partitionsTmpl({ partitions: m.partitions }));
+            $partitions.html(partitionsTmpl({ partitions: m.partition_metrics }));
           })
           $.get(path, function(topic) {
             $overview.html(overviewTmpl(topic));

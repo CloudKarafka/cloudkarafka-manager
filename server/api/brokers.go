@@ -1,15 +1,14 @@
 package api
 
 import (
-	"cloudkarafka-mgmt/config"
 	"cloudkarafka-mgmt/dm"
-	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/zookeeper"
+	"github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
 
-	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -39,12 +38,13 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		bvm brokerVM
 		bm  dm.BrokerMetric
 	)
-	if vars["id"] == jmx.BrokerId {
+	bm = dm.BrokerMetrics(vars["id"])
+	/*if vars["id"] == jmx.BrokerId {
 		bm = dm.BrokerMetrics(vars["id"])
 	} else {
 		path := fmt.Sprintf("http://%s:%s/api/brokers/%s/metrics", broker.Host, config.Port, vars["id"])
 		err = fetchRemote(path, r, &bm)
-	}
+	}*/
 	if err != nil {
 		bvm = brokerVM{B: broker}
 	} else {
@@ -56,7 +56,7 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		return
 	}
 	t := time.Unix(ts/1000, 0)
-	bvm.Uptime = time.Since(t).String()
+	bvm.Uptime = strings.TrimSpace(humanize.RelTime(time.Now(), t, "", ""))
 	writeJson(w, bvm)
 }
 

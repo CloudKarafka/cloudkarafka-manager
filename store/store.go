@@ -22,8 +22,9 @@ func (me storageType) String() string {
 }
 
 var (
-	Store store
-	l     sync.RWMutex
+	Store        store
+	l            sync.RWMutex
+	KafkaVersion string
 
 	NotFound     = errors.New("Element not found")
 	indexes      = make(map[string][]int)

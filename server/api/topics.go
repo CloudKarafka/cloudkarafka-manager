@@ -2,7 +2,6 @@ package api
 
 import (
 	"cloudkarafka-mgmt/dm"
-	"cloudkarafka-mgmt/jmx"
 	"cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/mux"
 
@@ -21,6 +20,7 @@ var (
 
 type topicVM struct {
 	zookeeper.T
+	dm.TopicMetric
 	PartitionCount    int `json:"partition_count,1"`
 	ReplicationFactor int `json:"replication_factor,1"`
 	BrokerSpread      int `json:"broker_spread"`
@@ -28,7 +28,6 @@ type topicVM struct {
 
 type partitionVM struct {
 	zookeeper.P
-	jmx.OffsetMetric
 }
 
 func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -169,10 +168,7 @@ func getTopic(w http.ResponseWriter, name string) {
 		return
 	}
 
-	var (
-		t topicVM
-	)
-	t = topicVM{T: top}
+	t := topicVM{T: top, TopicMetric: dm.TopicMetrics(name)}
 	t.PartitionCount = len(t.Partitions)
 	t.ReplicationFactor = len(t.Partitions["0"])
 	writeJson(w, t)
