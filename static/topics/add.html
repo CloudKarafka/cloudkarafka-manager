@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add New Topic - Kafka MGMT</title>
+  <link rel="apple-touch-icon" href="/img/logo.png">
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <meta property="og:title" content="The best management interface for Apache Kafka" />
+  <meta name="author" content="84codes Team" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:site_name" content="Kafka MGMT" />
+  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  <script src="/js/handlebars.min.js"></script>
+  <script src="/js/kafka-helpers.js"></script>
+
+    <style>
+      html,body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+  <div class="container-fluid">
+    <div>
+      <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+        <span class="hamburger-box">
+          <span class="hamburger-inner"></span>
+        </span>
+      </button>
+    </div>
+    <div class="text-right">
+      <p class="my-2 my-md-0 text-right">
+        <a href="/login">
+          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+      </p>
+    </div>
+  </div>
+</nav>
+
+      <aside class="sidebar-wrapper">
+  <div class="sidebar-header text-center">
+    <a href="/" class="app-logo">
+      <img src="/assets/mgmt-logo.svg"/>
+      <h1 class="logo-text">Kafka MGMT</h1>
+    </a>
+
+  </div>
+  <div class="sidebar-content">
+    <div class="sidebar-info">
+      <h2 class="host">localhost</h2>
+      <p>
+        username
+      </p>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        
+        <li class="">
+            <a href="/">
+              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+              <span>Overview</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/topics">
+              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+              <span>Topics</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/consumers">
+              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+              <span>Consumers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/brokers">
+              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+              <span>Brokers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/admin">
+              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+              <span>Admin</span>
+            </a>
+        </li>
+        
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+        <div class="sidebar-backdrop"></div>
+<main class="main-container">
+  <div class="main-heading">
+    <div class="row">
+      <div class="col-12">
+        <h1><a href="/topics/">Topics</a> / Add New Topic</h1>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <form>
+      <div class="form-row">
+        <div class="col-md-4 mb-3">
+          <label for="validationCustom01">Name</label>
+          <input type="text" class="form-control" placeholder="Enter a name of this topic">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="validationCustom02">Partitions</label>
+          <input type="text" class="form-control">
+        </div>
+        <div class="col-md-4 mb-3">
+          <label for="validationCustomUsername">Replication Factor</label>
+          <div class="input-group">
+            <input type="text" class="form-control">
+            <div class="invalid-feedback">
+              Please choose a username.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="exampleFormControlTextarea1">Configuration</label>
+        <textarea class="form-control" id="exampleFormControlTextarea1" rows="10"></textarea>
+      </div>
+      <div class="form-group">
+        <button type="submit" class="btn btn-lg btn-primary">Create New Topic</button>
+      </div>
+    </form>
+  </div>
+  <footer>
+  <p>
+		Kafka MGMT is developed by
+		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+		</a> and released under
+		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+	</p>
+</footer>
+
+</main>
+
+    </div>
+  
+<script src="/js/jquery-3.3.1.min.js"></script>
+<script src="/js/tether.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/jquery.sparkline.min.js"></script>
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/rickshaw.min.js"></script>
+<script src="/js/kafka-mgmt.js"></script>
+
+
+
+
+
+
+  </body>
+</html>

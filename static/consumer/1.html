@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Topic 1 - Kafka MGMT</title>
+  <link rel="apple-touch-icon" href="/img/logo.png">
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <meta property="og:title" content="The best management interface for Apache Kafka" />
+  <meta name="author" content="84codes Team" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:site_name" content="Kafka MGMT" />
+  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  <script src="/js/handlebars.min.js"></script>
+  <script src="/js/kafka-helpers.js"></script>
+
+    <style>
+      html,body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+  <div class="container-fluid">
+    <div>
+      <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+        <span class="hamburger-box">
+          <span class="hamburger-inner"></span>
+        </span>
+      </button>
+    </div>
+    <div class="text-right">
+      <p class="my-2 my-md-0 text-right">
+        <a href="/login">
+          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+      </p>
+    </div>
+  </div>
+</nav>
+
+      <aside class="sidebar-wrapper">
+  <div class="sidebar-header text-center">
+    <a href="/" class="app-logo">
+      <img src="/assets/mgmt-logo.svg"/>
+      <h1 class="logo-text">Kafka MGMT</h1>
+    </a>
+
+  </div>
+  <div class="sidebar-content">
+    <div class="sidebar-info">
+      <h2 class="host">localhost</h2>
+      <p>
+        username
+      </p>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        
+        <li class="">
+            <a href="/">
+              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+              <span>Overview</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/topics">
+              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+              <span>Topics</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/consumers">
+              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+              <span>Consumers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/brokers">
+              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+              <span>Brokers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/admin">
+              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+              <span>Admin</span>
+            </a>
+        </li>
+        
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+        <div class="sidebar-backdrop"></div>
+<main class="main-container">
+  <div class="main-heading">
+    <div class="row">
+      <div class="col-4">
+        <h1><a href="/consumers/">Consumers</a> / Topic 1</h1>
+      </div>
+      <div class="col-sm-8 col-12 text-sm-right">
+        <p>
+          <strong>Last updated:</strong> 1 minute ago
+          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> <span>Refresh</span></a>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Topic</th>
+              <th scope="col" class="text-center">Partitions</th>
+              <th scope="col" class="text-center">Coverage</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><a href="/topic/1">Topic 1</a></td>
+              <td class="text-center">10</td>
+              <td class="text-center">90%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12 col-lg-6">
+        <div class="box box-w-header">
+          <div class="box-header">
+            <h2 class="text-center">Consumer Coverage</h2>
+          </div>
+          <div class="box-body consumer-coverage" id="kafka-chart-consumer">
+            <div id="y_axis"></div>
+            <div id="consumer-coverage-chart"></div>
+          </div>
+        </div>
+      </div>
+        <div class="col-md-12 col-lg-6">
+        <div class="box box-w-header">
+          <div class="box-header">
+            <h2 class="text-center">Total Lag</h2>
+          </div>
+          <div class="box-body total-lag" id="kafka-chart-lag">
+            <div id="y_axis2"></div>
+            <div id="total-lag-chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-12">
+        <h4>Consumed Partitions</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Partition</th>
+              <th scope="col" class="text-center">Lag</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr>
+              <td>0</td>
+              <td class="text-center">10</td>
+            </tr>
+            
+            <tr>
+              <td>1</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>3</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>4</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>5</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>6</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>7</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>8</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>9</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+            <tr>
+              <td>10</td>
+              <td class="text-center">0</td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <footer>
+  <p>
+		Kafka MGMT is developed by
+		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+		</a> and released under
+		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+	</p>
+</footer>
+
+</main>
+
+    </div>
+  
+<script src="/js/jquery-3.3.1.min.js"></script>
+<script src="/js/tether.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/jquery.sparkline.min.js"></script>
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/rickshaw.min.js"></script>
+<script src="/js/kafka-mgmt.js"></script>
+
+
+
+
+
+<script>
+
+  // instantiate our graph!
+
+  var graph2 = new Rickshaw.Graph( {
+  	element: document.getElementById("consumer-coverage-chart"),
+  	renderer: 'line',
+  	height: 240,
+  	width: 500,
+    interpolation: 'linear',
+  	series: [
+  		{
+  			data: [{ "x": 1514793600, "y": 100 }, { "x": 1514880000, "y": 100 }, { "x": 1514966400, "y": 100 }, { "x": 1515052800, "y": 100 }, { "x": 1515139200, "y": 100 }, { "x": 1515225600, "y": 100 }, { "x": 1515312000, "y": 100 }, { "x": 1515398400, "y": 96 }, { "x": 1515484800, "y": 100 }, { "x": 1515571200, "y": 92 }, { "x": 1515657600, "y": 100 }, { "x": 1515744000, "y": 100 },
+        { "x": 1515830400, "y": 100 }, { "x": 1515916800, "y": 100 }, { "x": 1516003200, "y": 100 }, { "x": 1516089600, "y": 70 }, { "x": 1516176000, "y": 100 }, { "x": 1516262400, "y": 100 }, { "x": 1516348800, "y": 100 }, { "x": 1516435200, "y": 95 }],
+        name: 'Coverage',
+  			color: "#00CD00"
+  		}
+  	]
+  } );
+
+  var y_ticks = new Rickshaw.Graph.Axis.Y( {
+  	graph: graph2,
+  	orientation: 'left',
+  	tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+  	element: document.getElementById('y_axis')
+  } );
+
+  new Rickshaw.Graph.HoverDetail({
+    graph: graph2
+  });
+
+  var graph3 = new Rickshaw.Graph( {
+  	element: document.getElementById("total-lag-chart"),
+  	renderer: 'line',
+  	height: 240,
+  	width: 500,
+    interpolation: 'linear',
+  	series: [
+  		{
+  			data: [{ "x": 1514793600, "y": 0 }, { "x": 1514880000, "y": 0 }, { "x": 1514966400, "y": 0 }, { "x": 1515052800, "y": 0 }, { "x": 1515139200, "y": 0 }, { "x": 1515225600, "y": 0 }, { "x": 1515312000, "y": 0 }, { "x": 1515398400, "y": 5 }, { "x": 1515484800, "y": 0 }, { "x": 1515571200, "y": 15 }, { "x": 1515657600, "y": 0 }, { "x": 1515744000, "y": 0 },
+        { "x": 1515830400, "y": 0 }, { "x": 1515916800, "y": 0 }, { "x": 1516003200, "y": 0 }, { "x": 1516089600, "y": 20 }, { "x": 1516176000, "y": 0 }, { "x": 1516262400, "y": 0 }, { "x": 1516348800, "y": 0 }, { "x": 1516435200, "y": 11 }],
+        name: 'Coverage',
+  			color: "#326D9F"
+  		}
+  	]
+  } );
+
+  var y_ticks = new Rickshaw.Graph.Axis.Y( {
+  	graph: graph3,
+  	orientation: 'left',
+  	tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
+  	element: document.getElementById('y_axis2')
+  } );
+
+  new Rickshaw.Graph.HoverDetail({
+    graph: graph3
+  });
+
+  var resize = function() {
+
+    var chart2 = $("#kafka-chart-consumer");
+  	graph2.configure({
+  		width: chart2.width() - 42 ,
+  		height: chart2.height() - 42
+  	});
+
+    var chart3 = $("#kafka-chart-lag");
+    graph3.configure({
+      width: chart3.width() - 42 ,
+      height: chart3.height() - 42
+    });
+
+    graph2.render();
+    graph3.render();
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+
+</script>
+
+
+  </body>
+</html>

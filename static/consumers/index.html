@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Consumers - Kafka MGMT</title>
+  <link rel="apple-touch-icon" href="/img/logo.png">
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <meta property="og:title" content="The best management interface for Apache Kafka" />
+  <meta name="author" content="84codes Team" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:site_name" content="Kafka MGMT" />
+  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  <script src="/js/handlebars.min.js"></script>
+  <script src="/js/kafka-helpers.js"></script>
+
+    <style>
+      html,body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+  <div class="container-fluid">
+    <div>
+      <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+        <span class="hamburger-box">
+          <span class="hamburger-inner"></span>
+        </span>
+      </button>
+    </div>
+    <div class="text-right">
+      <p class="my-2 my-md-0 text-right">
+        <a href="/login">
+          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+      </p>
+    </div>
+  </div>
+</nav>
+
+      <aside class="sidebar-wrapper">
+  <div class="sidebar-header text-center">
+    <a href="/" class="app-logo">
+      <img src="/assets/mgmt-logo.svg"/>
+      <h1 class="logo-text">Kafka MGMT</h1>
+    </a>
+
+  </div>
+  <div class="sidebar-content">
+    <div class="sidebar-info">
+      <h2 class="host">localhost</h2>
+      <p>
+        username
+      </p>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        
+        <li class="">
+            <a href="/">
+              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+              <span>Overview</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/topics">
+              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+              <span>Topics</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/consumers">
+              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+              <span>Consumers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/brokers">
+              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+              <span>Brokers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/admin">
+              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+              <span>Admin</span>
+            </a>
+        </li>
+        
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+        <div class="sidebar-backdrop"></div>
+<main class="main-container">
+  <div class="main-heading">
+    <div class="row">
+      <div class="col-sm-4 col-12">
+        <h1>Consumers</h1>
+      </div>
+      <div class="col-sm-8 col-12 text-sm-right">
+        <p>
+          <strong>Last updated:</strong> 1 minute ago
+          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> <span>Refresh</span></a>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <form>
+      <div class="form-row">
+         <div class="col-md-3 mb-3">
+           <input type="text" class="form-control" autocomplete="off" id="filterTable" placeholder="Search">
+         </div>
+       </div>
+     </form>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table" id="kafka-table">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col" class="text-center">Consumed Topics</th>
+              <th scope="col" class="text-center">Coverage</th>
+            </tr>
+          </thead>
+          <tbody id="consumer-rows">
+            <tr>
+              <td class="text-center" colspan="3">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+          <script id='tmpl-consumers' type='text/x-handlebars-template'>
+            {{#elements}}
+              <tr>
+                <td><a href="/consumer/1">{{ name }}</a></td>
+                <td class="text-center">{{ consumed }}</td>
+                <td class="text-center">{{ coverage }}</td>
+              </tr>
+            {{/elements}}
+          </script>
+        
+      </div>
+    </div>
+  </div>
+  <footer>
+  <p>
+		Kafka MGMT is developed by
+		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+		</a> and released under
+		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+	</p>
+</footer>
+
+  <script type="text/javascript">
+    renderListTmpl('#consumer-rows', '#tmpl-consumers', '/api/consumers.json');
+  </script>
+</main>
+
+    </div>
+  
+<script src="/js/jquery-3.3.1.min.js"></script>
+<script src="/js/tether.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/jquery.sparkline.min.js"></script>
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/rickshaw.min.js"></script>
+<script src="/js/kafka-mgmt.js"></script>
+
+
+  <script src="/js/datatables.min.js"></script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+        var table = $('#kafka-table').DataTable(
+          {
+            "paging": false,
+            "info": false
+          }
+        );
+
+        $('#filterTable').on( 'keyup', function () {
+            table.search( this.value ).draw();
+        } );
+    });
+  </script>
+
+
+
+
+
+  </body>
+</html>

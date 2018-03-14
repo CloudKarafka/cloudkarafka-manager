@@ -1,0 +1,1 @@
+{"bytes_in_per_sec":0,"bytes_out_per_sec":0,"messages_in_per_sec":0,"kafka_version":"0.11.0.2","broker_id":"0","jmx_port":-1,"timestamp":"1520942978133","endpoints":["PLAINTEXT://192.168.0.104:9092"],"host":"192.168.0.104","port":9092,"id":"0","uptime":"2 hours"}
