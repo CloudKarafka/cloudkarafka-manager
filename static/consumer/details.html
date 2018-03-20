@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Topic 1 - Kafka MGMT</title>
+  <title> - Kafka MGMT</title>
   <link rel="apple-touch-icon" href="/img/logo.png">
 
   <link rel="stylesheet" href="/css/style.css">
@@ -78,7 +78,7 @@
             </a>
         </li>
         
-        <li class="">
+        <li class=" active">
             <a href="/consumers">
               <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
               <span>Consumers</span>
@@ -109,7 +109,7 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-4">
-        <h1><a href="/consumers/">Consumers</a> / Topic 1</h1>
+        <h1><a href="/consumers">Consumers</a> / </h1>
       </div>
       <div class="col-sm-8 col-12 text-sm-right">
         <p>
@@ -126,17 +126,32 @@
           <thead>
             <tr>
               <th scope="col">Topic</th>
-              <th scope="col" class="text-center">Partitions</th>
               <th scope="col" class="text-center">Coverage</th>
+              <th scope="col" class="text-center">Total lag</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="consumed-topics">
             <tr>
-              <td><a href="/topic/1">Topic 1</a></td>
-              <td class="text-center">10</td>
-              <td class="text-center">90%</td>
+              <td class="text-center" colspan="3">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
+              </td>
             </tr>
           </tbody>
+          
+            <script id='tmpl-consumed-topics' type='text/x-handlebars-template'>
+              {{#consumed_topics}}
+                <tr>
+                  <td><a href="/topic/details?name={{name}}">{{name}}</a></td>
+                  <td class="text-center">{{coverage}}%</td>
+                  <td class="text-center">{{lag}}</td>
+                </tr>
+              {{/consumed_topics}}
+            </script>
+          
         </table>
       </div>
     </div>
@@ -174,64 +189,34 @@
         <table class="table">
           <thead>
             <tr>
+              <th scope="col">Topic</th>
               <th scope="col">Partition</th>
               <th scope="col" class="text-center">Lag</th>
             </tr>
           </thead>
-          <tbody>
-            
+          <tbody id=consumed-partitions>
             <tr>
-              <td>0</td>
-              <td class="text-center">10</td>
+              <td class="text-center" colspan="3">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
+              </td>
             </tr>
-            
-            <tr>
-              <td>1</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>3</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>4</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>5</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>6</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>7</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>8</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>9</td>
-              <td class="text-center">0</td>
-            </tr>
-            
-            <tr>
-              <td>10</td>
-              <td class="text-center">0</td>
-            </tr>
-            
           </tbody>
         </table>
+        
+          <script id='tmpl-consumed-partitions' type='text/x-handlebars-template'>
+            {{#consumed_partitions}}
+              <tr>
+                <td><a href="/topic/details?name={{topic}}">{{topic}}</a></td>
+                <td class="text-center">{{ partition }}</td>
+                <td class="text-center">{{ lag }}</td>
+              </tr>
+            {{/consumed_partitions}}
+          </script>
+        
       </div>
     </div>
   </div>
@@ -245,6 +230,13 @@
 	</p>
 </footer>
 
+  <script type="text/javascript">
+    var path = '/api/consumers/' + getParameterByName('name') + '.json';
+    get(path, function(consumer) {
+      renderTmpl('#consumed-topics', '#tmpl-consumed-topics', consumer);
+      renderTmpl('#consumed-partitions', '#tmpl-consumed-partitions', consumer);
+    });
+  </script>
 </main>
 
     </div>
@@ -260,87 +252,6 @@
 
 
 
-
-<script>
-
-  // instantiate our graph!
-
-  var graph2 = new Rickshaw.Graph( {
-  	element: document.getElementById("consumer-coverage-chart"),
-  	renderer: 'line',
-  	height: 240,
-  	width: 500,
-    interpolation: 'linear',
-  	series: [
-  		{
-  			data: [{ "x": 1514793600, "y": 100 }, { "x": 1514880000, "y": 100 }, { "x": 1514966400, "y": 100 }, { "x": 1515052800, "y": 100 }, { "x": 1515139200, "y": 100 }, { "x": 1515225600, "y": 100 }, { "x": 1515312000, "y": 100 }, { "x": 1515398400, "y": 96 }, { "x": 1515484800, "y": 100 }, { "x": 1515571200, "y": 92 }, { "x": 1515657600, "y": 100 }, { "x": 1515744000, "y": 100 },
-        { "x": 1515830400, "y": 100 }, { "x": 1515916800, "y": 100 }, { "x": 1516003200, "y": 100 }, { "x": 1516089600, "y": 70 }, { "x": 1516176000, "y": 100 }, { "x": 1516262400, "y": 100 }, { "x": 1516348800, "y": 100 }, { "x": 1516435200, "y": 95 }],
-        name: 'Coverage',
-  			color: "#00CD00"
-  		}
-  	]
-  } );
-
-  var y_ticks = new Rickshaw.Graph.Axis.Y( {
-  	graph: graph2,
-  	orientation: 'left',
-  	tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-  	element: document.getElementById('y_axis')
-  } );
-
-  new Rickshaw.Graph.HoverDetail({
-    graph: graph2
-  });
-
-  var graph3 = new Rickshaw.Graph( {
-  	element: document.getElementById("total-lag-chart"),
-  	renderer: 'line',
-  	height: 240,
-  	width: 500,
-    interpolation: 'linear',
-  	series: [
-  		{
-  			data: [{ "x": 1514793600, "y": 0 }, { "x": 1514880000, "y": 0 }, { "x": 1514966400, "y": 0 }, { "x": 1515052800, "y": 0 }, { "x": 1515139200, "y": 0 }, { "x": 1515225600, "y": 0 }, { "x": 1515312000, "y": 0 }, { "x": 1515398400, "y": 5 }, { "x": 1515484800, "y": 0 }, { "x": 1515571200, "y": 15 }, { "x": 1515657600, "y": 0 }, { "x": 1515744000, "y": 0 },
-        { "x": 1515830400, "y": 0 }, { "x": 1515916800, "y": 0 }, { "x": 1516003200, "y": 0 }, { "x": 1516089600, "y": 20 }, { "x": 1516176000, "y": 0 }, { "x": 1516262400, "y": 0 }, { "x": 1516348800, "y": 0 }, { "x": 1516435200, "y": 11 }],
-        name: 'Coverage',
-  			color: "#326D9F"
-  		}
-  	]
-  } );
-
-  var y_ticks = new Rickshaw.Graph.Axis.Y( {
-  	graph: graph3,
-  	orientation: 'left',
-  	tickFormat: Rickshaw.Fixtures.Number.formatKMBT,
-  	element: document.getElementById('y_axis2')
-  } );
-
-  new Rickshaw.Graph.HoverDetail({
-    graph: graph3
-  });
-
-  var resize = function() {
-
-    var chart2 = $("#kafka-chart-consumer");
-  	graph2.configure({
-  		width: chart2.width() - 42 ,
-  		height: chart2.height() - 42
-  	});
-
-    var chart3 = $("#kafka-chart-lag");
-    graph3.configure({
-      width: chart3.width() - 42 ,
-      height: chart3.height() - 42
-    });
-
-    graph2.render();
-    graph3.render();
-  }
-
-  window.addEventListener('resize', resize);
-  resize();
-
-</script>
 
 
   </body>

@@ -149,9 +149,8 @@
           </div>
           <div class="box-body">
             <div class="clearfix">
-              <div class="float-left box-data">
-                <p class="loading-metric" style="display:none;"></p>
-                <p class="metric">0<small></small></p>
+              <div id="consumer-count" class="float-left box-data">
+                <p class="loading-metric"></p>
               </div>
               
                 <div class="float-right box-graph">
@@ -162,7 +161,6 @@
                 </div>
               
             </div>
-
           </div>
         </div>
       </div>
@@ -179,13 +177,11 @@
           </div>
           <div class="box-body">
             <div class="clearfix">
-              <div class="float-left box-data">
-                <p class="loading-metric" style="display:none;"></p>
-                <p class="metric">6<small></small></p>
+              <div id="topic-count" class="float-left box-data">
+                <p class="loading-metric"></p>
               </div>
               
             </div>
-
           </div>
         </div>
       </div>
@@ -202,9 +198,8 @@
           </div>
           <div class="box-body">
             <div class="clearfix">
-              <div class="float-left box-data">
-                <p class="loading-metric" style="display:none;"></p>
-                <p class="metric">2<small></small></p>
+              <div id="broker-count" class="float-left box-data">
+                <p class="loading-metric"></p>
               </div>
               
                 <div class="float-right box-graph">
@@ -215,7 +210,6 @@
                 </div>
               
             </div>
-
           </div>
         </div>
       </div>
@@ -232,13 +226,11 @@
           </div>
           <div class="box-body">
             <div class="clearfix">
-              <div class="float-left box-data">
-                <p class="loading-metric" style="display:none;"></p>
-                <p class="metric">1.24<small>TB</small></p>
+              <div id="total-topic-size" class="float-left box-data">
+                <p class="loading-metric"></p>
               </div>
               
             </div>
-
           </div>
         </div>
       </div>
@@ -255,13 +247,11 @@
           </div>
           <div class="box-body">
             <div class="clearfix">
-              <div class="float-left box-data">
-                <p class="loading-metric" style="display:none;"></p>
-                <p class="metric">1234312322<small></small></p>
+              <div id="total-message-count" class="float-left box-data">
+                <p class="loading-metric"></p>
               </div>
               
             </div>
-
           </div>
         </div>
       </div>
@@ -278,13 +268,11 @@
           </div>
           <div class="box-body">
             <div class="clearfix">
-              <div class="float-left box-data">
-                <p class="loading-metric" style="display:none;"></p>
-                <p class="metric">1<small></small></p>
+              <div id="user-count" class="float-left box-data">
+                <p class="loading-metric"></p>
               </div>
               
             </div>
-
           </div>
         </div>
       </div>
@@ -343,7 +331,7 @@
       </div>
     </div>
   </div>
-<footer>
+  <footer>
   <p>
 		Kafka MGMT is developed by
 		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
@@ -353,6 +341,41 @@
 	</p>
 </footer>
 
+  
+    <script id='tmpl-metric' type='text/x-handlebars-template'>
+      <p class="metric">{{ value }}<small>{{ unit }}</small></p>
+    </script>
+  
+  <script type="text/javascript">
+    get('/api/brokers.json', function(brokers) {
+      renderTmpl('#broker-count', '#tmpl-metric', { unit: "", value: brokers.length});
+    })
+    get('/api/topics.json', function(topics) {
+      renderTmpl('#topic-count', '#tmpl-metric', { unit: "", value: topics.length});
+      var size = 0;
+      var messageCount = 0;
+      var i = 0;
+      topics.forEach(function(t) {
+        get('/api/topics/' + t + '.json', function(topic) {
+          i += 1
+          messageCount += topic.message_count;
+          size += topic.size;
+          if (i == topics.length) {
+            renderTmpl('#total-topic-size', '#tmpl-metric', humanFileSize(size, true))
+            renderTmpl('#total-message-count',
+              '#tmpl-metric',
+              { unit: "", value: messageCount.toLocaleString()});
+          }
+        })
+      })
+    })
+    get('/api/consumers.json', function(consumers) {
+      renderTmpl('#consumer-count', '#tmpl-metric', { unit: "", value: consumers.length});
+    })
+    get('/api/users.json', function(users) {
+      renderTmpl('#user-count', '#tmpl-metric', { unit: "", value: users.length});
+    })
+  </script>
 </main>
 
     </div>

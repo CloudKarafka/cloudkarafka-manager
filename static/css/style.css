@@ -6792,7 +6792,7 @@ main.main-container {
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
     margin-bottom: 1.5rem; }
     main.main-container .box .box-header {
-      padding: 1rem .75rem 0 1rem; }
+      padding: 1rem .75rem .25rem 1rem; }
       main.main-container .box .box-header h1,
       main.main-container .box .box-header h2 {
         font-size: 1.125rem; }
@@ -6803,6 +6803,8 @@ main.main-container {
         width: 20px; }
         main.main-container .box .box-header span.icon img {
           height: 22px; }
+      main.main-container .box .box-header .float-right.btn {
+        margin-top: -.375rem; }
     main.main-container .box .box-body {
       padding: 1rem; }
       main.main-container .box .box-body .metric {
@@ -6935,9 +6937,9 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     transform: scale(1); } }
 @keyframes loading-animation {
   0% {
-    background-position: -468px 0; }
+    background-position: -554px 0; }
   100% {
-    background-position: 468px 0; } }
+    background-position: 554px 0; } }
 .loading-metric {
   animation-duration: 1.25s;
   animation-fill-mode: forwards;
@@ -6946,7 +6948,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   animation-timing-function: linear;
   background: #F6F6F6;
   background: linear-gradient(to right, #F6F6F6 8%, #F0F0F0 18%, #F6F6F6 33%);
-  background-size: 800px 104px;
+  background-size: 1200px 104px;
   height: 32px;
   position: relative; }
 
@@ -6961,6 +6963,11 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   height: 40px;
   margin: 0;
   min-width: 120px; }
+
+#topic-overview .loading-metric, #topic-metrics .loading-metric, #topic-config .loading-metric {
+  height: 24px;
+  margin: 0;
+  width: 100%; }
 
 .main-heading h1 {
   font-size: 1.25rem;

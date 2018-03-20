@@ -134,12 +134,11 @@
             <tr>
               <th scope="col">Name</th>
               <th scope="col" class="text-center">Consumed Topics</th>
-              <th scope="col" class="text-center">Coverage</th>
             </tr>
           </thead>
           <tbody id="consumer-rows">
             <tr>
-              <td class="text-center" colspan="3">
+              <td class="text-center" colspan="2">
                 <div class="sk-three-bounce">
                   <div class="sk-child sk-bounce1"></div>
                   <div class="sk-child sk-bounce2"></div>
@@ -153,9 +152,23 @@
           <script id='tmpl-consumers' type='text/x-handlebars-template'>
             {{#elements}}
               <tr>
-                <td><a href="/consumer/1">{{ name }}</a></td>
-                <td class="text-center">{{ consumed }}</td>
-                <td class="text-center">{{ coverage }}</td>
+                <td><a href="/consumer/details?name={{name}}">{{ name }}</a></td>
+                <td>
+                  <ul>
+                  {{#consumed_topics}}
+                    <dl>
+                      <dt>
+                        <a href="/topic/details?name={{name}}"> {{name}} </a>
+                      </dt>
+                      <dd>
+                        Coverage: {{coverage}}%
+                        <br/>
+                        Total lag: {{lag}}
+                      </dd>
+                    </dl>
+                  {{/consumed_topics}}
+                  </ul>
+                </td>
               </tr>
             {{/elements}}
           </script>

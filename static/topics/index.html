@@ -156,8 +156,8 @@
                   <td data-search="{{ name }}">
                     <a href="/topic/details?name={{name}}">{{ name }}</a>
                   </td>
-                  <td class="text-center">{{ message_count }}</td>
-                  <td class="text-center">{{ messages_in_per_sec }}</td>
+                  <td class="text-center">{{ toLocaleString message_count }}</td>
+                  <td class="text-center">{{ humanFileSize messages_in_per_sec }}</td>
                   <td class="text-center">{{ partition_count }}</td>
                   <td class="text-center">{{ replication_factor }}</td>
                 </tr>

@@ -4,7 +4,7 @@ import (
 	"cloudkarafka-mgmt/store"
 	"cloudkarafka-mgmt/zookeeper"
 
-	"github.com/dustin/go-humanize"
+	//"github.com/dustin/go-humanize"
 
 	"sort"
 	"strconv"
@@ -19,11 +19,11 @@ type BrokerMetric struct {
 }
 
 type TopicMetric struct {
-	BytesInPerSec    string `json:"bytes_in_per_sec"`
-	BytesOutPerSec   string `json:"bytes_out_per_sec"`
-	MessagesInPerSec string `json:"messages_in_per_sec"`
-	MessageCount     string `json:"message_count"`
-	Size             string `json:"size"`
+	BytesInPerSec    int `json:"bytes_in_per_sec"`
+	BytesOutPerSec   int `json:"bytes_out_per_sec"`
+	MessagesInPerSec int `json:"messages_in_per_sec"`
+	MessageCount     int `json:"message_count"`
+	Size             int `json:"size"`
 
 	PMs PartitionMetrics `json:"partition_metrics"`
 }
@@ -34,7 +34,7 @@ type PartitionMetric struct {
 	ISR            []int  `json:"isr"`
 	LogStartOffset int    `json:"log_start_offset"`
 	LogEndOffset   int    `json:"log_end_offset"`
-	Size           string `json:"size"`
+	Size           int    `json:"size"`
 }
 
 type PartitionMetrics []PartitionMetric
@@ -85,13 +85,13 @@ func TopicMetrics(name string) TopicMetric {
 				pm.LogEndOffset = value
 			case "Size":
 				totalSize += value
-				pm.Size = humanize.Bytes(uint64(value))
+				pm.Size = value
 			case "BytesInPerSec":
-				tm.BytesInPerSec = humanize.Bytes(uint64(value))
+				tm.BytesInPerSec = value
 			case "BytesOutPerSec":
-				tm.BytesOutPerSec = humanize.Bytes(uint64(value))
+				tm.BytesOutPerSec = value
 			case "MessagesInPerSec":
-				tm.MessagesInPerSec = humanize.Comma(int64(value))
+				tm.MessagesInPerSec = value
 			}
 		}
 		if partition != "" {
@@ -104,7 +104,7 @@ func TopicMetrics(name string) TopicMetric {
 		total += pm.LogEndOffset - pm.LogStartOffset
 	}
 	sort.Sort(tm.PMs)
-	tm.MessageCount = humanize.Comma(int64(total))
-	tm.Size = humanize.Bytes(uint64(totalSize))
+	tm.MessageCount = total
+	tm.Size = totalSize
 	return tm
 }

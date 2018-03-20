@@ -50,7 +50,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/topics/{topic}/reassigning.json", ah(api.ReassigningTopic))
 	a.HandleFunc("/consumers.json", ah(api.Consumers))
 	a.HandleFunc("/consumers/{name}.json", ah(api.Consumer))
-	a.HandleFunc("/consumers/{name}/metrics.json", ah(api.ConsumerMetrics))
+	//a.HandleFunc("/consumers/{name}/metrics.json", ah(api.ConsumerMetrics))
 	a.HandleFunc("/whoami.json", ah(api.Whoami))
 	a.HandleFunc("/users.json", ah(api.Users))
 	a.HandleFunc("/users/{name}.json", ah(api.User))
@@ -72,7 +72,7 @@ func Start(cert, key string) {
 		http.ServeFile(w, req, "static/topics/index.html")
 	}))
 
-	r.HandleFunc("/topics/details", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+	r.HandleFunc("/topic/details", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "static/topic/details.html")
 	}))
 
@@ -84,8 +84,12 @@ func Start(cert, key string) {
 		http.ServeFile(w, req, "static/html/user.html")
 	}))
 
-	r.HandleFunc("/consumers/{name}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "static/html/consumer.html")
+	r.HandleFunc("/consumers", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+		http.ServeFile(w, req, "static/consumers/index.html")
+	}))
+
+	r.HandleFunc("/consumer/details", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+		http.ServeFile(w, req, "static/consumer/details.html")
 	}))
 
 	http.Handle("/js/", http.FileServer(http.Dir("static/")))

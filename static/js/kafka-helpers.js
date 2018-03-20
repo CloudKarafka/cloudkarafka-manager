@@ -1,3 +1,13 @@
+function getParameterByName(name, url) {
+  if (!url) url = window.location.href;
+  name = name.replace(/[\[\]]/g, "\\$&");
+  var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+    results = regex.exec(url);
+  if (!results) return null;
+  if (!results[2]) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
 function get(path, callback) {
   var request = new XMLHttpRequest();
   request.open('GET', path, true);
@@ -19,11 +29,15 @@ function elementHtml(id) {
   return element(id).innerHTML;
 }
 
+function renderTmpl(attachToId, tmplId, elements) {
+  var $attachTo = element(attachToId);
+  var tmpl = Handlebars.compile(elementHtml(tmplId));
+  $attachTo.innerHTML = tmpl(elements);
+}
+
 function renderListTmpl(attachToId, tmplId, path) {
+  //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
   get(path, function(elements) {
-    var $attachTo = element(attachToId);
-    var tmpl = Handlebars.compile(elementHtml(tmplId));
-    //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
     var l = elements.length;
     var result = [];
     elements.forEach(function(e) {
@@ -33,10 +47,34 @@ function renderListTmpl(attachToId, tmplId, path) {
           result.sort(function(a, b) {
             return a.name > b.name
           })
-          console.log(result);
-          $attachTo.innerHTML = tmpl({ elements: result });
+          renderTmpl(attachToId, tmplId, {elements: result})
         }
       })
     })
   })
 }
+
+function humanFileSize(bytes) {
+  var thresh = 1024;
+  if(Math.abs(bytes) < thresh) {
+    return { value: bytes, unit: 'B' };
+  }
+  var units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
+  var u = -1;
+  do {
+    bytes /= thresh;
+    ++u;
+  } while(Math.abs(bytes) >= thresh && u < units.length - 1);
+  return { value: bytes.toFixed(1), unit: units[u] };
+}
+
+Handlebars.registerHelper('humanFileSize', function(bytes) {
+  var res = humanFileSize(bytes);
+  return new Handlebars.SafeString(
+    res.value + "<small>" + res.unit + "</small>"
+  );
+})
+//Handlebars.registerHelper('humanFileSize', humanFileSize)
+Handlebars.registerHelper('toLocaleString', function(elem) {
+  return elem.toLocaleString();
+})

@@ -129,21 +129,37 @@
           <div class="box-body p-0">
             <div class="clearfix">
               <table class="table">
-                <tbody>
+                <tbody id="topic-overview">
                   <tr>
                     <td>Partitions</td>
-                    <td class="text-right"><strong>10</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                   <tr>
                     <td>Replication Factor</td>
-                    <td class="text-right"><strong>1</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                   <tr>
                     <td>Broker Spread</td>
-                    <td class="text-right"><strong>0</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                 </tbody>
               </table>
+              
+                <script id='tmpl-topic-overview' type='text/x-handlebars-template'>
+                  <tr>
+                    <td>Partitions</td>
+                    <td class="text-right"><strong>{{partition_count}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Replication Factor</td>
+                    <td class="text-right"><strong>{{replication_factor}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Broker Spread</td>
+                    <td class="text-right"><strong>{{broker_spread}}</strong></td>
+                  </tr>
+                </script>
+              
             </div>
           </div>
         </div>
@@ -156,25 +172,45 @@
           <div class="box-body p-0">
             <div class="clearfix">
               <table class="table">
-                <tbody>
+                <tbody id="topic-metrics">
                   <tr>
                     <td>Message Count</td>
-                    <td class="text-right"><strong>6,218,492</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                   <tr>
                     <td>Messages in/s</td>
-                    <td class="text-right"><strong>20</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                   <tr>
                     <td>Bytes in/s</td>
-                    <td class="text-right"><strong>1388</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                   <tr>
                     <td>Bytes out/s</td>
-                    <td class="text-right"><strong>2833</strong></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
                 </tbody>
               </table>
+              
+                <script id='tmpl-topic-metrics' type='text/x-handlebars-template'>
+                  <tr>
+                    <td>Message Count</td>
+                    <td class="text-right"><strong>{{toLocaleString message_count}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Messages in/s</td>
+                    <td class="text-right"><strong>{{toLocaleString messages_in_per_sec}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Bytes in/s</td>
+                    <td class="text-right"><strong>{{humanFileSize bytes_in_per_sec}}</strong></td>
+                  </tr>
+                  <tr>
+                    <td>Bytes out/s</td>
+                    <td class="text-right"><strong>{{humanFileSize bytes_out_per_sec}}</strong></td>
+                  </tr>
+                </script>
+              
             </div>
           </div>
         </div>
@@ -187,17 +223,27 @@
           <div class="box-body p-0">
             <div class="clearfix">
               <table class="table">
-                <tbody>
+                <tbody id="topic-config">
                   <tr>
-                    <td>cleanup.policy</td>
-                    <td class="text-right"><strong>delete</strong></td>
+                    <td><p class="loading-metric"></p></td>
+                    <td class="text-right"><p class="loading-metric"></p></td>
                   </tr>
-                  <tr>
-                    <td>retention</td>
-                    <td class="text-right"><strong>86400000</strong></td>
-                  </tr>
+                    <tr>
+                      <td><p class="loading-metric"></p></td>
+                      <td class="text-right"><p class="loading-metric"></p></td>
+                    </tr>
                 </tbody>
               </table>
+              
+                <script id='tmpl-topic-config' type='text/x-handlebars-template'>
+                  {{#each config}}
+                    <tr>
+                      <td>{{@key}}</td>
+                      <td class="text-right"><strong>{{this}}</strong></td>
+                    </tr>
+                  {{/each}}
+                </script>
+              
             </div>
           </div>
         </div>
@@ -210,6 +256,7 @@
             <h2> Input/Output</h2>
           </div>
           <div class="box-body input-output" id="kafka-chart-1">
+            <div class="loading-metric chart"></div>
             <div id="axis0"></div>
             <div id="chart"></div>
             <div id="axis1"></div>
@@ -241,90 +288,31 @@
               <th scope="col" class="text-center">End Offset</th>
             </tr>
           </thead>
-          <tbody>
-            
+          <tbody id="partition-rows">
             <tr>
-              <td>0</td>
-              <td class="text-center">1</td>
-              <td class="text-center">0.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
+              <td class="text-center" colspan="7">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
+              </td>
             </tr>
-            
-            <tr>
-              <td>1</td>
-              <td class="text-center">2</td>
-              <td class="text-center">2.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>2</td>
-              <td class="text-center">0</td>
-              <td class="text-center">0.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>3</td>
-              <td class="text-center">1</td>
-              <td class="text-center">2.0</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>4</td>
-              <td class="text-center">2</td>
-              <td class="text-center">0.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>5</td>
-              <td class="text-center">0</td>
-              <td class="text-center">2.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>6</td>
-              <td class="text-center">1</td>
-              <td class="text-center">2.0</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>7</td>
-              <td class="text-center">1</td>
-              <td class="text-center">0.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>8</td>
-              <td class="text-center">2</td>
-              <td class="text-center">0.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
-            <tr>
-              <td>9</td>
-              <td class="text-center">1</td>
-              <td class="text-center">0.1</td>
-              <td class="text-center">22664650</td>
-              <td class="text-center">22720199</td>
-            </tr>
-            
           </tbody>
         </table>
+        
+          <script id='tmpl-partition-rows' type='text/x-handlebars-template'>
+            {{#partition_metrics}}
+              <tr>
+                <td>{{ number }}</td>
+                <td class="text-center">{{ leader }}</td>
+                <td class="text-center">{{ isr }}</td>
+                <td class="text-center">{{ toLocaleString log_start_offset }}</td>
+                <td class="text-center">{{ toLocaleString log_end_offset }}</td>
+              </tr>
+            {{/partition_metrics}}
+          </script>
+        
       </div>
     </div>
     <div class="row">
@@ -343,6 +331,15 @@
 	</p>
 </footer>
 
+  <script type="text/javascript">
+    var path = '/api/topics/' + getParameterByName('name') + '.json';
+    get(path, function(topic) {
+      renderTmpl('#topic-overview', '#tmpl-topic-overview', topic);
+      renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
+      renderTmpl('#topic-config', '#tmpl-topic-config', topic);
+      renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
+    })
+  </script>
 </main>
 
     </div>

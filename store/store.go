@@ -70,6 +70,27 @@ func SelectWithIndex(indexName string) store {
 	return selectWithIndex(positions)
 }
 
+/*func Intersection(indices []string) store {
+	var ids []int
+	for _, index := range indices {
+		i := len(ids)
+		ids = append(ids[:i], append(SelectWithIndex(id), ids[i:]...)...)
+	}
+	intSlice := sort.IntSlice(ids)
+	intSlice.Sort()
+	prev := intSlice[0]
+	ints := make(map[int]struct{})
+	var ids []int
+	for _, id := range intSlice[1:] {
+		if id == prev && _, exists := ints[id]; !exists {
+			ints[id] = struct{}{}
+			ids = append(i, id)
+		}
+		prev = id
+	}
+	return selectWithIndex(ids)
+}*/
+
 func selectWithIndex(ints []int) store {
 	var selected []Data
 	for _, i := range ints {

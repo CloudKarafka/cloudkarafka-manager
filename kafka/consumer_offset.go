@@ -111,12 +111,12 @@ func processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) {
 			"group":     m.Group,
 			"topic":     m.Topic,
 			"partition": m.Partition,
-			"type":      "consumer",
+			"metric":    "consumer",
 		},
 		Value:     m.Offset,
 		Timestamp: m.Timestamp,
 	}
-	store.Put(data, []string{"group", "topic", "type"})
+	store.Put(data, []string{"group", "topic", "metric"})
 	return
 }
 
