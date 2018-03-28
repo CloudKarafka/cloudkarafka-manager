@@ -23,10 +23,7 @@
 
 [[constraint]]
   name = "github.com/Shopify/sarama"
-
-[[constraint]]
   branch = "master"
-  name = "github.com/dustin/go-humanize"
 
 [[constraint]]
   name = "github.com/gorilla/mux"
@@ -34,6 +31,11 @@
 
 [[constraint]]
   name = "github.com/samuel/go-zookeeper"
+  branch = "master"
 
 [[constraint]]
   name = "golang.org/x/crypto"
+
+[prune]
+  go-tests = true
+  unused-packages = true
