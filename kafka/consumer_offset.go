@@ -9,46 +9,9 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	"os"
 )
 
-type message struct {
-	Topic     string
-	Type      string
-	Group     string
-	Partition string
-	Offset    int
-	Timestamp int64
-}
-
-func consumerOffsets(hostname string) error {
-	config := sarama.NewConfig()
-	h, _ := os.Hostname()
-	config.ClientID = fmt.Sprintf("CloudKarafka-co-monitor-%s", h)
-	client, err := sarama.NewClient([]string{hostname}, config)
-	if err != nil {
-		return err
-	}
-	consumer, err := sarama.NewConsumerFromClient(client)
-	if err != nil {
-		return err
-	}
-	topic := "__consumer_offsets"
-
-	fmt.Println("[INFO] start consumer offsets consumer")
-
-	partitions, err := client.Partitions(topic)
-	if err != nil {
-		return err
-	}
-
-	for _, part := range partitions {
-		go consumePartition(topic, part, consumer, processConsumerOffsetsMessage)
-	}
-	return nil
-}
-
-func processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) {
+func consumerOffsetsMessage(msg *sarama.ConsumerMessage) {
 	var keyver, valver uint16
 	var group, topic string
 	var partition uint32
@@ -56,7 +19,6 @@ func processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) {
 
 	buf := bytes.NewBuffer(msg.Key)
 	err := binary.Read(buf, binary.BigEndian, &keyver)
-	var m message
 	switch keyver {
 	case 0, 1:
 		group, err = readString(buf)
@@ -96,28 +58,20 @@ func processConsumerOffsetsMessage(msg *sarama.ConsumerMessage) {
 		return //m, errors.New(fmt.Sprintf("Failed to decode %s:%v offset %v: timestamp\n", msg.Topic, msg.Partition, msg.Offset))
 	}
 
-	m = message{
-		Topic:     topic,
-		Group:     group,
-		Partition: fmt.Sprintf("%v", partition),
-		Timestamp: int64(timestamp),
-		Offset:    int(offset),
-	}
-	if m.Topic == "__consumer_offsets" {
+	if topic == "__consumer_offsets" || topic == "__cloudkarafka_metrics" {
 		return
 	}
 	data := store.Data{
 		Id: map[string]string{
-			"group":     m.Group,
-			"topic":     m.Topic,
-			"partition": m.Partition,
+			"group":     group,
+			"topic":     topic,
+			"partition": fmt.Sprintf("%v", partition),
 			"metric":    "consumer",
 		},
-		Value:     m.Offset,
-		Timestamp: m.Timestamp,
+		Value:     int(offset),
+		Timestamp: int64(timestamp),
 	}
 	store.Put(data, []string{"group", "topic", "metric"})
-	return
 }
 
 func readString(buf *bytes.Buffer) (string, error) {

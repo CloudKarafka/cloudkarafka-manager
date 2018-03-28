@@ -33,14 +33,10 @@ func main() {
 	zookeeper.SetAuthentication(*auth)
 	// Runtime metrics, collect metrics every 30s
 	// Consumer offsets
-	if err := kafka.Start(*kh); err != nil {
-		fmt.Println("[WARN] Kakfa client failed to start no consumer info i shown")
-		fmt.Println(err)
-	}
+	kafka.Start(*kh)
 	// HTTP server
 	config.Port = *port
 	go server.Start(*cert, *key)
-	go server.StartJMX()
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	//Wait for term
 	<-signals

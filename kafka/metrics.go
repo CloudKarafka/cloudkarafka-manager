@@ -7,63 +7,37 @@ import (
 
 	"encoding/json"
 	"fmt"
-	"os"
 	"strings"
 )
 
-func consumeMetrics(hostname string) error {
-	config := sarama.NewConfig()
-	h, _ := os.Hostname()
-	config.ClientID = fmt.Sprintf("CloudKarafka-metrics-%s", h)
-	config.Consumer.Return.Errors = true
-	config.Version = sarama.V0_11_0_0
-	client, err := sarama.NewClient([]string{hostname}, config)
-	if err != nil {
-		return err
+func metricMessage(msg *sarama.ConsumerMessage) {
+	mbeanName := strings.Split(string(msg.Key), ",")
+	if len(mbeanName) == 0 {
+		fmt.Println(string(msg.Key))
+		return
 	}
-	consumer, err := sarama.NewConsumerFromClient(client)
-	if err != nil {
-		return err
+	keys := make(map[string]string)
+	for _, m := range mbeanName {
+		kv := strings.Split(m, "=")
+		if len(kv) != 2 {
+			fmt.Println(m)
+			continue
+		}
+		keys[kv[0]] = kv[1]
 	}
-	topic := "__cloudkarafka_metrics"
-	fmt.Println("[INFO] start metrics consumer")
-	partitions, err := client.Partitions(topic)
+	value, err := parseJson(msg.Value)
 	if err != nil {
-		return err
+		fmt.Println("[ERROR]", string(msg.Value))
+		fmt.Println(err)
+		return
 	}
 
-	for _, part := range partitions {
-		go consumePartition(topic, part, consumer, func(msg *sarama.ConsumerMessage) {
-			mbeanName := strings.Split(string(msg.Key), ",")
-			if len(mbeanName) == 0 {
-				fmt.Println(string(msg.Key))
-				return
-			}
-			keys := make(map[string]string)
-			for _, m := range mbeanName {
-				kv := strings.Split(m, "=")
-				if len(kv) != 2 {
-					fmt.Println(m)
-					continue
-				}
-				keys[kv[0]] = kv[1]
-			}
-			value, err := parseJson(msg.Value)
-			if err != nil {
-				fmt.Println("[ERROR]", string(msg.Value))
-				fmt.Println(err)
-				return
-			}
-
-			switch keys["domain"] {
-			case "kafka.log":
-				storeLogOffset(keys, value)
-			case "kafka.server":
-				storeKafkaServer(keys, value)
-			}
-		})
+	switch keys["domain"] {
+	case "kafka.log":
+		storeLogOffset(keys, value)
+	case "kafka.server":
+		storeKafkaServer(keys, value)
 	}
-	return nil
 }
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
