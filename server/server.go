@@ -7,6 +7,8 @@ import (
 
 	"github.com/gorilla/mux"
 
+	_ "net/http/pprof"
+
 	"fmt"
 	"net/http"
 	"time"
@@ -91,6 +93,9 @@ func Start(cert, key string) {
 	r.HandleFunc("/consumer/details", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
 		http.ServeFile(w, req, "static/consumer/details.html")
 	}))
+	r.HandleFunc("/admin", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+		http.ServeFile(w, req, "static/admin/index.html")
+	}))
 
 	http.Handle("/js/", http.FileServer(http.Dir("static/")))
 	http.Handle("/css/", http.FileServer(http.Dir("static/")))
@@ -99,8 +104,8 @@ func Start(cert, key string) {
 	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%s", config.Port),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
 	}
 	fmt.Println("Listening on Port", config.Port)
 	fmt.Println(s.ListenAndServe())
