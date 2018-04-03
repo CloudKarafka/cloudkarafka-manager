@@ -53,7 +53,7 @@ func BrokerMetrics(id string) BrokerMetric {
 	brokerMetrics := store.SelectWithIndex(id).GroupByMetric()
 	for metric, values := range brokerMetrics {
 		values.Sort()
-		value := values[len(values)-1]
+		value := values.Stored[values.Len()-1]
 		switch metric {
 		case "BytesInPerSec":
 			bm.BytesInPerSec = value.Value
@@ -75,7 +75,7 @@ func TopicMetrics(name string) TopicMetric {
 		pm := PartitionMetric{}
 		for m, d := range data.GroupByMetric() {
 			sort.Sort(d)
-			value := d[len(d)-1].Value
+			value := d.Stored[d.Len()-1].Value
 			switch m {
 			case "LogStartOffset":
 				pm.LogStartOffset = value

@@ -2,69 +2,34 @@ package store
 
 import (
 	//"cloudkarafka-mgmt/zookeeper"
+	"fmt"
 
-	"bytes"
-	"errors"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 )
 
-type storageType int
-
-const (
-	JMX storageType = 1 + iota
-	ConsumerOffset
-)
-
-func (me storageType) String() string {
-	return strconv.Itoa(int(me))
+type store struct {
+	sync.RWMutex
+	Stored       []Data
+	indexes      map[string][]int
+	indexedNames map[string][]string
 }
 
-var (
-	Store        store
-	l            sync.RWMutex
-	KafkaVersion string
-
-	NotFound     = errors.New("Element not found")
-	indexes      = make(map[string][]int)
-	indexedNames = make(map[string][]string)
-)
-
-type store []Data
-type set map[string]bool
-
-type Data struct {
-	Value     int
-	Timestamp int64
-	Id        map[string]string
-}
-
-func (me Data) Key() string {
-	keys := make([]string, len(me.Id))
-	i := 0
-	for k, _ := range me.Id {
-		keys[i] = k
-		i++
+func newStore(size int) store {
+	return store{
+		Stored:       make([]Data, size),
+		indexes:      make(map[string][]int),
+		indexedNames: make(map[string][]string),
 	}
-	sort.Strings(keys)
-	var b bytes.Buffer
-	for _, k := range keys {
-		b.WriteString(me.Id[k])
-	}
-	b.WriteString(string(me.Timestamp))
-	return b.String()
 }
 
-func IndexedNames(name string) []string {
-	return indexedNames[name]
-}
-
-func Intersection(indexNames ...string) store {
+func (me store) Intersection(indexNames ...string) store {
+	me.RLock()
+	defer me.RUnlock()
 	var ints []int
 	for _, name := range indexNames {
-		ints = append(ints, indexes[name]...)
+		ints = append(ints, me.indexes[name]...)
 	}
 	sort.Ints(ints)
 	var intersection []int
@@ -79,50 +44,46 @@ func Intersection(indexNames ...string) store {
 		}
 		prev = val
 	}
-	return selectWithIndex(intersection)
+	return me.subset(intersection)
 }
 
-func SelectWithIndex(indexName string) store {
-	positions := indexes[indexName]
-	return selectWithIndex(positions)
+func (me store) Indexes() map[string][]int {
+	return me.indexes
 }
 
-/*func Intersection(indices []string) store {
-	var ids []int
-	for _, index := range indices {
-		i := len(ids)
-		ids = append(ids[:i], append(SelectWithIndex(id), ids[i:]...)...)
-	}
-	intSlice := sort.IntSlice(ids)
-	intSlice.Sort()
-	prev := intSlice[0]
-	ints := make(map[int]struct{})
-	var ids []int
-	for _, id := range intSlice[1:] {
-		if id == prev && _, exists := ints[id]; !exists {
-			ints[id] = struct{}{}
-			ids = append(i, id)
+func (me store) IndexedNames(indexName string) []string {
+	me.RLock()
+	defer me.RUnlock()
+	return me.indexedNames[indexName]
+}
+
+func (me store) SelectWithIndex(indexName string) store {
+	me.RLock()
+	defer me.RUnlock()
+	return me.subset(me.indexes[indexName])
+}
+
+func (me store) subset(ints []int) store {
+	me.RLock()
+	defer me.RUnlock()
+	selected := newStore(len(ints))
+	for i, id := range ints {
+		if me.Len() <= id {
+			fmt.Printf("[ERROR] id=%v len=%v\n", id, me.Len())
+			continue
 		}
-		prev = id
-	}
-	return selectWithIndex(ids)
-}*/
-
-func selectWithIndex(ints []int) store {
-	var selected []Data
-	for _, i := range ints {
-		selected = append(selected, Store[i])
+		selected.Stored[i] = me.Stored[id]
 	}
 	return selected
 }
 
 func (me store) Select(fn func(Data) bool) store {
 	var selected store
-	l.RLock()
-	defer l.RUnlock()
-	for _, d := range me {
+	me.RLock()
+	defer me.RUnlock()
+	for _, d := range me.Stored {
 		if fn(d) {
-			selected = append(selected, d)
+			selected.Stored = append(selected.Stored, d)
 		}
 	}
 	return selected
@@ -130,10 +91,10 @@ func (me store) Select(fn func(Data) bool) store {
 
 func (me store) Find(fn func(Data) bool) (Data, error) {
 	data := me.Select(fn)
-	if len(data) != 1 {
+	if len(data.Stored) != 1 {
 		return Data{}, NotFound
 	}
-	return data[0], nil
+	return data.Stored[0], nil
 }
 
 func (me store) GroupByMetric() map[string]store {
@@ -155,52 +116,57 @@ func (me store) GroupByPartition() map[string]store {
 }
 
 func (me store) GroupBy(fn func(Data) string) map[string]store {
-	l.RLock()
-	defer l.RUnlock()
-	group := make(map[string]store)
-	for _, d := range me {
+	me.RLock()
+	defer me.RUnlock()
+	grouped := make(map[string]store)
+	for _, d := range me.Stored {
 		name := fn(d)
-		if _, ok := group[name]; !ok {
-			group[name] = make(store, 0)
+		if _, ok := grouped[name]; !ok {
+			grouped[name] = store{}
 		}
-		group[name] = append(group[name], d)
+		g := grouped[name]
+		g.Stored = append(g.Stored, d)
+		grouped[name] = g
 	}
-	return group
+	return grouped
 }
 
 func (me store) StringMap(fn func(Data) string) []string {
-	l.RLock()
-	defer l.RUnlock()
-	strings := make([]string, len(me))
-	for i, d := range me {
+	me.RLock()
+	defer me.RUnlock()
+	strings := make([]string, len(me.Stored))
+	for i, d := range me.Stored {
 		strings[i] = fn(d)
 	}
 	return strings
 }
 
 func (me store) Sort() store {
+	me.RLock()
+	defer me.RUnlock()
 	sort.Sort(me)
 	return me
 }
 
 func (me store) Len() int {
-	return len(me)
+	return len(me.Stored)
 }
 
 func (me store) Less(i, j int) bool {
-	iElem, jElem := me[i], me[j]
+	iElem, jElem := me.Stored[i], me.Stored[j]
 	return iElem.Timestamp < jElem.Timestamp
 }
 
 func (me store) Swap(i, j int) {
-	iElem, jElem := me[i], me[j]
-	me[j] = iElem
-	me[i] = jElem
+	iElem, jElem := me.Stored[i], me.Stored[j]
+	me.Stored[j] = iElem
+	me.Stored[i] = jElem
 }
 
-func Put(data Data, indexOn []string) {
-	l.Lock()
-	defer l.Unlock()
+func (me *store) Put(data Data, indexOn []string) {
+	me.Lock()
+	defer me.Unlock()
+
 	if data.Timestamp == 0 {
 		data.Timestamp = time.Now().UTC().Unix()
 	}
@@ -209,11 +175,10 @@ func Put(data Data, indexOn []string) {
 		if !ok {
 			continue
 		}
-		if _, ok = indexes[index]; !ok {
-			indexes[index] = make([]int, 0)
-			indexedNames[n] = append(indexedNames[n], index)
+		if _, ok = me.indexes[index]; !ok {
+			me.indexedNames[n] = append(me.indexedNames[n], index)
 		}
-		indexes[index] = append(indexes[index], len(Store))
+		me.indexes[index] = append(me.indexes[index], me.Len())
 	}
-	Store = append(Store, data)
+	me.Stored = append(me.Stored, data)
 }

@@ -17,13 +17,13 @@ type sw struct {
 func (s sweeper) Start() {
 	s.running = true
 	for {
-		l.Lock()
-		fmt.Printf("[INFO] sweeper-start store-size=%v\n", len(Store))
+		fmt.Printf("[INFO] sweeper-start store-size=%v\n", Store.Len())
 		s := time.Now()
 		keep := make(map[string]sw)
-		for indexName, ints := range indexes {
+		Store.RLock()
+		for indexName, ints := range Store.Indexes() {
 			for _, i := range ints {
-				d := Store[i]
+				d := Store.Stored[i]
 				if time.Unix(d.Timestamp, 0).Before(time.Now().Add(-1 * time.Minute)) {
 					continue
 				}
@@ -35,26 +35,18 @@ func (s sweeper) Start() {
 				keep[d.Key()] = k
 			}
 		}
-		if len(keep) != len(Store) {
-			resetStore()
-			l.Unlock()
-			for _, d := range keep {
-				Put(d.D, d.IndexNames)
-			}
-		} else {
-			l.Unlock()
+		Store.RUnlock()
+		newStore := newStore(0)
+		for _, k := range keep {
+			newStore.Put(k.D, k.IndexNames)
 		}
-		fmt.Printf("[INFO] sweeper-completed time-spent=%v\n", time.Since(s))
+		fmt.Printf("[INFO] sweeper-completed time-spent=%v len-before=%v len-after=%v\n",
+			time.Since(s), Store.Len(), newStore.Len())
+		Store = newStore
 		time.Sleep(15 * time.Second)
 	}
 }
 
-func resetStore() {
-	indexes = make(map[string][]int)
-	indexedNames = make(map[string][]string)
-	Store = make(store, 0)
-}
-
 func init() {
-	go sweeper{}.Start()
+	go sweeper{running: false}.Start()
 }

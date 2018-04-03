@@ -69,7 +69,7 @@ func ConsumerMetrics(consumer string) ConsumerMetric {
 				continue
 			}
 			sort.Sort(d)
-			value := d[len(d)-1].Value
+			value := d.Stored[d.Len()-1].Value
 			p := tm.PMs[pNr]
 			lag := p.LogEndOffset - value
 			tLag += lag
