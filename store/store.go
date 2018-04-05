@@ -11,16 +11,16 @@ import (
 
 type store struct {
 	sync.RWMutex
-	Stored       []Data
-	indexes      map[string][]int
-	indexedNames map[string][]string
+	Stored     []Data
+	indexes    map[string][]int
+	indexTypes map[string][]string
 }
 
 func newStore(size int) store {
 	return store{
-		Stored:       make([]Data, size),
-		indexes:      make(map[string][]int),
-		indexedNames: make(map[string][]string),
+		Stored:     make([]Data, size),
+		indexes:    make(map[string][]int),
+		indexTypes: make(map[string][]string),
 	}
 }
 
@@ -47,14 +47,20 @@ func (me store) Intersection(indexNames ...string) store {
 	return me.subset(intersection)
 }
 
-func (me store) Indexes() map[string][]int {
-	return me.indexes
+func (me store) IndexTypes() map[string][]string {
+	return me.indexTypes
+}
+
+func (me store) Index(i string) []int {
+	me.RLock()
+	defer me.RUnlock()
+	return me.indexes[i]
 }
 
 func (me store) IndexedNames(indexName string) []string {
 	me.RLock()
 	defer me.RUnlock()
-	return me.indexedNames[indexName]
+	return me.indexTypes[indexName]
 }
 
 func (me store) SelectWithIndex(indexName string) store {
@@ -69,7 +75,8 @@ func (me store) subset(ints []int) store {
 	selected := newStore(len(ints))
 	for i, id := range ints {
 		if me.Len() <= id {
-			fmt.Printf("[ERROR] id=%v len=%v\n", id, me.Len())
+			fmt.Printf("[ERROR] id-larger-than-stored id=%v len=%v\n",
+				id, me.Len())
 			continue
 		}
 		selected.Stored[i] = me.Stored[id]
@@ -176,7 +183,7 @@ func (me *store) Put(data Data, indexOn []string) {
 			continue
 		}
 		if _, ok = me.indexes[index]; !ok {
-			me.indexedNames[n] = append(me.indexedNames[n], index)
+			me.indexTypes[n] = append(me.indexTypes[n], index)
 		}
 		me.indexes[index] = append(me.indexes[index], me.Len())
 	}
