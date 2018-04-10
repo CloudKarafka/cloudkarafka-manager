@@ -18,7 +18,7 @@ var (
 	kh   = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
 	key  = flag.String("key", "", "Path to CA key")
 	cert = flag.String("cert", "", "Path to CA cert")
-	auth = flag.String("authentication", "none-with-write", "Valid values are (none|none-with-write|scram)")
+	auth = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
 )
 
 func main() {

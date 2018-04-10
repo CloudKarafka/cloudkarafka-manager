@@ -59,8 +59,3 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	bvm.Uptime = strings.TrimSpace(humanize.RelTime(time.Now(), t, "", ""))
 	writeJson(w, bvm)
 }
-
-func BrokerMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	writeJson(w, dm.BrokerMetrics(vars["id"]))
-}

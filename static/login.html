@@ -18,6 +18,7 @@
   <meta property="og:site_name" content="Kafka MGMT" />
   <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
   <script src="/js/handlebars.min.js"></script>
+  <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
 
     <style>
@@ -44,10 +45,10 @@
       <div class="login-info">
         <h2 class="host">localhost</h2>
       </div>
-      <form action="/">
+      <form id="login" action="/">
         <div class="form-group">
           <label for="kafka-username">Username</label>
-          <input type="email" class="form-control" id="kafka-username">
+          <input type="text" class="form-control" id="kafka-username">
         </div>
         <div class="form-group password mb-3">
           <label for="kafka-password">Password</label>
@@ -74,7 +75,29 @@
 
     </div>
   </div>
+  <script type="text/javascript">
+    testLoggedIn()
+    element("#login").addEventListener("submit", function(evt) {
+      evt.preventDefault();
+      var request = new XMLHttpRequest();
+      var user = element('#kafka-username').value;
+      var pass = element('#kafka-password').value;
+      request.open('GET', '/api/whoami.json', true, user, pass);
+      request.onload = function() {
+        if (request.status >= 200 && request.status < 400) {
+          // Success!
+          var data = JSON.parse(request.responseText);
+          console.log(data);
+          store_cookie({username: user, password: pass});
+          set_auth(user + ":" + pass);
+          redirect('/');
+        }
+      }
+      request.send();
+    });
+  </script>
 </main>
+
 
   </body>
 </html>

@@ -18,6 +18,7 @@
   <meta property="og:site_name" content="Kafka MGMT" />
   <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
   <script src="/js/handlebars.min.js"></script>
+  <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
 
     <style>
@@ -39,7 +40,7 @@
     </div>
     <div class="text-right">
       <p class="my-2 my-md-0 text-right">
-        <a href="/login">
+        <a onclick="signout()">
           <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
       </p>
     </div>
@@ -115,7 +116,7 @@
         <p>
           <strong>Last updated:</strong> 1 minute ago
           <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> <span>Refresh</span></a>
-          <a href="/topics/add" class="btn btn-primary float-sm-none float-right ml-2">+ Add User</a>
+          <a href="/users/add" class="btn btn-primary float-sm-none float-right ml-2">+ Add User</a>
         </p>
       </div>
     </div>
@@ -153,7 +154,7 @@
           <script id='tmpl-users' type='text/x-handlebars-template'>
             {{#elements}}
             <tr>
-              <td><a href="/user/{{username}}">{{username}}</a></td>
+              <td>{{username}}</td>
               <td class="text-center">Read/Write</td>
               <td class="text-center"></td>
               <td class="text-center"></td>

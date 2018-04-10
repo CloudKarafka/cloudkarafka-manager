@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>John Doe - Kafka MGMT</title>
+  <title>Add New User - Kafka MGMT</title>
   <link rel="apple-touch-icon" href="/img/logo.png">
 
   <link rel="stylesheet" href="/css/style.css">
@@ -18,6 +18,7 @@
   <meta property="og:site_name" content="Kafka MGMT" />
   <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
   <script src="/js/handlebars.min.js"></script>
+  <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
 
     <style>
@@ -39,7 +40,7 @@
     </div>
     <div class="text-right">
       <p class="my-2 my-md-0 text-right">
-        <a href="/login">
+        <a onclick="signout()">
           <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
       </p>
     </div>
@@ -92,7 +93,7 @@
             </a>
         </li>
         
-        <li class="">
+        <li class=" active">
             <a href="/admin">
               <span class="icon"><img src="/assets/icons/tools.svg" /></span>
               <span>Admin</span>
@@ -108,51 +109,25 @@
 <main class="main-container">
   <div class="main-heading">
     <div class="row">
-      <div class="col-4">
-        <h1><a href="/admin/">Admin</a> / User / John Doe</h1>
-      </div>
-      <div class="col-sm-8 col-12 text-sm-right">
-        <p>
-          <strong>Last updated:</strong> 1 minute ago
-          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> Refresh</a>
-        </p>
+      <div class="col-12">
+        <h1><a href="/admin">Admin</a> / Add New User</h1>
       </div>
     </div>
   </div>
   <div class="container-fluid">
-    <div class="row">
-      <div class="col-4">
-        <h4>Permissions for John Doe</h4>
+    <form id="userForm" method="post" action="/api/users">
+      <div class="form-group col-md-4 mb-3">
+          <label for="validationCustom01">Username</label>
+          <input type="text" name="name" class="form-control" placeholder="Enter a username">
       </div>
-      <div class="col-sm-8 col-12 text-sm-right">
-        <a href="#" class="btn btn-primary float-sm-none float-right">+ Add Permission</a>
+      <div class="form-group col-md-4 mb-3">
+          <label for="validationCustom02">Password</label>
+          <input type="password" name="password" class="form-control">
       </div>
-    </div>
-    <div class="row">
-      <div class="col-md-12">
-        <table class="table mt-2">
-          <tbody>
-            <tr>
-              <td><strong>Cluster:</strong> Read/Write</td>
-              <td class="text-right"><a href="#" class="btn btn-outline-secondary danger btn-sm"><span>Remove</span></a></td>
-            </tr>
-              <tr>
-                <td><strong>Topic:</strong> Read</td>
-                <td class="text-right"><a href="#" class="btn btn-outline-secondary danger btn-sm"><span>Remove</span></a></td>
-              </tr>
-                <tr>
-                  <td><strong>Consumer Groups:</strong> Write</td>
-                  <td class="text-right"><a href="#" class="btn btn-outline-secondary danger btn-sm"><span>Remove</span></a></td>
-                </tr>
-          </tbody>
-        </table>
+      <div class="form-group col-md-4 mb-3">
+        <button type="submit" class="btn btn-lg btn-primary">Add User</button>
       </div>
-    </div>
-    <div class="row">
-      <div class="col-12">
-        <a href="#" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></span> <span>Delete this user</span></a>
-      </div>
-    </div>
+    </form>
   </div>
   <footer>
   <p>
@@ -164,6 +139,14 @@
 	</p>
 </footer>
 
+  <script type="text/javascript"> 
+    element("#userForm").addEventListener('submit', function(ev) {
+      postForm("/api/users", "#userForm", function() {
+        console.log("user added");
+      });
+      ev.preventDefault();
+    })
+  </script>
 </main>
 
     </div>

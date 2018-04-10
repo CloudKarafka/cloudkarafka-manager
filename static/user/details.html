@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Brokers - Kafka MGMT</title>
+  <title> - Kafka MGMT</title>
   <link rel="apple-touch-icon" href="/img/logo.png">
 
   <link rel="stylesheet" href="/css/style.css">
@@ -86,14 +86,14 @@
             </a>
         </li>
         
-        <li class=" active">
+        <li class="">
             <a href="/brokers">
               <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
               <span>Brokers</span>
             </a>
         </li>
         
-        <li class="">
+        <li class=" active">
             <a href="/admin">
               <span class="icon"><img src="/assets/icons/tools.svg" /></span>
               <span>Admin</span>
@@ -109,66 +109,49 @@
 <main class="main-container">
   <div class="main-heading">
     <div class="row">
-      <div class="col-sm-4 col-12">
-        <h1>Brokers</h1>
+      <div class="col-4">
+        <h1><a href="/admin">Admin</a> / User / </h1>
       </div>
       <div class="col-sm-8 col-12 text-sm-right">
         <p>
           <strong>Last updated:</strong> 1 minute ago
-          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> <span>Refresh</span></a>
+          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> Refresh</a>
         </p>
       </div>
     </div>
   </div>
   <div class="container-fluid">
-    <form>
-      <div class="form-row">
-         <div class="col-md-3 mb-3">
-           <input type="text" class="form-control" autocomplete="off" id="filterTable" placeholder="Search">
-         </div>
-       </div>
-</form>
+    <div class="row">
+      <div class="col-4">
+        <h4>Permissions for </h4>
+      </div>
+      <div class="col-sm-8 col-12 text-sm-right">
+        <a href="#" class="btn btn-primary float-sm-none float-right">+ Add Permission</a>
+      </div>
+    </div>
     <div class="row">
       <div class="col-md-12">
-        <table class="table" id="kafka-table">
-          <thead>
+        <table class="table mt-2">
+          <tbody>
             <tr>
-              <th scope="col">Id</th>
-              <th scope="col" class="text-center">Version</th>
-              <th scope="col" class="text-center">End Points</th>
-              <th scope="col" class="text-center">Uptime</th>
-              <th scope="col" class="text-center">Messages in/s</th>
-              <th scope="col" class="text-center">Bytes in/s</th>
-              <th scope="col" class="text-center">Bytes out/s</th>
+              <td><strong>Cluster:</strong> Read/Write</td>
+              <td class="text-right"><a href="#" class="btn btn-outline-secondary danger btn-sm"><span>Remove</span></a></td>
             </tr>
-          </thead>
-          <tbody id="broker-rows">
-            <tr>
-              <td class="text-center" colspan="7">
-                <div class="sk-three-bounce">
-                  <div class="sk-child sk-bounce1"></div>
-                  <div class="sk-child sk-bounce2"></div>
-                  <div class="sk-child sk-bounce3"></div>
-                </div>
-              </td>
-            </tr>
+              <tr>
+                <td><strong>Topic:</strong> Read</td>
+                <td class="text-right"><a href="#" class="btn btn-outline-secondary danger btn-sm"><span>Remove</span></a></td>
+              </tr>
+                <tr>
+                  <td><strong>Consumer Groups:</strong> Write</td>
+                  <td class="text-right"><a href="#" class="btn btn-outline-secondary danger btn-sm"><span>Remove</span></a></td>
+                </tr>
           </tbody>
         </table>
-        
-          <script id='tmpl-brokers' type='text/x-handlebars-template'>
-            {{#elements}}
-              <tr>
-                <td>{{ id }}</td>
-                <td class="text-center">{{ kafka_version }}</td>
-                <td class="text-center">{{ endpoints }}</td>
-                <td class="text-center">{{ uptime }}</td>
-                <td class="text-center">{{ messages_in_per_sec }}</td>
-                <td class="text-center">{{ bytes_in_per_sec }}</td>
-                <td class="text-center">{{ bytes_out_per_sec }}</td>
-              </tr>
-            {{/elements}}
-          </script>
-        
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-12">
+        <a href="#" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></span> <span>Delete this user</span></a>
       </div>
     </div>
   </div>
@@ -182,9 +165,6 @@
 	</p>
 </footer>
 
-  <script type="text/javascript">
-    renderListTmpl('#broker-rows', '#tmpl-brokers', '/api/brokers.json');
-  </script>
 </main>
 
     </div>
@@ -197,22 +177,6 @@
 <script src="/js/rickshaw.min.js"></script>
 <script src="/js/kafka-mgmt.js"></script>
 
-
-  <script src="/js/datatables.min.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function() {
-        var table = $('#kafka-table').DataTable(
-          {
-            "paging": false,
-            "info": false
-          }
-        );
-
-        $('#filterTable').on( 'keyup', function () {
-            table.search( this.value ).draw();
-        } );
-    });
-  </script>
 
 
 

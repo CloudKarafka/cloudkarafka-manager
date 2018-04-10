@@ -10,30 +10,54 @@ function getParameterByName(name, url) {
 
 function get(path, callback) {
   var request = new XMLHttpRequest();
-  request.open('GET', path, true);
+  request.open('GET', path, true, get_cookie_value("username"), get_cookie_value("password"));
+  request.setRequestHeader('authorization', auth_header());
   request.onload = function() {
     if (request.status >= 200 && request.status < 400) {
       // Success!
       var data = JSON.parse(request.responseText);
       callback(data)
+    } else {
+      redirectToLogin();
     }
   }
   request.send();
 };
 
+function postForm(path, formId, callback) {
+  var request = new XMLHttpRequest();
+  var formElement = element(formId)
+  request.open('POST', path, true)
+  var auth = auth_header();
+  if (!auth) {
+    redirectToLogin();
+  }
+  req.setRequestHeader('authorization', auth);
+  request.onload = function() {
+    if (request.status >= 200 && request.status < 400) {
+      // Success!
+      var data = JSON.parse(request.responseText);
+      callback(data)
+    } else {
+      redirectToLogin();
+    }
+  }
+  request.send(new FormData(formElement));
+};
+
 function element(id) {
   return document.querySelector(id);
-}
+};
 
 function elementHtml(id) {
   return element(id).innerHTML;
-}
+};
 
 function renderTmpl(attachToId, tmplId, elements) {
   var $attachTo = element(attachToId);
   var tmpl = Handlebars.compile(elementHtml(tmplId));
   $attachTo.innerHTML = tmpl(elements);
-}
+};
 
 function renderListTmpl(attachToId, tmplId, path) {
   //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
@@ -74,6 +98,7 @@ Handlebars.registerHelper('humanFileSize', function(bytes) {
     res.value + "<small>" + res.unit + "</small>"
   );
 })
+
 //Handlebars.registerHelper('humanFileSize', humanFileSize)
 Handlebars.registerHelper('toLocaleString', function(elem) {
   return elem.toLocaleString();
