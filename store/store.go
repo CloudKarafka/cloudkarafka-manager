@@ -48,6 +48,8 @@ func (me store) Intersection(indexNames ...string) store {
 }
 
 func (me store) IndexTypes() map[string][]string {
+	me.RLock()
+	defer me.RUnlock()
 	return me.indexTypes
 }
 
@@ -74,9 +76,9 @@ func (me store) subset(ints []int) store {
 	defer me.RUnlock()
 	selected := newStore(len(ints))
 	for i, id := range ints {
-		if me.Len() <= id {
+		if len(me.Stored) <= id {
 			fmt.Printf("[ERROR] id-larger-than-stored id=%v len=%v\n",
-				id, me.Len())
+				id, len(me.Stored))
 			continue
 		}
 		selected.Stored[i] = me.Stored[id]
@@ -149,13 +151,13 @@ func (me store) StringMap(fn func(Data) string) []string {
 }
 
 func (me store) Sort() store {
-	me.RLock()
-	defer me.RUnlock()
 	sort.Sort(me)
 	return me
 }
 
 func (me store) Len() int {
+	me.RLock()
+	defer me.RUnlock()
 	return len(me.Stored)
 }
 
@@ -173,7 +175,10 @@ func (me store) Swap(i, j int) {
 func (me *store) Put(data Data, indexOn []string) {
 	me.Lock()
 	defer me.Unlock()
+	me.put(data, indexOn)
+}
 
+func (me *store) put(data Data, indexOn []string) {
 	if data.Timestamp == 0 {
 		data.Timestamp = time.Now().UTC().Unix()
 	}
@@ -185,7 +190,18 @@ func (me *store) Put(data Data, indexOn []string) {
 		if _, ok = me.indexes[index]; !ok {
 			me.indexTypes[n] = append(me.indexTypes[n], index)
 		}
-		me.indexes[index] = append(me.indexes[index], me.Len())
+		me.indexes[index] = append(me.indexes[index], len(me.Stored))
 	}
 	me.Stored = append(me.Stored, data)
+}
+
+func (me *store) Copy(data map[string]puttable) {
+	me.Lock()
+	defer me.Unlock()
+	me.Stored = make([]Data, 0)
+	me.indexes = make(map[string][]int)
+	me.indexTypes = make(map[string][]string)
+	for _, p := range data {
+		me.put(p.D, p.IndexNames)
+	}
 }

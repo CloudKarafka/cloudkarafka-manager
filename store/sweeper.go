@@ -18,15 +18,15 @@ func (s sweeper) Start() {
 	s.running = true
 	for {
 		fmt.Printf("[INFO] sweeper-start store-size=%v\n", Store.Len())
+		lock.Lock()
 		s := time.Now()
 		keep := make(map[string]puttable)
-		Store.RLock()
 		for t, names := range Store.IndexTypes() {
 			for _, name := range names {
 				ints := Store.Index(name)
 				for _, i := range ints {
 					d := Store.Stored[i]
-					if time.Unix(d.Timestamp, 0).Before(time.Now().Add(-1 * time.Minute)) {
+					if time.Unix(d.Timestamp, 0).Before(time.Now().Add(-5 * time.Minute)) {
 						continue
 					}
 					if _, ok := keep[d.Key()]; !ok {
@@ -38,14 +38,10 @@ func (s sweeper) Start() {
 				}
 			}
 		}
-		Store.RUnlock()
-		newStore := newStore(0)
-		for _, p := range keep {
-			newStore.Put(p.D, p.IndexNames)
-		}
 		fmt.Printf("[INFO] sweeper-completed time-spent=%v len-before=%v len-after=%v\n",
-			time.Since(s), Store.Len(), newStore.Len())
-		Store = newStore
+			time.Since(s), Store.Len(), len(keep))
+		Store.Copy(keep)
+		lock.Unlock()
 		time.Sleep(15 * time.Second)
 	}
 }
