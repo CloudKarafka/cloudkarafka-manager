@@ -33,6 +33,16 @@ func TopicAcl(t string) ([]acl, error) {
 	return aclFor(fmt.Sprintf("%s/%s", tPath, t))
 }
 
+func TopicsAcls(_p Permissions) ([]string, error) {
+	children, _, err := conn.Children("/kafka-acl/Topic")
+	return children, err
+}
+
+func GroupsAcls(_p Permissions) ([]string, error) {
+	children, _, err := conn.Children("/kafka-acl/Group")
+	return children, err
+}
+
 func GroupAcl(g string) ([]acl, error) {
 	return aclFor(fmt.Sprintf("%s/%s", gPath, g))
 }
@@ -58,7 +68,11 @@ type AclFunc func(string) ([]acl, error)
 
 func AllAcls(all AllFunc, details AclFunc) map[string][]acl {
 	acls := make(map[string][]acl)
-	rows, _ := all(Permissions{Cluster: RW})
+	rows, _ := all(Permissions{
+		Cluster: RW,
+		Topics:  map[string]Permission{"*": RW},
+		Groups:  map[string]Permission{"*": RW},
+	})
 	for _, r := range rows {
 		acls[r], _ = details(r)
 	}
