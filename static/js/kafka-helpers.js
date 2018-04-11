@@ -10,7 +10,11 @@ function getParameterByName(name, url) {
 
 function get(path, callback) {
   var request = new XMLHttpRequest();
-  request.open('GET', path, true, get_cookie_value("username"), get_cookie_value("password"));
+  request.open('GET', path, true)
+  var auth = auth_header();
+  if (!auth) {
+    redirectToLogin();
+  }
   request.setRequestHeader('authorization', auth_header());
   request.onload = function() {
     if (request.status >= 200 && request.status < 400) {

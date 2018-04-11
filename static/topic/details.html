@@ -28,7 +28,7 @@
     </style>
   </head>
   <body>
-    <div class="app-container">
+     <div class="app-container">
       <nav class="navbar navbar-expand-lg navbar-dark bg-header">
   <div class="container-fluid">
     <div>
@@ -58,8 +58,7 @@
   <div class="sidebar-content">
     <div class="sidebar-info">
       <h2 class="host">localhost</h2>
-      <p>
-        username
+      <p id="username">
       </p>
     </div>
     <nav class="sidebar-nav">
@@ -72,7 +71,7 @@
             </a>
         </li>
         
-        <li class="">
+        <li class=" active">
             <a href="/topics">
               <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
               <span>Topics</span>
@@ -110,7 +109,7 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-4">
-        <h1><a href="/topics/">Topics</a> / </h1>
+        <h1><a href="/topics">Topics</a> / </h1>
       </div>
       <div class="col-sm-8 col-12 text-sm-right">
         <p>
@@ -359,4 +358,7 @@
 
 
   </body>
+  <script type="text/javascript">
+    testLoggedIn()
+  </script>
 </html>

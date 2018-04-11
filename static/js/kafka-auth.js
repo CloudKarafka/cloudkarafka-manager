@@ -1,7 +1,14 @@
 function testLoggedIn() {
   get('/api/whoami.json', function() {
-    redirect('/')
+    setUsername();
+    if (location.pathname == "/login") {
+      redirect('/')
+    }
   })
+}
+
+function setUsername() {
+  element("#username").innerText = get_cookie_value("username");
 }
 
 function redirectToLogin() {
@@ -28,14 +35,16 @@ function signout() {
 }
 
 function set_auth(userinfo) {
-  // clear a local storage value used by earlier versions
   clear_cookie_value('auth');
+  clear_cookie_value('username');
 
   var b64 = window.btoa(userinfo);
   var date  = new Date();
   // 8 hours from now
   date.setHours(date.getHours() + 8);
   store_cookie_with_expiration({'auth': encodeURIComponent(b64)}, date);
+  console.log(userinfo.split(':')[0]);
+  store_cookie_with_expiration({'username': userinfo.split(':')[0]}, date);
 }
 
 function store_cookie(dict) {
@@ -45,6 +54,7 @@ function store_cookie(dict) {
 }
 
 function store_cookie_with_expiration(dict, expiration_date) {
+  var dict = Object.assign({}, parse_cookie(), dict);
   var enc = [];
   for (var k in dict) {
     enc.push(k + ':' + escape(dict[k]));
