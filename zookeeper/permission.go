@@ -89,24 +89,8 @@ func (me Permissions) GroupWrite(g string) bool {
 }
 
 func PermissionsFor(username string) Permissions {
-	ar := Permissions{Username: username, Topics: make(map[string]Permission)}
-	ca, _ := ClusterAcl()
-	for _, a := range ca {
-		if a.PermissionType != "Allow" {
-			continue
-		}
-		if a.Principal == fmt.Sprintf("User:%s", username) {
-			switch a.Operation {
-			case "All":
-				ar.Cluster = RW
-			case "Read":
-				ar.Cluster = R
-			case "Write":
-				ar.Cluster = W
-			}
-			break
-		}
-	}
+	ar := Permissions{Username: username}
+	ar.Cluster = permissionsMap(username, AllAcls(ClusterAcls, ClusterAcl))["kafka-cluster"]
 	ar.Topics = permissionsMap(username, AllAcls(TopicsAcls, TopicAcl))
 	ar.Groups = permissionsMap(username, AllAcls(GroupsAcls, GroupAcl))
 	return ar

@@ -9,7 +9,7 @@ import (
 
 const (
 	tPath string = "/kafka-acl/Topic"
-	cPath string = "/kafka-acl/Cluster/kafka-cluster"
+	cPath string = "/kafka-acl/Cluster"
 	gPath string = "/kafka-acl/Group"
 )
 
@@ -25,26 +25,31 @@ type aclNode struct {
 	Acls    []acl `json:"acls"`
 }
 
-func ClusterAcl() ([]acl, error) {
-	return aclFor(cPath)
+func ClusterAcl(name string) ([]acl, error) {
+	return aclFor(fmt.Sprintf("%s/%s", cPath, name))
 }
 
 func TopicAcl(t string) ([]acl, error) {
 	return aclFor(fmt.Sprintf("%s/%s", tPath, t))
 }
 
+func GroupAcl(g string) ([]acl, error) {
+	return aclFor(fmt.Sprintf("%s/%s", gPath, g))
+}
+
+func ClusterAcls(_p Permissions) ([]string, error) {
+	children, _, err := conn.Children(cPath)
+	return children, err
+}
+
 func TopicsAcls(_p Permissions) ([]string, error) {
-	children, _, err := conn.Children("/kafka-acl/Topic")
+	children, _, err := conn.Children(tPath)
 	return children, err
 }
 
 func GroupsAcls(_p Permissions) ([]string, error) {
-	children, _, err := conn.Children("/kafka-acl/Group")
+	children, _, err := conn.Children(gPath)
 	return children, err
-}
-
-func GroupAcl(g string) ([]acl, error) {
-	return aclFor(fmt.Sprintf("%s/%s", gPath, g))
 }
 
 func Groups(p Permissions) ([]string, error) {
@@ -95,7 +100,7 @@ func CreateAcl(principal, resource, resourceType string, perm Permission) error 
 	case "Topic":
 		acls, err = TopicAcl(resource)
 	case "Cluster":
-		acls, err = ClusterAcl()
+		acls, err = ClusterAcl("")
 		resource = "kafka-cluster"
 	}
 	path = fmt.Sprintf("%s/%s", path, resource)
@@ -148,7 +153,7 @@ func DeleteAcl(user, resource, resourceType string) error {
 		path = fmt.Sprintf("%s/%s", path, resource)
 		err = setAcl(path, rejectAclFor(user, acls))
 	case "Cluster":
-		acls, err = ClusterAcl()
+		acls, err = ClusterAcl("")
 		if err != nil {
 			return err
 		}
@@ -168,7 +173,7 @@ func DeleteAcls(user string) error {
 		acls, _ := TopicAcl(t)
 		setAcl(fmt.Sprintf("%s/%s", tPath, t), rejectAclFor(user, acls))
 	}
-	acls, err := ClusterAcl()
+	acls, err := ClusterAcl("")
 	if err != nil {
 		return err
 	}

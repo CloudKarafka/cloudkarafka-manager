@@ -48,7 +48,6 @@ func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
 	a.HandleFunc("/acls.json", protected(api.Acls))
 	a.HandleFunc("/acls", protected(api.Acls))
-	a.HandleFunc("/acls/{type}/{resource}/{username}?.json", protected(api.Acl))
 	a.HandleFunc("/brokers.json", protected(api.Brokers))
 	a.HandleFunc("/brokers/{id}.json", protected(api.Broker))
 	a.HandleFunc("/topics.json", protected(api.Topics))
