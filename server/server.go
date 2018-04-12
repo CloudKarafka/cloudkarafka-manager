@@ -62,6 +62,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/consumers/{name}.json", protected(api.Consumer))
 	//a.HandleFunc("/consumers/{name}/metrics.json", protected(api.ConsumerMetrics))
 	a.HandleFunc("/whoami.json", protected(api.Whoami))
+	a.HandleFunc("/whoami", protected(api.Whoami))
 	a.HandleFunc("/users.json", protected(api.Users))
 	a.HandleFunc("/users", protected(api.Users))
 	a.HandleFunc("/users/{name}.json", protected(api.User))
@@ -80,6 +81,7 @@ func Start(cert, key string) {
 
 	serveFile(r, "/", "index.html")
 	serveFile(r, "/topics", "topics/index.html")
+	serveFile(r, "/topics/add", "topics/add.html")
 	serveFile(r, "/topic/details", "topic/details.html")
 	serveFile(r, "/brokers", "brokers.html")
 	serveFile(r, "/consumers", "consumers/index.html")

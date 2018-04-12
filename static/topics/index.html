@@ -127,10 +127,11 @@
       </div>
       <div class="row">
         <div class="col-md-12">
-          <table class="table" id="kafka-table">
+          <table class="table" id="topics">
             <thead>
               <tr>
                 <th scope="col">Name</th>
+                <th scope="col" class="text-center">Size</th>
                 <th scope="col" class="text-center">Message Count</th>
                 <th scope="col" class="text-center">Messages in/s</th>
                 <th scope="col" class="text-center">Partitions</th>
@@ -156,8 +157,9 @@
                   <td data-search="{{ name }}">
                     <a href="/topic/details?name={{name}}">{{ name }}</a>
                   </td>
+                  <td class="text-center">{{ humanFileSize size }}</td>
                   <td class="text-center">{{ toLocaleString message_count }}</td>
-                  <td class="text-center">{{ humanFileSize messages_in_per_sec }}</td>
+                  <td class="text-center">{{ toLocaleString messages_in_per_sec }}</td>
                   <td class="text-center">{{ partition_count }}</td>
                   <td class="text-center">{{ replication_factor }}</td>
                 </tr>
@@ -177,8 +179,18 @@
 	</p>
 </footer>
 
+  <script src="/js/vanilla-dataTables.min.js"></script>
   <script type="text/javascript">
-    renderListTmpl('#topic-rows', '#tmpl-topics', '/api/topics.json');
+    renderListTmpl('#topic-rows', '#tmpl-topics', '/api/topics.json', function() {
+      table = new DataTable("#topics", {
+        "perPageSelect": false,
+        "searchable": false,
+        "perPage": 1000,
+      });
+      element('#filterTable').addEventListener('keyup', function () {
+        table.search( this.value );
+      });
+    });
   </script>
 </main>
 
@@ -191,23 +203,6 @@
 <script src="/js/d3.v3.min.js"></script>
 <script src="/js/rickshaw.min.js"></script>
 <script src="/js/kafka-mgmt.js"></script>
-
-
-  <script src="/js/datatables.min.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function() {
-        var table = $('#kafka-table').DataTable(
-          {
-            "paging": false,
-            "info": false
-          }
-        );
-
-        $('#filterTable').on( 'keyup', function () {
-            table.search( this.value ).draw();
-        } );
-    });
-  </script>
 
 
 

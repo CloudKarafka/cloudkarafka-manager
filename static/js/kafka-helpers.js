@@ -9,22 +9,22 @@ function getParameterByName(name, url) {
 }
 
 function get(path, callback) {
+  req('GET', path, callback);
+};
+
+function del(path, callback) {
+  req('DELETE', path, callback);
+};
+
+function req(method, path, callback) {
   var request = new XMLHttpRequest();
-  request.open('GET', path, true)
+  request.open(method, path, true)
   var auth = auth_header();
   if (!auth) {
     redirectToLogin();
   }
-  request.setRequestHeader('authorization', auth_header());
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      // Success!
-      var data = JSON.parse(request.responseText);
-      callback(data)
-    } else {
-      redirectToLogin();
-    }
-  }
+  request.setRequestHeader('authorization', auth);
+  request.onload = onLoad(request, callback);
   request.send();
 };
 
@@ -36,18 +36,27 @@ function postForm(path, formId, callback) {
   if (!auth) {
     redirectToLogin();
   }
-  req.setRequestHeader('authorization', auth);
-  request.onload = function() {
-    if (request.status >= 200 && request.status < 400) {
-      // Success!
-      var data = JSON.parse(request.responseText);
-      callback(data)
-    } else {
-      redirectToLogin();
-    }
-  }
+  request.setRequestHeader('authorization', auth);
+  request.onload = onLoad(request, callback);
   request.send(new FormData(formElement));
 };
+
+function onLoad(request, callback) {
+  return function() {
+    if (request.status == 401) {
+      redirectToLogin();
+    } else if (request.status >= 200 && request.status < 400) {
+      // Success!
+      var data;
+      if (request.responseText.length > 0) {
+        data = JSON.parse(request.responseText);
+      }
+      callback(data)
+    } else {
+      console.log(request.responseText);
+    }
+  }
+}
 
 function element(id) {
   return document.querySelector(id);
@@ -63,7 +72,7 @@ function renderTmpl(attachToId, tmplId, elements) {
   $attachTo.innerHTML = tmpl(elements);
 };
 
-function renderListTmpl(attachToId, tmplId, path) {
+function renderListTmpl(attachToId, tmplId, path, clb) {
   //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
   get(path, function(elements) {
     var l = elements.length;
@@ -76,6 +85,9 @@ function renderListTmpl(attachToId, tmplId, path) {
             return a.name > b.name
           })
           renderTmpl(attachToId, tmplId, {elements: result})
+          if (clb !== undefined) {
+            clb();
+          }
         }
       })
     })

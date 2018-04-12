@@ -197,23 +197,6 @@
 <script src="/js/kafka-mgmt.js"></script>
 
 
-  <script src="/js/datatables.min.js"></script>
-  <script type="text/javascript">
-    $(document).ready(function() {
-        var table = $('#kafka-table').DataTable(
-          {
-            "paging": false,
-            "info": false
-          }
-        );
-
-        $('#filterTable').on( 'keyup', function () {
-            table.search( this.value ).draw();
-        } );
-    });
-  </script>
-
-
 
 
 

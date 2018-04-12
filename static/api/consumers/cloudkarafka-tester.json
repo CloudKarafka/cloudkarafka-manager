@@ -1,1 +1,0 @@
-{"name":"cloudkarafka-tester","consumed_partitions":[{"topic":"cloudkarafka-metrics5","partition":0,"lag":3230957}],"consumed_topics":[{"name":"cloudkarafka-metrics5","coverage":100,"lag":3230957}]}

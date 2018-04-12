@@ -71,7 +71,7 @@
             </a>
         </li>
         
-        <li class="">
+        <li class=" active">
             <a href="/topics">
               <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
               <span>Topics</span>
@@ -109,25 +109,25 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-12">
-        <h1><a href="/topics/">Topics</a> / Add New Topic</h1>
+        <h1><a href="/topics">Topics</a> / Add New Topic</h1>
       </div>
     </div>
   </div>
   <div class="container-fluid">
-    <form>
+    <form id="topicForm" action="/api/topics" method="post">
       <div class="form-row">
         <div class="col-md-4 mb-3">
           <label for="validationCustom01">Name</label>
-          <input type="text" class="form-control" placeholder="Enter a name of this topic">
+          <input type="text" name="name" class="form-control" placeholder="Enter a name of this topic">
         </div>
         <div class="col-md-4 mb-3">
           <label for="validationCustom02">Partitions</label>
-          <input type="text" class="form-control">
+          <input type="text" name="partition_count" class="form-control">
         </div>
         <div class="col-md-4 mb-3">
           <label for="validationCustomUsername">Replication Factor</label>
           <div class="input-group">
-            <input type="text" class="form-control">
+            <input type="text" name="replication_factor" class="form-control">
             <div class="invalid-feedback">
               Please choose a username.
             </div>
@@ -136,7 +136,7 @@
       </div>
       <div class="form-group">
         <label for="exampleFormControlTextarea1">Configuration</label>
-        <textarea class="form-control" id="exampleFormControlTextarea1" rows="10"></textarea>
+        <textarea class="form-control" name="config" id="exampleFormControlTextarea1" rows="10"></textarea>
       </div>
       <div class="form-group">
         <button type="submit" class="btn btn-lg btn-primary">Create New Topic</button>
@@ -153,6 +153,14 @@
 	</p>
 </footer>
 
+  <script type="text/javascript"> 
+    element("#topicForm").addEventListener('submit', function(ev) {
+      ev.preventDefault();
+      postForm("/api/topics", "#topicForm", function(t) {
+        redirect("/topic/details?name=" + t.name);
+      });
+    })
+  </script>
 </main>
 
     </div>
@@ -164,7 +172,6 @@
 <script src="/js/d3.v3.min.js"></script>
 <script src="/js/rickshaw.min.js"></script>
 <script src="/js/kafka-mgmt.js"></script>
-
 
 
 

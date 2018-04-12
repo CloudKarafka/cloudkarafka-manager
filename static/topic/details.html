@@ -109,7 +109,7 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-4">
-        <h1><a href="/topics">Topics</a> / </h1>
+        <h1><a href="/topics">Topics</a> </h1>
       </div>
       <div class="col-sm-8 col-12 text-sm-right">
         <p>
@@ -317,7 +317,9 @@
     </div>
     <div class="row">
       <div class="col-12">
-        <a href="#" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></span> <span>Delete this topic</span></a>
+        <form id="delete-topic" method="post">
+          <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></span> <span>Delete this topic</span></button>
+        </form>
       </div>
     </div>
   </div>
@@ -332,7 +334,15 @@
 </footer>
 
   <script type="text/javascript">
-    var path = '/api/topics/' + getParameterByName('name') + '.json';
+    var name = getParameterByName('name');
+    var path = '/api/topics/' + name + '.json';
+    element(".main-heading h1").innerText = '/' + name;
+    element("#delete-topic").addEventListener("submit", function(evt) {
+      evt.preventDefault();
+      del("/api/topics/" + name, function() {
+        redirect("/topics");
+      })
+    })
     get(path, function(topic) {
       renderTmpl('#topic-overview', '#tmpl-topic-overview', topic);
       renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
@@ -351,7 +361,6 @@
 <script src="/js/d3.v3.min.js"></script>
 <script src="/js/rickshaw.min.js"></script>
 <script src="/js/kafka-mgmt.js"></script>
-
 
 
 

@@ -36,7 +36,8 @@ func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		topics(w, p)
 	case "POST":
 		if !p.ClusterWrite() {
-			http.NotFound(w, r)
+			w.WriteHeader(http.StatusForbidden)
+			fmt.Fprintf(w, "Insufficient privileges, requires cluster write.")
 			return
 		}
 		t, err := decodeTopic(r)
@@ -142,7 +143,7 @@ func decodeTopic(r *http.Request) (topicVM, error) {
 		err = decoder.Decode(&t)
 		defer r.Body.Close()
 	default:
-		err = r.ParseForm()
+		err = r.ParseMultipartForm(512)
 		t.Name = r.PostForm.Get("name")
 		t.PartitionCount, err = strconv.Atoi(r.PostForm.Get("partition_count"))
 		t.ReplicationFactor, err = strconv.Atoi(r.PostForm.Get("replication_factor"))
@@ -198,6 +199,7 @@ func createTopic(w http.ResponseWriter, t topicVM) {
 		internalError(w, err.Error())
 		return
 	}
+	fmt.Println(t.Name)
 	getTopic(w, t.Name)
 }
 
