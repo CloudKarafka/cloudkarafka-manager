@@ -9,9 +9,11 @@ import (
 )
 
 type aclVM struct {
-	Username   string               `json:"username"`
+	Principal  string               `json:"principal"`
+	Name       string               `json:"name"`
 	Resource   string               `json:"resource"`
 	Type       string               `json:"type"`
+	Host       string               `json:"host"`
 	Permission zookeeper.Permission `json:"permission"`
 }
 
@@ -33,7 +35,13 @@ func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 			internalError(w, err)
 			return
 		}
-		err = zookeeper.CreateAcl(acl.Username, acl.Resource, acl.Type, acl.Permission)
+		err = zookeeper.CreateAcl(acl.Principal,
+			acl.Name,
+			acl.Resource,
+			acl.Type,
+			acl.Host,
+			acl.Permission.String(),
+		)
 		if err != nil {
 			internalError(w, err)
 		}
@@ -47,16 +55,8 @@ func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 func Acl(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
-	/*case "GET":
-	switch vars["type"] {
-	case "Cluster":
-	case "Group":
-		zookeeper.TopicAcl(vars["topic"])
-	case "Topic":
-		zookeeper.TopicAcl(vars["topic"])
-	}*/
 	case "DELETE":
-		err := zookeeper.DeleteAcl(vars["username"], vars["resource"], vars["type"])
+		err := zookeeper.DeleteAcl(vars["principal"], vars["name"], vars["resource"])
 		if err != nil {
 			internalError(w, err)
 		}
@@ -77,11 +77,13 @@ func decodeAcl(r *http.Request) (aclVM, error) {
 		err = decoder.Decode(&acl)
 		defer r.Body.Close()
 	default:
-		err = r.ParseForm()
+		err = r.ParseMultipartForm(512)
 		if err == nil {
-			acl.Username = r.PostForm.Get("username")
+			acl.Principal = r.PostForm.Get("principal")
+			acl.Name = r.PostForm.Get("name")
 			acl.Resource = r.PostForm.Get("resource")
 			acl.Type = r.PostForm.Get("type")
+			acl.Host = r.PostForm.Get("host")
 			acl.Permission = zookeeper.ParsePermission(r.PostForm.Get("permission"))
 		}
 	}

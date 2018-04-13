@@ -31,7 +31,7 @@ func ParsePermission(s string) Permission {
 		return R
 	case "Write":
 		return W
-	case "Read/Write":
+	case "All", "Read/Write":
 		return RW
 	}
 }
