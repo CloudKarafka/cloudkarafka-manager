@@ -7,6 +7,8 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
+	"fmt"
+	"hash"
 	"math/rand"
 	"time"
 )
@@ -19,34 +21,34 @@ const (
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
 
-func CreateScramLogin(user, pass, crypt string) (string, string, string, int) {
+func CreateScramLogin(pass, crypt string) (string, string, string, int) {
 	enc := base64.StdEncoding.Strict()
 	salt := generateSalt()
-	var clientKey, serverKey string
+	var storedKey, serverKey string
 	if crypt == "SCRAM-SHA-512" {
-		clientKey = enc.EncodeToString(CalculateSha512Key([]byte(pass), []byte("Client Key"), salt, 4096))
-		serverKey = enc.EncodeToString(CalculateSha512Key([]byte(pass), []byte("Server Key"), salt, 4096))
+		storedKey, serverKey = CalculateSha512Keys(pass, salt)
 	} else {
-		clientKey = enc.EncodeToString(CalculateSha256Key([]byte(pass), []byte("Client Key"), salt, 4096))
-		serverKey = enc.EncodeToString(CalculateSha256Key([]byte(pass), []byte("Server Key"), salt, 4096))
+		storedKey, serverKey = CalculateSha256Keys(pass, salt)
 	}
-	return enc.EncodeToString(salt), clientKey, serverKey, 4096
+	return enc.EncodeToString(salt), storedKey, serverKey, 4096
 }
 
-func CalculateSha256Key(password, t, salt []byte, ittr int) []byte {
-	key := pbkdf2.Key(password, salt, ittr, sha256.Size, sha512.New)
-	hash := hmac.New(sha256.New, key)
-	hash.Write([]byte("Client Key"))
-	val := sha256.Sum256(hash.Sum(nil))
-	return val[:]
+func CalculateSha256Keys(pass string, salt []byte) (string, string) {
+	return calculateKeys([]byte(pass), salt, sha256.New)
 }
 
-func CalculateSha512Key(password, t, salt []byte, ittr int) []byte {
-	key := pbkdf2.Key(password, salt, ittr, sha512.Size, sha512.New)
-	hash := hmac.New(sha512.New, key)
-	hash.Write([]byte("Client Key"))
-	val := sha512.Sum512(hash.Sum(nil))
-	return val[:]
+func CalculateSha512Keys(pass string, salt []byte) (string, string) {
+	return calculateKeys([]byte(pass), salt, sha512.New)
+}
+
+func calculateKeys(pass, salt []byte, hashFn func() hash.Hash) (string, string) {
+	enc := base64.StdEncoding.Strict()
+	saltedPassword := hi(pass, salt, 4096, hashFn)
+	clientKey := calcHmac(hashFn, saltedPassword, []byte("Client Key"))
+	fmt.Println(enc.EncodeToString(clientKey))
+	storedKey := enc.EncodeToString(h(hashFn, clientKey))
+	serverKey := enc.EncodeToString(calcHmac(hashFn, saltedPassword, []byte("Server Key")))
+	return storedKey, serverKey
 }
 
 func generateSalt() []byte {
@@ -66,4 +68,21 @@ func generateSalt() []byte {
 	}
 
 	return b
+}
+
+func hi(password, salt []byte, ittr int, hashFn func() hash.Hash) []byte {
+	saltedPassword := pbkdf2.Key(password, salt, ittr, hashFn().Size(), hashFn)
+	return saltedPassword
+}
+
+func calcHmac(hashFn func() hash.Hash, saltedPassword, msg []byte) []byte {
+	hash := hmac.New(hashFn, saltedPassword)
+	hash.Write(msg)
+	return hash.Sum(nil)
+}
+
+func h(hashFn func() hash.Hash, bytes []byte) []byte {
+	hash := hashFn()
+	hash.Write(bytes)
+	return hash.Sum(nil)
 }

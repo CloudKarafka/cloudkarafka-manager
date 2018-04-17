@@ -128,7 +128,6 @@ func CreateAcl(principal, name, resource, permissionType, host, perm string) err
 
 func setAcl(root, name string, acls []acl) error {
 	path := fmt.Sprintf("%s/%s", root, name)
-	change := fmt.Sprintf("%s:%s", strings.Split(root, "/")[1], name)
 	data, err := json.Marshal(aclNode{
 		Version: 1,
 		Acls:    acls,
@@ -148,8 +147,8 @@ func setAcl(root, name string, acls []acl) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Create("/kafka-acl-changes/acl_changes_", []byte(change), zk.FlagSequence, zk.WorldACL(zk.PermAll))
-	return err
+	c := fmt.Sprintf("%s:%s", strings.Split(root, "/")[2], name)
+	return change("/kafka-acl-changes/acl_changes_", []byte(c))
 }
 
 func DeleteAcl(user, resource, resourceType string) error {

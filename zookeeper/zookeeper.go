@@ -78,3 +78,8 @@ func get(path string, v interface{}) error {
 	}
 	return json.Unmarshal(data, v)
 }
+
+func change(path string, data []byte) error {
+	_, err := conn.Create(path, []byte(data), zk.FlagSequence, zk.WorldACL(zk.PermAll))
+	return err
+}
