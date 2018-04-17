@@ -1,3 +1,13 @@
+function redirectToLogin() {
+  redirect('/login')
+}
+
+function redirect(path) {
+  if (window.location.pathname != path) {
+    window.location = path;
+  }
+}
+
 function getParameterByName(name, url) {
   if (!url) url = window.location.href;
   name = name.replace(/[\[\]]/g, "\\$&");

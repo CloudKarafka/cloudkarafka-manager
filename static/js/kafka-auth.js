@@ -1,4 +1,12 @@
 function testLoggedIn() {
+  var hash = location.hash;
+  if (hash.startsWith("#/login")) {
+    var arr = hash.split("/");
+    set_auth(arr[2] + ":" + arr[3]);
+    location.hash = "";
+    location.pathname = "/";
+    return;
+  }
   get('/api/whoami.json', function() {
     setUsername();
     if (location.pathname == "/login") {
@@ -9,16 +17,6 @@ function testLoggedIn() {
 
 function setUsername() {
   element("#username").innerText = get_cookie_value("username");
-}
-
-function redirectToLogin() {
-  redirect('/login')
-}
-
-function redirect(path) {
-  if (window.location.pathname != path) {
-    window.location = path;
-  }
 }
 
 function auth_header() {
