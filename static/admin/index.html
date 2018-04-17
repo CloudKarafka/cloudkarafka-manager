@@ -156,9 +156,39 @@
             {{#elements}}
             <tr>
               <td>{{username}}</td>
-              <td class="text-center">Read/Write</td>
-              <td class="text-center"></td>
-              <td class="text-center"></td>
+              <td class="text-center">{{cluster}}</td>
+              <td class="text-center">
+                <ul>
+                {{#each topics}}
+                  <dl>
+                    <dt>
+                      {{@key}}:
+                    </dt>
+                    <dd>
+                      {{this}}%
+                    </dd>
+                  </dl>
+                {{else}}
+                No permission
+                {{/each}}
+                </ul>
+              </td>
+              <td class="text-center">
+                <ul>
+                  {{#each groups}}
+                  <dl>
+                    <dt>
+                      {{@key}}:
+                    </dt>
+                    <dd>
+                      {{this}}%
+                    </dd>
+                  </dl>
+                  {{else}}
+                  No permissions
+                  {{/each}}
+                </ul>
+              </td>
               <td class="text-center">
                 <form action="/api/users/{{username}}" class="user-form">
                   <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></button>
