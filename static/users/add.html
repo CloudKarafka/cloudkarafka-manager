@@ -140,8 +140,8 @@
 
   <script type="text/javascript"> 
     element("#userForm").addEventListener('submit', function(ev) {
-      postForm("/api/users", "#userForm", function() {
-        console.log("user added");
+      postForm("/api/users", "#userForm", function(usr) {
+        redirect('/admin');
       });
       ev.preventDefault();
     })
