@@ -43,14 +43,16 @@ func metricMessage(msg *sarama.ConsumerMessage) {
 func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
 	switch keys["type"] {
 	case "app-info":
-		store.KafkaVersion = value["Version"].(string)
+		if val, ok := value["Version"].(string); ok {
+			store.KafkaVersion = val
+		}
 	case "BrokerTopicMetrics":
 		topic := keys["topic"]
 		val, _ := value["OneMinuteRate"].(float64)
 		id := map[string]string{"metric": keys["name"]}
 		index := []string{"metric"}
 		if topic == "" {
-			brokerId := value["BrokerId"].(float64)
+			brokerId, _ := value["BrokerId"].(float64)
 			id["broker"] = fmt.Sprintf("%v", brokerId)
 			index = append(index, "broker")
 		} else {
