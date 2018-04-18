@@ -34,6 +34,9 @@ func (me store) Intersection(indexNames ...string) store {
 	sort.Ints(ints)
 	var intersection []int
 	var prev int
+	if len(ints) < 2 {
+		return newStore(0)
+	}
 	prev, ints = ints[0], ints[1:]
 	for _, val := range ints {
 		if prev == val {

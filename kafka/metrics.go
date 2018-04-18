@@ -41,10 +41,28 @@ func metricMessage(msg *sarama.ConsumerMessage) {
 }
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
+	brokerId, _ := value["BrokerId"].(float64)
 	switch keys["type"] {
 	case "app-info":
 		if val, ok := value["Version"].(string); ok {
 			store.KafkaVersion[fmt.Sprintf("%v", brokerId)] = val
+		}
+	case "socket-server-metrics":
+		if keys["listener"] == "" {
+			return
+		}
+		id := map[string]string{
+			"metric":            "socket-server",
+			"broker":            fmt.Sprintf("%v", brokerId),
+			"listener":          keys["listener"],
+			"network_processor": keys["networkProcessor"],
+		}
+		index := []string{"metric", "broker"}
+		for _, attr := range []string{"connection-count", "failed-authentication-total"} {
+			id["attr"] = attr
+			val, _ := value[attr].(float64)
+			data := store.Data{Id: id, Value: int(val)}
+			store.Put(data, index)
 		}
 	case "BrokerTopicMetrics":
 		topic := keys["topic"]
@@ -52,7 +70,6 @@ func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
 		id := map[string]string{"metric": keys["name"]}
 		index := []string{"metric"}
 		if topic == "" {
-			brokerId, _ := value["BrokerId"].(float64)
 			id["broker"] = fmt.Sprintf("%v", brokerId)
 			index = append(index, "broker")
 		} else {
@@ -61,6 +78,16 @@ func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
 		}
 		data := store.Data{Id: id, Value: int(val)}
 		store.Put(data, index)
+	case "ReplicaManager":
+		id := map[string]string{"metric": keys["name"], "broker": fmt.Sprintf("%v", brokerId)}
+		index := []string{"metric", "broker"}
+		if val, ok := value["OneMinuteRate"]; ok {
+			data := store.Data{Id: id, Value: int(val.(float64))}
+			store.Put(data, index)
+		} else if val, ok := value["Value"]; ok {
+			data := store.Data{Id: id, Value: int(val.(float64))}
+			store.Put(data, index)
+		}
 	}
 }
 
