@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"encoding/base64"
-	"fmt"
 	"hash"
 	"math/rand"
 	"time"
@@ -45,7 +44,6 @@ func calculateKeys(pass, salt []byte, hashFn func() hash.Hash) (string, string) 
 	enc := base64.StdEncoding.Strict()
 	saltedPassword := hi(pass, salt, 4096, hashFn)
 	clientKey := calcHmac(hashFn, saltedPassword, []byte("Client Key"))
-	fmt.Println(enc.EncodeToString(clientKey))
 	storedKey := enc.EncodeToString(h(hashFn, clientKey))
 	serverKey := enc.EncodeToString(calcHmac(hashFn, saltedPassword, []byte("Server Key")))
 	return storedKey, serverKey
