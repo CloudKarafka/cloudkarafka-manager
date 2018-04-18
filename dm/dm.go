@@ -8,14 +8,6 @@ import (
 	"strconv"
 )
 
-type BrokerMetric struct {
-	BytesInPerSec    int    `json:"bytes_in_per_sec"`
-	BytesOutPerSec   int    `json:"bytes_out_per_sec"`
-	MessagesInPerSec int    `json:"messages_in_per_sec"`
-	KafkaVersion     string `json:"kafka_version"`
-	BrokerId         string `json:"broker_id"`
-}
-
 type TopicMetric struct {
 	BytesInPerSec    int `json:"bytes_in_per_sec"`
 	BytesOutPerSec   int `json:"bytes_out_per_sec"`
@@ -43,27 +35,6 @@ func (pm PartitionMetrics) Less(i, j int) bool {
 	in, _ := strconv.Atoi(pm[i].Number)
 	jn, _ := strconv.Atoi(pm[j].Number)
 	return in < jn
-}
-
-func BrokerMetrics(id string) BrokerMetric {
-	bm := BrokerMetric{
-		KafkaVersion: store.KafkaVersion,
-		BrokerId:     id,
-	}
-	brokerMetrics := store.SelectWithIndex(id).GroupByMetric()
-	for metric, values := range brokerMetrics {
-		values.Sort()
-		value := values.Stored[values.Len()-1]
-		switch metric {
-		case "BytesInPerSec":
-			bm.BytesInPerSec = value.Value
-		case "BytesOutPerSec":
-			bm.BytesOutPerSec = value.Value
-		case "MessagesInPerSec":
-			bm.MessagesInPerSec = value.Value
-		}
-	}
-	return bm
 }
 
 func TopicMetrics(name string) TopicMetric {
