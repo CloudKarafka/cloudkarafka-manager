@@ -8,7 +8,7 @@ import (
 var (
 	lock         sync.RWMutex
 	Store        = newStore(0)
-	KafkaVersion string
+	KafkaVersion = make(map[string]string)
 
 	NotFound = errors.New("Element not found")
 )

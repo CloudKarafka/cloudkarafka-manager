@@ -44,7 +44,7 @@ func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
 	switch keys["type"] {
 	case "app-info":
 		if val, ok := value["Version"].(string); ok {
-			store.KafkaVersion = val
+			store.KafkaVersion[fmt.Sprintf("%v", brokerId)] = val
 		}
 	case "BrokerTopicMetrics":
 		topic := keys["topic"]
