@@ -90,7 +90,7 @@ func Start(hostname string) {
 		fmt.Println("[ERROR]", err)
 		return
 	}
-	c := conn{client: client}
+	c = conn{client: client}
 	go c.ConsumeTopic("__consumer_offsets", consumerOffsetsMessage)
 	go c.ConsumeTopic("__cloudkarafka_metrics", metricMessage)
 }
