@@ -157,7 +157,7 @@
           <script id='tmpl-brokers' type='text/x-handlebars-template'>
             {{#elements}}
               <tr>
-                <td>{{ id }}</td>
+                <td> <a href="/broker/details?id={{id}}"> {{ id }} </a> </td>
                 <td class="text-center">{{ kafka_version }}</td>
                 <td class="text-center">{{ endpoints }}</td>
                 <td class="text-center">{{ uptime }}</td>
