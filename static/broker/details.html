@@ -20,6 +20,7 @@
   <script src="/js/handlebars.min.js"></script>
   <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
+  <script type="text/javascript"> testLoggedIn() </script>
 
     <style>
       html,body {
@@ -257,7 +258,7 @@
                     <td class="text-right"><strong>{{toLocaleString plaintext}}</strong></td>
                   </tr>
                   <tr>
-                    <td>SSL in/s</td>
+                    <td>SSL</td>
                     <td class="text-right"><strong>{{toLocaleString ssl}}</strong></td>
                   </tr>
                   <tr>
@@ -333,7 +334,4 @@
 
 
   </body>
-  <script type="text/javascript">
-    testLoggedIn()
-  </script>
 </html>

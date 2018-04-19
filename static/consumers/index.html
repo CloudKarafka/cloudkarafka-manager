@@ -20,6 +20,7 @@
   <script src="/js/handlebars.min.js"></script>
   <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
+  <script type="text/javascript"> testLoggedIn() </script>
 
     <style>
       html,body {
@@ -129,7 +130,7 @@
      </form>
     <div class="row">
       <div class="col-md-12">
-        <table class="table" id="kafka-table">
+        <table class="table" id="consumers">
           <thead>
             <tr>
               <th scope="col">Name</th>
@@ -186,8 +187,18 @@
 	</p>
 </footer>
 
+  <script src="/js/vanilla-dataTables.min.js"></script>
   <script type="text/javascript">
-    renderListTmpl('#consumer-rows', '#tmpl-consumers', '/api/consumers.json');
+    renderListTmpl('#consumer-rows', '#tmpl-consumers', '/api/consumers.json', function() {
+      table = new DataTable("#consumers", {
+        "perPageSelect": false,
+        "searchable": false,
+        "perPage": 1000,
+      });
+      element('#filterTable').addEventListener('keyup', function () {
+        table.search( this.value );
+      });
+    });
   </script>
 </main>
 
@@ -206,7 +217,4 @@
 
 
   </body>
-  <script type="text/javascript">
-    testLoggedIn()
-  </script>
 </html>

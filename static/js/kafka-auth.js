@@ -4,8 +4,7 @@ function testLoggedIn() {
     var arr = hash.split("/");
     set_auth(arr[2] + ":" + arr[3]);
     location.hash = "";
-    location.pathname = "/";
-    return;
+    redirect("/");
   }
   get('/api/whoami.json', function() {
     setUsername();
@@ -29,6 +28,7 @@ function auth_header() {
 
 function signout() {
   clear_cookie_value('auth');
+  clear_cookie_value('username');
   redirectToLogin();
 }
 
@@ -37,22 +37,18 @@ function set_auth(userinfo) {
   clear_cookie_value('username');
 
   var b64 = window.btoa(userinfo);
-  var date  = new Date();
-  // 8 hours from now
-  date.setHours(date.getHours() + 8);
-  store_cookie_with_expiration({'auth': encodeURIComponent(b64)}, date);
-  console.log(userinfo.split(':')[0]);
-  store_cookie_with_expiration({'username': userinfo.split(':')[0]}, date);
+  store_cookie({'auth': encodeURIComponent(b64)});
+  store_cookie({'username': userinfo.split(':')[0]});
 }
 
 function store_cookie(dict) {
   var date = new Date();
-  date.setFullYear(date.getFullYear() + 1);
+  date.setHours(date.getHours() + 8);
+  var dict = Object.assign({}, dict, parse_cookie());
   store_cookie_with_expiration(dict, date);
 }
 
 function store_cookie_with_expiration(dict, expiration_date) {
-  var dict = Object.assign({}, parse_cookie(), dict);
   var enc = [];
   for (var k in dict) {
     enc.push(k + ':' + escape(dict[k]));
@@ -63,7 +59,9 @@ function store_cookie_with_expiration(dict, expiration_date) {
 function clear_cookie_value(k) {
   var d = parse_cookie();
   delete d[k];
-  store_cookie(d);
+  var date = new Date();
+  date.setHours(date.getHours() + 8);
+  store_cookie_with_expiration(d, date);
 }
 
 function get_cookie_value(k) {
@@ -90,3 +88,4 @@ function get_cookie(key) {
   }
   return '';
 }
+

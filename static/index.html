@@ -20,6 +20,7 @@
   <script src="/js/handlebars.min.js"></script>
   <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
+  <script type="text/javascript"> testLoggedIn() </script>
 
     <style>
       html,body {
@@ -284,51 +285,43 @@
           <div class="box-header">
             <h2 class="mb-0">Notifications</h2>
           </div>
-          
-          <div class="notification">
-            <span class="icon float-left danger">
-            </span>
-            <div class="message">
-              <h2>You have no active consumers</h2>
-              <p>
-                This is a help text.
-              </p>
-            </div>
-          </div>
-          
-          <div class="notification">
-            <span class="icon float-left warning">
-            </span>
-            <div class="message">
-              <h2>Topic 2 has an invalid configuration setting</h2>
-              <p>
-                cleanup.policy is set to delte. Valid values are [compact, delete]
-              </p>
-            </div>
-          </div>
-          
-          <div class="notification">
-            <span class="icon float-left info">
-            </span>
-            <div class="message">
-              <h2>Your cluster has been up for 1 year straight</h2>
-              <p>
-                This is a help text.
-              </p>
-            </div>
-          </div>
-          
-          <div class="notification loading" style="display:none;">
-            <div class="message text-center">
-              <div class="sk-three-bounce">
-                <div class="sk-child sk-bounce1"></div>
-                <div class="sk-child sk-bounce2"></div>
-                <div class="sk-child sk-bounce3"></div>
+          <div id="notifications">
+            <div class="notification loading">
+              <div class="message text-center">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
+        <script id='tmpl-notifications' type='text/x-handlebars-template'>
+          {{#each this}}
+          <div class="notification">
+            <span class="icon float-left {{ level }}">
+            </span>
+            <div class="message">
+              <h2>{{ type }}</h2>
+              <p>
+                {{ message }}
+              </p>
+            </div>
+          </div>
+          {{ else }}
+          <div class="notification">
+            <span class="icon float-left success">
+            </span>
+            <div class="message">
+              <h2> No notifications </h2>
+            </div>
+          </div>
+          {{/each}}
+        </script>
+      
     </div>
   </div>
   <footer>
@@ -347,6 +340,9 @@
     </script>
   
   <script type="text/javascript">
+    get('/api/notifications.json', function(notifications) {
+      renderTmpl('#notifications', '#tmpl-notifications', notifications);
+    });
     get('/api/brokers.json', function(brokers) {
       renderTmpl('#broker-count', '#tmpl-metric', { unit: "", value: brokers.length});
     })
@@ -529,7 +525,4 @@ resize();
 
 
   </body>
-  <script type="text/javascript">
-    testLoggedIn()
-  </script>
 </html>
