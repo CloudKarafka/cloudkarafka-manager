@@ -76,7 +76,7 @@ func ConsumerMetrics(consumer string) ConsumerMetric {
 			cm.ConsumedPartitions = append(cm.ConsumedPartitions,
 				consumedPartition{Topic: topic, Partition: pNr, Lag: lag})
 		}
-		c := int(float64(len(tm.PMs))/float64(len(cm.ConsumedPartitions))) * 100
+		c := int(float64(len(cm.ConsumedPartitions)) / float64(len(tm.PMs)) * 100)
 		cm.ConsumedTopics = append(cm.ConsumedTopics,
 			consumedTopic{Name: topic, Lag: tLag, Coverage: c})
 	}
