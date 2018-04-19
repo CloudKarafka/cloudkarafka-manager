@@ -11,21 +11,12 @@ import (
 )
 
 func metricMessage(msg *sarama.ConsumerMessage) {
-	mbeanName := strings.Split(string(msg.Key), ",")
-	if len(mbeanName) == 0 {
-		fmt.Println(string(msg.Key))
+	keys, err := parseKey(string(msg.Key))
+	if err != nil {
+		fmt.Println("[ERROR]", err)
 		return
 	}
-	keys := make(map[string]string)
-	for _, m := range mbeanName {
-		kv := strings.Split(m, "=")
-		if len(kv) != 2 {
-			fmt.Println(m)
-			continue
-		}
-		keys[kv[0]] = kv[1]
-	}
-	value, err := parseJson(msg.Value)
+	value, err := parseBody(msg.Value)
 	if err != nil {
 		fmt.Println("[ERROR]", string(msg.Value))
 		fmt.Println(err)
@@ -42,56 +33,21 @@ func metricMessage(msg *sarama.ConsumerMessage) {
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
 	brokerId, _ := value["BrokerId"].(float64)
+	broker := fmt.Sprintf("%v", brokerId)
 	switch keys["type"] {
 	case "app-info":
-		if val, ok := value["Version"].(string); ok {
-			store.KafkaVersion[fmt.Sprintf("%v", brokerId)] = val
-		}
+		kafkaVersion(broker, value["Version"])
 	case "socket-server-metrics":
-		if keys["listener"] == "" {
-			return
-		}
-		id := map[string]string{
-			"metric":            "socket-server",
-			"broker":            fmt.Sprintf("%v", brokerId),
-			"listener":          keys["listener"],
-			"network_processor": keys["networkProcessor"],
-		}
-		index := []string{"metric", "broker"}
-		for _, attr := range []string{"connection-count", "failed-authentication-total"} {
-			id["attr"] = attr
-			val, _ := value[attr].(float64)
-			data := store.Data{Id: id, Value: int(val)}
-			store.Put(data, index)
-		}
+		socketServerMetrics(broker, keys, value)
 	case "BrokerTopicMetrics":
-		topic := keys["topic"]
-		val, _ := value["OneMinuteRate"].(float64)
-		id := map[string]string{"metric": keys["name"]}
-		index := []string{"metric"}
-		if topic == "" {
-			id["broker"] = fmt.Sprintf("%v", brokerId)
-			index = append(index, "broker")
-		} else {
-			id["topic"] = topic
-			index = append(index, "topic")
-		}
-		data := store.Data{Id: id, Value: int(val)}
-		store.Put(data, index)
+		brokerTopicMetrics(broker, keys, value)
 	case "ReplicaManager":
-		id := map[string]string{"metric": keys["name"], "broker": fmt.Sprintf("%v", brokerId)}
-		index := []string{"metric", "broker"}
-		if val, ok := value["OneMinuteRate"]; ok {
-			data := store.Data{Id: id, Value: int(val.(float64))}
-			store.Put(data, index)
-		} else if val, ok := value["Value"]; ok {
-			data := store.Data{Id: id, Value: int(val.(float64))}
-			store.Put(data, index)
-		}
+		replicaManager(broker, keys, value)
 	}
 }
 
 func storeLogOffset(keys map[string]string, value map[string]interface{}) {
+	brokerId, _ := value["BrokerId"].(float64)
 	v, ok := value["Value"].(float64)
 	if !ok {
 		fmt.Printf("Cast failed for %v to float64\n", value["Value"])
@@ -100,6 +56,7 @@ func storeLogOffset(keys map[string]string, value map[string]interface{}) {
 	data := store.Data{
 		Id: map[string]string{
 			"metric":    keys["name"],
+			"broker":    fmt.Sprintf("%v", brokerId),
 			"topic":     keys["topic"],
 			"partition": keys["partition"],
 		},
@@ -108,7 +65,75 @@ func storeLogOffset(keys map[string]string, value map[string]interface{}) {
 	store.Put(data, []string{"metric", "topic", "partition"})
 }
 
-func parseJson(bytes []byte) (map[string]interface{}, error) {
+func kafkaVersion(broker string, version interface{}) {
+	if val, ok := version.(string); ok {
+		store.KafkaVersion[broker] = val
+	}
+}
+
+func socketServerMetrics(broker string, keys map[string]string, value map[string]interface{}) {
+	if keys["listener"] == "" {
+		return
+	}
+	id := map[string]string{
+		"metric":            "socket-server",
+		"broker":            broker,
+		"listener":          keys["listener"],
+		"network_processor": keys["networkProcessor"],
+	}
+	index := []string{"metric", "broker"}
+	for _, attr := range []string{"connection-count", "failed-authentication-total"} {
+		id["attr"] = attr
+		val, _ := value[attr].(float64)
+		data := store.Data{Id: id, Value: int(val)}
+		store.Put(data, index)
+	}
+}
+
+func brokerTopicMetrics(broker string, keys map[string]string, value map[string]interface{}) {
+	topic := keys["topic"]
+	val, _ := value["OneMinuteRate"].(float64)
+	id := map[string]string{"metric": keys["name"], "broker": broker}
+	index := []string{"metric", "broker"}
+	index = append(index, "broker")
+	if topic != "" {
+		id["topic"] = topic
+		index = append(index, "topic")
+	}
+	data := store.Data{Id: id, Value: int(val)}
+	store.Put(data, index)
+}
+
+func replicaManager(broker string, keys map[string]string, value map[string]interface{}) {
+	id := map[string]string{"metric": keys["name"], "broker": broker}
+	index := []string{"metric", "broker"}
+	if val, ok := value["OneMinuteRate"]; ok {
+		data := store.Data{Id: id, Value: int(val.(float64))}
+		store.Put(data, index)
+	} else if val, ok := value["Value"]; ok {
+		data := store.Data{Id: id, Value: int(val.(float64))}
+		store.Put(data, index)
+	}
+}
+
+func parseKey(key string) (map[string]string, error) {
+	keys := make(map[string]string)
+	mbeanName := strings.Split(key, ",")
+	if len(mbeanName) == 0 {
+		return keys, fmt.Errorf("Unknown format for message key: %s", key)
+	}
+	for _, m := range mbeanName {
+		kv := strings.Split(m, "=")
+		if len(kv) != 2 {
+			fmt.Println(m)
+			continue
+		}
+		keys[kv[0]] = kv[1]
+	}
+	return keys, nil
+}
+
+func parseBody(bytes []byte) (map[string]interface{}, error) {
 	value := make(map[string]interface{})
 	err := json.Unmarshal(bytes, &value)
 	if err != nil {
