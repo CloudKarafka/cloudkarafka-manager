@@ -22,35 +22,34 @@ func metricMessage(msg *sarama.ConsumerMessage) {
 		fmt.Println(err)
 		return
 	}
-
+	ts := msg.Timestamp.UTC().Unix()
 	switch keys["domain"] {
 	case "kafka.log":
-		storeLogOffset(keys, value)
+		storeLogOffset(keys, value, ts)
 	case "kafka.server":
-		storeKafkaServer(keys, value)
+		storeKafkaServer(keys, value, ts)
 	}
 }
 
-func storeKafkaServer(keys map[string]string, value map[string]interface{}) {
+func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts int64) {
 	brokerId, _ := value["BrokerId"].(float64)
 	broker := fmt.Sprintf("%v", brokerId)
 	switch keys["type"] {
 	case "app-info":
 		kafkaVersion(broker, value["Version"])
 	case "socket-server-metrics":
-		socketServerMetrics(broker, keys, value)
+		socketServerMetrics(broker, keys, value, ts)
 	case "BrokerTopicMetrics":
-		brokerTopicMetrics(broker, keys, value)
+		brokerTopicMetrics(broker, keys, value, ts)
 	case "ReplicaManager":
-		replicaManager(broker, keys, value)
+		replicaManager(broker, keys, value, ts)
 	}
 }
 
-func storeLogOffset(keys map[string]string, value map[string]interface{}) {
+func storeLogOffset(keys map[string]string, value map[string]interface{}, ts int64) {
 	brokerId, _ := value["BrokerId"].(float64)
 	v, ok := value["Value"].(float64)
 	if !ok {
-		fmt.Printf("Cast failed for %v to float64\n", value["Value"])
 		return
 	}
 	data := store.Data{
@@ -60,9 +59,10 @@ func storeLogOffset(keys map[string]string, value map[string]interface{}) {
 			"topic":     keys["topic"],
 			"partition": keys["partition"],
 		},
-		Value: int(v),
+		Value:     int(v),
+		Timestamp: ts,
 	}
-	store.Put(data, []string{"metric", "topic", "partition"})
+	store.Put(data, []string{"metric", "topic", "partition", "broker"})
 }
 
 func kafkaVersion(broker string, version interface{}) {
@@ -71,7 +71,7 @@ func kafkaVersion(broker string, version interface{}) {
 	}
 }
 
-func socketServerMetrics(broker string, keys map[string]string, value map[string]interface{}) {
+func socketServerMetrics(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
 	if keys["listener"] == "" {
 		return
 	}
@@ -85,33 +85,34 @@ func socketServerMetrics(broker string, keys map[string]string, value map[string
 	for _, attr := range []string{"connection-count", "failed-authentication-total"} {
 		id["attr"] = attr
 		val, _ := value[attr].(float64)
-		data := store.Data{Id: id, Value: int(val)}
+		data := store.Data{Id: id, Value: int(val), Timestamp: ts}
 		store.Put(data, index)
 	}
 }
 
-func brokerTopicMetrics(broker string, keys map[string]string, value map[string]interface{}) {
+func brokerTopicMetrics(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
 	topic := keys["topic"]
 	val, _ := value["OneMinuteRate"].(float64)
 	id := map[string]string{"metric": keys["name"], "broker": broker}
-	index := []string{"metric", "broker"}
-	index = append(index, "broker")
-	if topic != "" {
+	index := []string{"metric"}
+	if topic == "" {
+		index = append(index, "broker")
+	} else {
 		id["topic"] = topic
 		index = append(index, "topic")
 	}
-	data := store.Data{Id: id, Value: int(val)}
+	data := store.Data{Id: id, Value: int(val), Timestamp: ts}
 	store.Put(data, index)
 }
 
-func replicaManager(broker string, keys map[string]string, value map[string]interface{}) {
+func replicaManager(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
 	id := map[string]string{"metric": keys["name"], "broker": broker}
 	index := []string{"metric", "broker"}
 	if val, ok := value["OneMinuteRate"]; ok {
-		data := store.Data{Id: id, Value: int(val.(float64))}
+		data := store.Data{Id: id, Value: int(val.(float64)), Timestamp: ts}
 		store.Put(data, index)
 	} else if val, ok := value["Value"]; ok {
-		data := store.Data{Id: id, Value: int(val.(float64))}
+		data := store.Data{Id: id, Value: int(val.(float64)), Timestamp: ts}
 		store.Put(data, index)
 	}
 }

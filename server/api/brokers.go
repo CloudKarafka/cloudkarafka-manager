@@ -39,12 +39,6 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		bm  dm.BrokerMetric
 	)
 	bm = dm.BrokerMetrics(vars["id"])
-	/*if vars["id"] == jmx.BrokerId {
-		bm = dm.BrokerMetrics(vars["id"])
-	} else {
-		path := fmt.Sprintf("http://%s:%s/api/brokers/%s/metrics", broker.Host, config.Port, vars["id"])
-		err = fetchRemote(path, r, &bm)
-	}*/
 	if err != nil {
 		bvm = brokerVM{B: broker}
 	} else {
@@ -58,4 +52,9 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	t := time.Unix(ts/1000, 0)
 	bvm.Uptime = strings.TrimSpace(humanize.RelTime(time.Now(), t, "", ""))
 	writeJson(w, bvm)
+}
+
+func BrokerThroughputTimeseries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	series := dm.BrokerThroughputTimeseries("BytesInPerSec", "0")
+	writeJson(w, series)
 }

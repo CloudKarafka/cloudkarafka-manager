@@ -45,7 +45,8 @@ func (me conn) ConsumeTopic(topic string, handleMessage func(*sarama.ConsumerMes
 }
 
 func (me conn) consumePartition(topic string, partition int32, consumer sarama.Consumer, fn func(*sarama.ConsumerMessage)) {
-	pc, err := consumer.ConsumePartition(topic, partition, sarama.OffsetNewest)
+	offset, _ := me.client.GetOffset(topic, partition, time.Now().Add(-5*time.Minute).Unix())
+	pc, err := consumer.ConsumePartition(topic, partition, offset)
 	if err != nil {
 		fmt.Printf("[ERROR] failed-to-consume topic=%s partition=%v\n", topic, partition)
 		fmt.Println(err)

@@ -77,3 +77,28 @@ func BrokerMetrics(id string) BrokerMetric {
 	}
 	return bm
 }
+
+func BrokerThroughputTimeseries(brokerId, metric string) []DataPoint {
+	var indexes []string
+	if brokerId == "" {
+		indexes = []string{metric}
+		for brokerId, _ := range store.KafkaVersion {
+			indexes = append(indexes, brokerId)
+		}
+	} else {
+		indexes = []string{brokerId, metric}
+	}
+	s := store.Intersection(indexes...)
+	total := make(map[int64]int)
+	for _, d := range s.Stored {
+		total[d.Timestamp] += d.Value
+	}
+	series := make(Series, len(total))
+	i := 0
+	for x, y := range total {
+		series[i] = DataPoint{X: x, Y: y}
+		i += 1
+	}
+	series.Sort()
+	return series
+}

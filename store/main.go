@@ -25,6 +25,12 @@ func Intersection(indexNames ...string) store {
 	return Store.Intersection(indexNames...)
 }
 
+func Union(indexNames ...string) store {
+	lock.RLock()
+	defer lock.RUnlock()
+	return Store.Intersection(indexNames...)
+}
+
 func SelectWithIndex(indexName string) store {
 	lock.RLock()
 	defer lock.RUnlock()

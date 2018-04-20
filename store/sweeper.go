@@ -20,13 +20,15 @@ func (s sweeper) Start() {
 		fmt.Printf("[INFO] sweeper-start store-size=%v\n", Store.Len())
 		lock.Lock()
 		s := time.Now()
+		old := time.Now().UTC().Add(-10 * time.Minute)
 		keep := make(map[string]puttable)
 		for t, names := range Store.IndexTypes() {
 			for _, name := range names {
 				ints := Store.Index(name)
 				for _, i := range ints {
 					d := Store.Stored[i]
-					if time.Unix(d.Timestamp, 0).Before(time.Now().Add(-5 * time.Minute)) {
+					if time.Unix(d.Timestamp, 0).Before(old) {
+						fmt.Println(d.Timestamp)
 						continue
 					}
 					if _, ok := keep[d.Key()]; !ok {
@@ -47,5 +49,5 @@ func (s sweeper) Start() {
 }
 
 func init() {
-	go sweeper{running: false}.Start()
+	//go sweeper{running: false}.Start()
 }

@@ -27,27 +27,47 @@ func newStore(size int) store {
 func (me store) Intersection(indexNames ...string) store {
 	me.RLock()
 	defer me.RUnlock()
-	var ints []int
+	seen := make(map[int]struct{})
+	seenInBoth := make(map[int]struct{})
+
 	for _, name := range indexNames {
-		ints = append(ints, me.indexes[name]...)
-	}
-	sort.Ints(ints)
-	var intersection []int
-	var prev int
-	if len(ints) < 2 {
-		return newStore(0)
-	}
-	prev, ints = ints[0], ints[1:]
-	for _, val := range ints {
-		if prev == val {
-			len := len(intersection)
-			if len == 0 || intersection[len-1] != val {
-				intersection = append(intersection, val)
+		idxSet := make(map[int]struct{})
+		for _, i := range me.indexes[name] {
+			idxSet[i] = struct{}{}
+		}
+		for i, _ := range idxSet {
+			if _, ok := seen[i]; ok {
+				seenInBoth[i] = struct{}{}
+			} else {
+				seen[i] = struct{}{}
 			}
 		}
-		prev = val
+	}
+	intersection := make([]int, len(seenInBoth))
+	i := 0
+	for id, _ := range seenInBoth {
+		intersection[i] = id
+		i += 1
 	}
 	return me.subset(intersection)
+}
+
+func (me store) Union(indexNames ...string) store {
+	me.RLock()
+	defer me.RUnlock()
+	set := make(map[int]struct{})
+	for _, name := range indexNames {
+		for _, i := range me.indexes[name] {
+			set[i] = struct{}{}
+		}
+	}
+	union := make([]int, len(set))
+	i := 0
+	for idx, _ := range set {
+		union[i] = idx
+		i += 1
+	}
+	return me.subset(union)
 }
 
 func (me store) IndexTypes() map[string][]string {
