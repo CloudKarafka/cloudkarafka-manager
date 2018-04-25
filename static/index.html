@@ -18,8 +18,11 @@
   <meta property="og:site_name" content="Kafka MGMT" />
   <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
   <script src="/js/handlebars.min.js"></script>
+  <script src="/js/d3.v3.min.js"></script>
+  <script src="/js/rickshaw.min.js"></script>
   <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
+  <script src="/js/kafka-charts.js"></script>
   <script type="text/javascript"> testLoggedIn() </script>
 
     <style>
@@ -127,7 +130,7 @@
           <div class="box-header text-center">
             <h2>Total Input/Output</h2>
           </div>
-          <div class="box-body input-output" id="kafka-chart-1">
+          <div class="box-body input-output" id="total-throughput">
             <div class="loading-metric chart" style="display:none;"></div>
             <div id="axis0"></div>
             <div id="chart"></div>
@@ -379,6 +382,11 @@
       }
       renderTmpl('#user-count', '#tmpl-metric', { unit: "", value: count});
     })
+    
+    get('/api/brokers/throughput.json', function(data) {
+      drawChart('#total-throughput', '#chart', '#axis0', '#axis1', data);
+    })
+
   </script>
 </main>
 
@@ -464,61 +472,6 @@ for (_k = 0, _len1 = data.length; _k < _len1; _k++) {
   }
 }
 
-graph = new Rickshaw.Graph({
-  element: document.getElementById("chart"),
-  renderer: 'line',
-  series: [
-    {
-      color: 'steelblue',
-      data: data[0],
-      name: 'Input',
-      scale: scales[0]
-    }, {
-      color: 'lightblue',
-      data: data[1],
-      name: 'Output',
-      scale: scales[1]
-    }
-  ]
-});
-
-new Rickshaw.Graph.Axis.Y.Scaled({
-  element: document.getElementById('axis0'),
-  graph: graph,
-  orientation: 'left',
-  scale: scales[0],
-  tickFormat: Rickshaw.Fixtures.Number.formatKMBT
-});
-
-new Rickshaw.Graph.Axis.Y.Scaled({
-  element: document.getElementById('axis1'),
-  graph: graph,
-  grid: false,
-  orientation: 'right',
-  scale: scales[1],
-  tickFormat: Rickshaw.Fixtures.Number.formatKMBT
-});
-
-new Rickshaw.Graph.Axis.Time({
-  graph: graph
-});
-
-new Rickshaw.Graph.HoverDetail({
-  graph: graph
-});
-
-var resize = function() {
-
-  var chart = $("#kafka-chart-1");
-	graph.configure({
-		width: chart.width() - 58 ,
-		height: chart.height() - 32
-	});
-	graph.render();
-}
-
-window.addEventListener('resize', resize);
-resize();
 </script>
 
 
