@@ -53,7 +53,7 @@ func storeLogOffset(keys map[string]string, value map[string]interface{}, ts int
 		return
 	}
 	data := store.Data{
-		Id: map[string]string{
+		Tags: map[string]string{
 			"metric":    keys["name"],
 			"broker":    fmt.Sprintf("%v", brokerId),
 			"topic":     keys["topic"],
@@ -85,7 +85,7 @@ func socketServerMetrics(broker string, keys map[string]string, value map[string
 	for _, attr := range []string{"connection-count", "failed-authentication-total"} {
 		id["attr"] = attr
 		val, _ := value[attr].(float64)
-		data := store.Data{Id: id, Value: int(val), Timestamp: ts}
+		data := store.Data{Tags: id, Value: int(val), Timestamp: ts}
 		store.Put(data, index)
 	}
 }
@@ -101,7 +101,7 @@ func brokerTopicMetrics(broker string, keys map[string]string, value map[string]
 		id["topic"] = topic
 		index = append(index, "topic")
 	}
-	data := store.Data{Id: id, Value: int(val), Timestamp: ts}
+	data := store.Data{Tags: id, Value: int(val), Timestamp: ts}
 	store.Put(data, index)
 }
 
@@ -109,10 +109,10 @@ func replicaManager(broker string, keys map[string]string, value map[string]inte
 	id := map[string]string{"metric": keys["name"], "broker": broker}
 	index := []string{"metric", "broker"}
 	if val, ok := value["OneMinuteRate"]; ok {
-		data := store.Data{Id: id, Value: int(val.(float64)), Timestamp: ts}
+		data := store.Data{Tags: id, Value: int(val.(float64)), Timestamp: ts}
 		store.Put(data, index)
 	} else if val, ok := value["Value"]; ok {
-		data := store.Data{Id: id, Value: int(val.(float64)), Timestamp: ts}
+		data := store.Data{Tags: id, Value: int(val.(float64)), Timestamp: ts}
 		store.Put(data, index)
 	}
 }

@@ -62,7 +62,7 @@ func consumerOffsetsMessage(msg *sarama.ConsumerMessage) {
 		return
 	}
 	data := store.Data{
-		Id: map[string]string{
+		Tags: map[string]string{
 			"group":     group,
 			"topic":     topic,
 			"partition": fmt.Sprintf("%v", partition),
