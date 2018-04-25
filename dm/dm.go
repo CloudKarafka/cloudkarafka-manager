@@ -46,7 +46,7 @@ func TopicMetrics(name string) TopicMetric {
 		pm := PartitionMetric{}
 		for m, d := range data.GroupByMetric() {
 			sort.Sort(d)
-			value := d.Stored[d.Len()-1].Value
+			value := d.Last().Value
 			switch m {
 			case "LogStartOffset":
 				pm.LogStartOffset = value

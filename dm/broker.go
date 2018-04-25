@@ -27,7 +27,7 @@ type SocketServer struct {
 
 func SocketServers(brokerId string) []SocketServer {
 	grouped := store.Intersection(brokerId, "socket-server").GroupBy(func(d store.Data) string {
-		return fmt.Sprintf("%s.%s.%s", d.Id["broker"], d.Id["listener"], d.Id["network_processor"])
+		return fmt.Sprintf("%s.%s.%s", d.Tags["broker"], d.Tags["listener"], d.Tags["network_processor"])
 	})
 	socketServers := make([]SocketServer, len(grouped))
 	i := 0
@@ -35,10 +35,10 @@ func SocketServers(brokerId string) []SocketServer {
 		keys := strings.Split(key, ".")
 		iface := keys[1]
 		processor := keys[2]
-		attributes := connections.GroupBy(func(d store.Data) string { return d.Id["attr"] })
+		attributes := connections.GroupBy(func(d store.Data) string { return d.Tags["attr"] })
 		item := SocketServer{Interface: iface, Processor: processor}
 		for attr, data := range attributes {
-			ss := data.Stored[data.Len()-1]
+			ss := data.Last()
 			switch attr {
 			case "connection-count":
 				item.ConnectionCount = ss.Value
@@ -61,7 +61,7 @@ func BrokerMetrics(id string) BrokerMetric {
 	brokerMetrics := store.SelectWithIndex(id).GroupByMetric()
 	for metric, values := range brokerMetrics {
 		values.Sort()
-		value := values.Stored[values.Len()-1]
+		value := values.Last()
 		switch metric {
 		case "BytesInPerSec":
 			bm.BytesInPerSec = value.Value
@@ -90,9 +90,9 @@ func BrokerThroughputTimeseries(brokerId, metric string) []DataPoint {
 	}
 	s := store.Intersection(indexes...)
 	total := make(map[int64]int)
-	for _, d := range s.Stored {
+	s.Each(func(d store.Data) {
 		total[d.Timestamp] += d.Value
-	}
+	})
 	series := make(Series, len(total))
 	i := 0
 	for x, y := range total {

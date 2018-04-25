@@ -36,11 +36,11 @@ func checkUneven(index, msg string) ([]notification, bool) {
 	)
 	grouped := store.
 		SelectWithIndex(index).
-		GroupBy(func(d store.Data) string { return d.Id["broker"] })
+		GroupBy(func(d store.Data) string { return d.Tags["broker"] })
 	sum := 0
 	for _, values := range grouped {
 		values.Sort()
-		value := values.Stored[values.Len()-1]
+		value := values.Last()
 		sum += value.Value
 	}
 	for id, values := range grouped {
@@ -48,7 +48,7 @@ func checkUneven(index, msg string) ([]notification, bool) {
 			break
 		}
 		values.Sort()
-		value := values.Stored[values.Len()-1]
+		value := values.Last()
 		q := float64(value.Value) / float64(sum)
 		var (
 			level string
@@ -83,23 +83,16 @@ func checkUnevenLeaders() ([]notification, bool) {
 }
 
 func checkFailedLogins() ([]notification, bool) {
-	var (
-		n   []notification
-		any = false
-	)
-	for _, d := range store.SelectWithIndex("socket-server").Stored {
-		if d.Id["attr"] != "failed-authentication-total" {
-			continue
-		}
-		if d.Value > 0 {
-			any = true
-			n = append(n, notification{
-				Type:    "Failed authentication attempts",
-				Message: "Failed authentication attempts, check the client logs.",
-				Level:   "info",
-			})
-			break
-		}
+	any := store.SelectWithIndex("socket-server").Any(func(d store.Data) bool {
+		return d.Tags["attr"] == "failed-authentication-total" && d.Value > 0
+	})
+	var n []notification
+	if any {
+		n = append(n, notification{
+			Type:    "Failed authentication attempts",
+			Message: "Failed authentication attempts, check the client logs.",
+			Level:   "info",
+		})
 	}
 	return n, any
 }
