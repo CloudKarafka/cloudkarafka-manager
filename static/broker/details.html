@@ -285,7 +285,7 @@
           <div class="box-header text-center">
             <h2> Input/Output</h2>
           </div>
-          <div class="box-body input-output" id="kafka-chart-1">
+          <div class="box-body input-output" id="broker-throughput">
             <div class="loading-metric chart"></div>
             <div id="axis0"></div>
             <div id="chart"></div>
@@ -318,6 +318,10 @@
         conns["failed"] += c.failed_authentication_total;
       })
       renderTmpl('#broker-connections', '#tmpl-broker-connections', conns);
+    })
+    get('/api/brokers/' + id + '/throughput.json', function(data) {
+      element("#broker-throughput .loading-metric").hidden = true;
+      drawChart('#broker-throughput', '#chart', '#axis0', '#axis1', data);
     })
   </script>
 </main>

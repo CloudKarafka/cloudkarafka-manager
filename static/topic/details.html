@@ -75,7 +75,7 @@
             </a>
         </li>
         
-        <li class=" active">
+        <li class="">
             <a href="/topics">
               <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
               <span>Topics</span>
@@ -113,7 +113,7 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-4">
-        <h1><a href="/topics">Topics</a> </h1>
+        <h1><a href="/topics/">Topics</a> </h1>
       </div>
       <div class="col-sm-8 col-12 text-sm-right">
         <p>
@@ -259,7 +259,7 @@
           <div class="box-header text-center">
             <h2> Input/Output</h2>
           </div>
-          <div class="box-body input-output" id="kafka-chart-1">
+          <div class="box-body input-output" id="topic-throughput">
             <div class="loading-metric chart"></div>
             <div id="axis0"></div>
             <div id="chart"></div>
@@ -340,7 +340,7 @@
   <script type="text/javascript">
     var name = getParameterByName('name');
     var path = '/api/topics/' + name + '.json';
-    element(".main-heading h1").innerText = '/' + name;
+    element(".main-heading h1").innerText = 'topics/' + name;
     element("#delete-topic").addEventListener("submit", function(evt) {
       evt.preventDefault();
       del("/api/topics/" + name, function() {
@@ -352,6 +352,10 @@
       renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
       renderTmpl('#topic-config', '#tmpl-topic-config', topic);
       renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
+    })
+    get('/api/topics/' + name + '/throughput.json', function(data) {
+      element("#topic-throughput .loading-metric").hidden = true;
+      drawChart('#topic-throughput', '#chart', '#axis0', '#axis1', data);
     })
   </script>
 </main>

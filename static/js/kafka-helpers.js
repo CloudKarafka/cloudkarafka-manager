@@ -85,22 +85,26 @@ function renderTmpl(attachToId, tmplId, elements) {
 function renderListTmpl(attachToId, tmplId, path, clb) {
   //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
   get(path, function(elements) {
-    var l = elements.length;
-    var result = [];
-    elements.forEach(function(e) {
-      get(path.replace('.json', '/') + e + '.json', function(elem) {
-        result.push(elem)
-        if (result.length == l) {
-          result.sort(function(a, b) {
-            return a.name > b.name
-          })
-          renderTmpl(attachToId, tmplId, {elements: result})
-          if (clb !== undefined) {
-            clb();
+    if (elements !== null) {
+      var l = elements.length;
+      var result = [];
+      elements.forEach(function(e) {
+        get(path.replace('.json', '/') + e + '.json', function(elem) {
+          result.push(elem)
+          if (result.length == l) {
+            result.sort(function(a, b) {
+              return a.name > b.name
+            })
+            renderTmpl(attachToId, tmplId, {elements: result})
+            if (clb !== undefined) {
+              clb();
+            }
           }
-        }
+        })
       })
-    })
+    } else{
+      renderTmpl(attachToId, tmplId, {elements: []})
+    }
   })
 }
 

@@ -1,6 +1,4 @@
 function drawChart(containerId, id, xId, yId, data) {
-  var scales = [];
-
   var setScale = function(series, type) {
     min = Number.MAX_VALUE;
     max = Number.MIN_VALUE;
@@ -9,16 +7,17 @@ function drawChart(containerId, id, xId, yId, data) {
       min = Math.min(min, point.y);
       max = Math.max(max, point.y);
     }
+    console.log(min, max);
     if (type === 'linear') {
-      scales.push(d3.scale.linear().domain([min, max]).nice());
+      return d3.scale.linear().domain([min, max]).nice();
     } else {
-      scales.push(d3.scale.pow().domain([min, max]).nice());
+      return d3.scale.pow().domain([min, max]).nice();
     }
   };
-  setScale(data.in)
-  setScale(data.out, 'linear')
-
-  console.log(scales);
+  var scales = {
+    in: setScale(data.in),
+    out: setScale(data.out, 'linear')
+  };
   var graph = new Rickshaw.Graph({
     element: element(id),
     renderer: 'line',
@@ -27,12 +26,12 @@ function drawChart(containerId, id, xId, yId, data) {
         color: 'steelblue',
         data: data.in,
         name: 'Input',
-        scale: scales[0]
+        scale: scales.in
       }, {
         color: 'lightblue',
         data: data.out,
         name: 'Output',
-        scale: scales[1]
+        scale: scales.out
       }
     ]
   })
@@ -41,7 +40,7 @@ function drawChart(containerId, id, xId, yId, data) {
     element: document.getElementById(xId),
     graph: graph,
     orientation: 'left',
-    scale: scales[0],
+    scale: scales.in,
     tickFormat: Rickshaw.Fixtures.Number.formatKMBT
   });
 
@@ -50,7 +49,7 @@ function drawChart(containerId, id, xId, yId, data) {
     graph: graph,
     grid: false,
     orientation: 'right',
-    scale: scales[1],
+    scale: scales.out,
     tickFormat: Rickshaw.Fixtures.Number.formatKMBT
   });
 
