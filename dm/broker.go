@@ -2,9 +2,9 @@ package dm
 
 import (
 	"cloudkarafka-mgmt/store"
+	"cloudkarafka-mgmt/zookeeper"
 	"fmt"
 	"strings"
-	//"cloudkarafka-mgmt/zookeeper"
 )
 
 type BrokerMetric struct {
@@ -78,27 +78,20 @@ func BrokerMetrics(id string) BrokerMetric {
 	return bm
 }
 
-func BrokerThroughputTimeseries(brokerId, metric string) []DataPoint {
-	var indexes []string
-	if brokerId == "" {
-		indexes = []string{metric}
-		for brokerId, _ := range store.KafkaVersion {
-			indexes = append(indexes, brokerId)
+func AllBrokerThroughputTimeseries(metric string) Series {
+	brokers, _ := zookeeper.Brokers()
+	xy := make(map[int64]int)
+	for _, b := range brokers {
+		for _, dp := range ThroughputTimeseries("BytesInPerSec", b) {
+			xy[dp.X] += dp.Y
 		}
-	} else {
-		indexes = []string{brokerId, metric}
 	}
-	s := store.Intersection(indexes...)
-	total := make(map[int64]int)
-	s.Each(func(d store.Data) {
-		total[d.Timestamp] += d.Value
-	})
-	series := make(Series, len(total))
+	s := make(Series, len(xy))
 	i := 0
-	for x, y := range total {
-		series[i] = DataPoint{X: x, Y: y}
+	for x, y := range xy {
+		s[i] = DataPoint{Y: y, X: x}
 		i += 1
 	}
-	series.Sort()
-	return series
+	s.Sort()
+	return s
 }
