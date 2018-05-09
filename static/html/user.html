@@ -29,7 +29,8 @@
           <form id="add-permission">
             <div class="form-group">
               <label for="name">Username</label>
-              <input type="text" disabled class="form-control" name="username" id="username">
+              <input type="hidden" class="form-control" name="username" id="username_hidden">
+			  <input type="text" disabled class="form-control" id="username">
             </div>
             <div class="form-group">
               <label for="resource">Resource name</label>
@@ -93,6 +94,7 @@
         var username = document.location.pathname.replace("/users/", "");
         document.title = "User: "+ username;
         $("#username").attr('value', username);
+	    $("#username_hidden").attr('value', username);
         $('#username-heading').text(username);
         var renderUser = function() {
           var $user = $('#user-rows');
