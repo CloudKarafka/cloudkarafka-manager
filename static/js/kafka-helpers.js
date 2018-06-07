@@ -26,7 +26,17 @@ function del(path, callback) {
   req('DELETE', path, callback);
 };
 
-function req(method, path, callback) {
+function putForm(path, formId, callback) {
+  var formElement = element(formId)
+  req('PUT', path, callback, new FormData(formElement));
+};
+
+function postForm(path, formId, callback) {
+  var formElement = element(formId)
+  req('POST', path, callback, new FormData(formElement));
+};
+
+function req(method, path, callback, data) {
   var request = new XMLHttpRequest();
   request.open(method, path, true)
   var auth = auth_header();
@@ -35,20 +45,11 @@ function req(method, path, callback) {
   }
   request.setRequestHeader('authorization', auth);
   request.onload = onLoad(request, callback);
-  request.send();
-};
-
-function postForm(path, formId, callback) {
-  var request = new XMLHttpRequest();
-  var formElement = element(formId)
-  request.open('POST', path, true)
-  var auth = auth_header();
-  if (!auth) {
-    redirectToLogin();
+  if (data !== undefined) {
+    request.send(data);
+  } else {
+    request.send();
   }
-  request.setRequestHeader('authorization', auth);
-  request.onload = onLoad(request, callback);
-  request.send(new FormData(formElement));
 };
 
 function onLoad(request, callback) {

@@ -72,6 +72,23 @@ func (me conn) consumePartition(topic string, partition int32, consumer sarama.C
 	}
 }
 
+func (me conn) TopicExists(name string) bool {
+	topics, err := me.client.Topics()
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
+	exists := false
+	for _, t := range topics {
+		if t == name {
+			exists = true
+			break
+		}
+	}
+	exists = false
+	return exists
+}
+
 func (me conn) Stop() {
 	me.l.Lock()
 	for _, c := range me.consumers {
@@ -93,8 +110,12 @@ func Start(hostname string) {
 		return
 	}
 	c = conn{client: client}
-	go c.ConsumeTopic("__consumer_offsets", consumerOffsetsMessage)
-	go c.ConsumeTopic("__cloudkarafka_metrics", metricMessage)
+	if c.TopicExists("__consumer_offsets") {
+		go c.ConsumeTopic("__consumer_offsets", consumerOffsetsMessage)
+	}
+	if c.TopicExists("__cloudkarafka_metrics") {
+		go c.ConsumeTopic("__cloudkarafka_metrics", metricMessage)
+	}
 }
 
 func Stop() {

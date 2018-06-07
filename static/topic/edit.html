@@ -5,7 +5,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Add New Topic - Kafka MGMT</title>
+  <title>Edit Topic - Kafka MGMT</title>
   <link rel="apple-touch-icon" href="/img/logo.png">
 
   <link rel="stylesheet" href="/css/style.css">
@@ -75,7 +75,7 @@
             </a>
         </li>
         
-        <li class=" active">
+        <li class="">
             <a href="/topics">
               <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
               <span>Topics</span>
@@ -113,7 +113,7 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-12">
-        <h1><a href="/topics">Topics</a> / Add New Topic</h1>
+        <h1><a href="/topic/details">Topics</a> / Edit Topic</h1>
       </div>
     </div>
   </div>
@@ -161,15 +161,20 @@
 </footer>
 
   <script type="text/javascript"> 
-    renderTmpl("#edit", "#tmpl-edit-topic", {btn_txt: "Create new topic", disabled: false});
-    element("#topicForm").addEventListener('submit', function(ev) {
-      ev.preventDefault();
-      postForm("/api/topics", "#topicForm", function(t) {
-        redirect("/topic/details?name=" + t.name);
-      });
+    var name = getParameterByName('name');
+    get("/api/topics/" + name +".json", function(t) {
+      var topic = Object.assign({}, t, {btn_txt: "Save", disabled: true});
+      renderTmpl("#edit", "#tmpl-edit-topic", topic);
+      element("#topicForm").addEventListener('submit', function(ev) {
+        ev.preventDefault();
+        putForm("/api/topics/" + name, "#topicForm", function(t) {
+          redirect("/topic/details?name=" + t.name);
+        });
+      })
     })
   </script>
 </main>
+
 
     </div>
   

@@ -18,18 +18,6 @@ var (
 	partitionsRequired        = errors.New("ERROR: must suply partitions and it must be numeric")
 )
 
-type topicVM struct {
-	zookeeper.T
-	dm.TopicMetric
-	PartitionCount    int `json:"partition_count,1"`
-	ReplicationFactor int `json:"replication_factor,1"`
-	BrokerSpread      int `json:"broker_spread"`
-}
-
-type partitionVM struct {
-	zookeeper.P
-}
-
 func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
@@ -95,22 +83,6 @@ func TopicThroughput(w http.ResponseWriter, r *http.Request, p zookeeper.Permiss
 
 }
 
-func TopicMetrics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	/*topic, err := zookeeper.Topic(vars["topic"])
-	if err != nil {
-		internalError(w, err)
-		return
-	}
-	messages := 0
-	for partition, _ := range topic.Partitions {
-		om, _ := fetchOffsetMetric(vars["topic"], partition, r)
-		messages += (om.LogEndOffset - om.LogStartOffset)
-	}*/
-	tm := dm.TopicMetrics(vars["topic"])
-	writeJson(w, tm)
-}
-
 func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	if !p.TopicRead(vars["topic"]) {
@@ -126,9 +98,9 @@ func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	}
 }
 
-func decodeTopic(r *http.Request) (topicVM, error) {
+func decodeTopic(r *http.Request) (dm.T, error) {
 	var (
-		t   topicVM
+		t   dm.T
 		err error
 	)
 	switch r.Header.Get("content-type") {
@@ -145,7 +117,11 @@ func decodeTopic(r *http.Request) (topicVM, error) {
 			rows := strings.Split(r.PostForm.Get("config"), "\n")
 			cfg := make(map[string]interface{})
 			for _, r := range rows {
-				cols := strings.Split(r, "=")
+				row := strings.TrimSpace(r)
+				if row == "" {
+					continue
+				}
+				cols := strings.Split(row, "=")
 				key := strings.Trim(cols[0], " \n\r")
 				val := strings.Trim(cols[1], " \n\r")
 				cfg[key] = val
@@ -157,15 +133,11 @@ func decodeTopic(r *http.Request) (topicVM, error) {
 }
 
 func getTopic(w http.ResponseWriter, name string) {
-	top, err := zookeeper.Topic(name)
+	t, err := dm.Topic(name)
 	if err != nil {
 		http.NotFound(w, nil)
 		return
 	}
-
-	t := topicVM{T: top, TopicMetric: dm.TopicMetrics(name)}
-	t.PartitionCount = len(t.Partitions)
-	t.ReplicationFactor = len(t.Partitions["0"])
 	writeJson(w, t)
 }
 
@@ -187,7 +159,7 @@ func topics(w http.ResponseWriter, p zookeeper.Permissions) {
 	}
 }
 
-func createTopic(w http.ResponseWriter, t topicVM) {
+func createTopic(w http.ResponseWriter, t dm.T) {
 	err := zookeeper.CreateTopic(t.Name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
 		internalError(w, err.Error())
@@ -197,7 +169,7 @@ func createTopic(w http.ResponseWriter, t topicVM) {
 	getTopic(w, t.Name)
 }
 
-func updateTopic(w http.ResponseWriter, name string, t topicVM) {
+func updateTopic(w http.ResponseWriter, name string, t dm.T) {
 	err := zookeeper.UpdateTopic(name, t.PartitionCount, t.ReplicationFactor, t.Config)
 	if err != nil {
 		fmt.Println(err)

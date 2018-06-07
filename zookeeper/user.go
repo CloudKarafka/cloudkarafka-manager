@@ -42,19 +42,14 @@ func CreateUser(name, password string) error {
 		"version": 1,
 		"config":  cfg,
 	}
-	config, err := json.Marshal(node)
-	if err != nil {
-		return nil
-	}
-	_, err = conn.Create("/config/users/"+name, config, 0, zk.WorldACL(zk.PermAll))
+	err := createPersistent("/config/users/"+name, node)
 	if err == zk.ErrNodeExists {
 		err = userAlreadyExists
 	}
-	data, _ := json.Marshal(map[string]interface{}{
+	return createSeq("/config/changes/config_change_", map[string]interface{}{
 		"version":     2,
 		"entity_path": "users/" + name,
 	})
-	return change("/config/changes/config_change_", data)
 }
 
 func UserCredentials(name string) (string, string) {
@@ -102,11 +97,11 @@ func DeleteUser(name string) error {
 	if err != nil {
 		return err
 	}
-	data, _ := json.Marshal(map[string]interface{}{
+	data := map[string]interface{}{
 		"version":     2,
 		"entity_path": "users/" + name,
-	})
-	if err = change("/config/changes/config_change_", data); err != nil {
+	}
+	if err = createSeq("/config/changes/config_change_", data); err != nil {
 		return err
 	}
 	return DeleteAcls(name)

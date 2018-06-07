@@ -127,7 +127,7 @@
     <div class="row">
       <div class="col-md-6 col-lg-4">
         <div class="box box-w-header">
-          <div class="box-header"><a href="#" class="btn btn-sm btn-primary float-right">Edit</a>
+          <div class="box-header"><a href="#" class="btn btn-sm btn-primary float-right edit">Edit</a>
             <h2>Overview</h2>
           </div>
           <div class="box-body p-0">
@@ -221,7 +221,7 @@
       </div>
       <div class="col-md-6 col-lg-4">
         <div class="box box-w-header">
-          <div class="box-header"><a href="#" class="btn btn-sm btn-primary float-right">Edit</a>
+          <div class="box-header">
             <h2>Config</h2>
           </div>
           <div class="box-body p-0">
@@ -259,12 +259,21 @@
           <div class="box-header text-center">
             <h2> Input/Output</h2>
           </div>
-          <div class="box-body input-output" id="topic-throughput">
-            <div class="loading-metric chart"></div>
-            <div id="axis0"></div>
-            <div id="chart"></div>
-            <div id="axis1"></div>
-          </div>
+          <div class="box-body input-output" id="throughput">
+  <div class="loading-metric chart"></div>
+  <div id="axis0"></div>
+  <div id="chart"></div>
+  <div id="axis1"></div>
+</div>
+
+
+  <script id='tmpl-no-throughput' type='text/x-handlebars-template'>
+    <p class="text-center">
+      <strong> No throughput data is available</strong>
+    </p>
+  </script>
+
+
         </div>
       </div>
     </div>
@@ -287,7 +296,9 @@
             <tr>
               <th scope="col">Number</th>
               <th scope="col" class="text-center">Leader</th>
+              <th scope="col" class="text-center">Replicas</th>
               <th scope="col" class="text-center">In Sync Replicas</th>
+              <th scope="col" class="text-center">Size</th>
               <th scope="col" class="text-center">Start Offset</th>
               <th scope="col" class="text-center">End Offset</th>
             </tr>
@@ -306,15 +317,23 @@
         </table>
         
           <script id='tmpl-partition-rows' type='text/x-handlebars-template'>
-            {{#partition_metrics}}
+            {{#partitions}}
               <tr>
                 <td>{{ number }}</td>
                 <td class="text-center">{{ leader }}</td>
+                <td class="text-center">{{ replicas }}</td>
                 <td class="text-center">{{ isr }}</td>
+                <td class="text-center">{{ toLocaleString size }}</td>
                 <td class="text-center">{{ toLocaleString log_start_offset }}</td>
                 <td class="text-center">{{ toLocaleString log_end_offset }}</td>
               </tr>
-            {{/partition_metrics}}
+            {{ else }}
+              <tr>
+                <td colspan="5">
+                  <strong>No partitions</strong>
+                </td>
+              </tr>
+            {{/partitions}}
           </script>
         
       </div>
@@ -339,6 +358,7 @@
 
   <script type="text/javascript">
     var name = getParameterByName('name');
+    element(".box-header a.edit").href = "/topic/edit?name="  + name;
     var path = '/api/topics/' + name + '.json';
     element(".main-heading h1").innerText = 'topics/' + name;
     element("#delete-topic").addEventListener("submit", function(evt) {
@@ -354,8 +374,8 @@
       renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
     })
     get('/api/topics/' + name + '/throughput.json', function(data) {
-      element("#topic-throughput .loading-metric").hidden = true;
-      drawChart('#topic-throughput', '#chart', '#axis0', '#axis1', data);
+      element("#throughput .loading-metric").hidden = true;
+      drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
     })
   </script>
 </main>

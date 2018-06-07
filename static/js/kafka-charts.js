@@ -1,4 +1,8 @@
 function drawChart(containerId, id, xId, yId, data) {
+  if (data.in.length === 0 || data.out.length === 0) {
+    renderTmpl('#throughput', '#tmpl-no-throughput');
+    return;
+  }
   var setScale = function(series, type) {
     min = Number.MAX_VALUE;
     max = Number.MIN_VALUE;
@@ -7,7 +11,6 @@ function drawChart(containerId, id, xId, yId, data) {
       min = Math.min(min, point.y);
       max = Math.max(max, point.y);
     }
-    console.log(min, max);
     if (type === 'linear') {
       return d3.scale.linear().domain([min, max]).nice();
     } else {

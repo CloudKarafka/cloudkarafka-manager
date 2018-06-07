@@ -148,7 +148,7 @@ func setAcl(root, name string, acls []acl) error {
 		return err
 	}
 	c := fmt.Sprintf("%s:%s", strings.Split(root, "/")[2], name)
-	return change("/kafka-acl-changes/acl_changes_", []byte(c))
+	return createSeq("/kafka-acl-changes/acl_changes_", c)
 }
 
 func DeleteAcl(user, resource, resourceType string) error {

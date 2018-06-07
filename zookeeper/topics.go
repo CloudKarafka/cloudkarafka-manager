@@ -18,6 +18,11 @@ var (
 	unexpectedFormat           = errors.New("ERROR: unexpected format encountered in ZooKeeper node")
 )
 
+type topic struct {
+	Version    int              `json:"version"`
+	Partitions map[string][]int `json:"partitions"`
+}
+
 type T struct {
 	Name       string                 `json:"name,omitempty"`
 	Config     map[string]interface{} `json:"config"`
@@ -48,31 +53,6 @@ func (p P) ReplicasInclude(id int) bool {
 		included = included || r == id
 	}
 	return included
-}
-
-type leaderCount struct {
-	Broker   int
-	Leader   int
-	Follower int
-}
-
-type leaderCounts []leaderCount
-
-func (a leaderCounts) Len() int      { return len(a) }
-func (a leaderCounts) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-
-type byLeader struct{ leaderCounts }
-
-func (a byLeader) Less(i, j int) bool {
-	ai, aj := a.leaderCounts[i], a.leaderCounts[j]
-	return 2*ai.Leader+ai.Follower < 2*aj.Leader+aj.Follower
-}
-
-type byFollower struct{ leaderCounts }
-
-func (a byFollower) Less(i, j int) bool {
-	ai, aj := a.leaderCounts[i], a.leaderCounts[j]
-	return 2*ai.Follower+ai.Leader < 2*aj.Follower+aj.Leader
 }
 
 func Topics(p Permissions) ([]string, error) {
@@ -125,36 +105,18 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	if exists, _, _ := conn.Exists(path); !exists {
 		return topicDoesNotExist
 	}
-	raw, stat, _ := conn.Get(path)
-	var topic map[string]interface{}
-	if err := json.Unmarshal(raw, &topic); err != nil {
+	raw, _, _ := conn.Get(path)
+	var t topic
+	if err := json.Unmarshal(raw, &t); err != nil {
 		return err
 	}
-	parts := topic["partitions"].(map[string]interface{})
-	if partitionCount < len(parts) {
+	if partitionCount < len(t.Partitions) {
 		return onlyIncreasePartitionCount
 	}
-	partitions := make([]P, partitionCount)
-	i := 0
-	for p, r := range parts {
-		parts := make([]int, len(r.([]interface{})))
-		for i, pr := range r.([]interface{}) {
-			parts[i] = int(pr.(float64))
-		}
-		partition := P{
-			Number:   p,
-			Replicas: parts,
-		}
-		partitions[i] = partition
-		i++
-	}
-	ids, _ := Brokers()
-	var expandedPartitions map[string][]int
-	topic["partitions"], expandedPartitions = spreadReplicas(partitionCount, replicationFactor, ids, partitions)
-	ReassignPartitions(name, expandedPartitions)
-	raw, _ = json.Marshal(topic)
+	t.Partitions = spreadReplicas(partitionCount, replicationFactor, t.Partitions)
+	ReassignPartitions(name, t.Partitions)
 	fmt.Printf("[INFO] partition_count=%v replication_factor=%v\n", partitionCount, replicationFactor)
-	_, err := conn.Set(path, raw, stat.Version)
+	err := set(path, t)
 	if err != nil {
 		return err
 	}
@@ -215,14 +177,13 @@ func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 		return invalidReplicationFactor
 	}
 	topic := newTopic(name, partitionCount, replicationFactor)
-	j, _ := json.Marshal(topic)
 	path := topicPath(name)
-	if exists, _, _ := conn.Exists(path); exists {
-		return topicAlreadyExists
+	err := createPersistent(path, topic)
+	if err != nil {
+		return err
 	}
-	_, err := conn.Create(path, j, 0, zk.WorldACL(zk.PermAll))
 	if cfg != nil {
-		createOrSetConfig(name, cfg)
+		err = createOrSetConfig(name, cfg)
 	}
 	return err
 }
@@ -235,102 +196,61 @@ func DeleteTopic(name string) error {
 func createOrSetConfig(name string, cfg map[string]interface{}) error {
 	path := "/config/topics/" + name
 	var err error
-	if d, stat, _ := conn.Get(path); d != nil {
+	if d, _, _ := conn.Get(path); d != nil {
 		data := make(map[string]interface{})
 		json.Unmarshal(d, &data)
 		for k, v := range cfg {
 			data["config"].(map[string]interface{})[k] = v
 		}
-		raw, _ := json.Marshal(data)
-		_, err = conn.Set(path, raw, stat.Version)
+		err = set(path, data)
 	} else {
-		node := map[string]interface{}{"version": 1, "config": cfg}
-		raw, _ := json.Marshal(node)
-		_, err = conn.Create(path, raw, 0, zk.WorldACL(zk.PermAll))
+		err = createPersistent(path, map[string]interface{}{"version": 1, "config": cfg})
 	}
 	if err != nil {
 		return err
 	}
-	data, _ := json.Marshal(map[string]interface{}{
+	return createSeq("/config/changes/config_change_", map[string]interface{}{
 		"version":     2,
 		"entity_path": "topics/" + name,
 	})
-	return change("/config/changes/config_change_", data)
 }
 
 func topicPath(name string) string {
 	return "/brokers/topics/" + name
 }
 
-func newTopic(name string, partitionCount, replicationFactor int) map[string]interface{} {
-	topic := make(map[string]interface{})
-	topic["version"] = 1
-	ids, _ := Brokers()
-	partitions, _ := spreadReplicas(partitionCount, replicationFactor, ids, make([]P, partitionCount))
-	topic["partitions"] = partitions
-	return topic
+func newTopic(name string, partitionCount, replicationFactor int) topic {
+	parts := spreadReplicas(partitionCount, replicationFactor, make(map[string][]int))
+	return topic{Version: 1, Partitions: parts}
 }
 
-func spreadReplicas(partitionCount, replicationFactor int, ids []string, partitions []P) (map[string][]int, map[string][]int) {
-	var expand []P
+func spreadReplicas(partitionCount, replicationFactor int, partitions map[string][]int) map[string][]int {
+	brokers, _ := Brokers()
+	ids := make([]int, len(brokers))
+	for i, b := range brokers {
+		ids[i], _ = strconv.Atoi(b)
+	}
+	sort.Ints(ids)
 	for i := 0; i < partitionCount; i++ {
-		lc := replicaSpread(ids, partitions)
-		partition := partitions[i]
-		if partition.Number == "" {
-			partition.Number = strconv.Itoa(i)
-		}
-		if len(partition.Replicas) == 0 {
-			partitions[i] = assignReplicas(replicationFactor, partition, lc)
-		} else {
-			expand = append(expand, assignReplicas(replicationFactor, partition, lc))
-		}
-	}
-	parts := make(map[string][]int)
-	for _, part := range partitions {
-		parts[part.Number] = part.Replicas
-	}
-	expanded := make(map[string][]int)
-	for _, part := range expand {
-		expanded[part.Number] = part.Replicas
-	}
-	return parts, expanded
-}
-
-func assignReplicas(replicationFactor int, partition P, lc []leaderCount) P {
-	for len(partition.Replicas) < replicationFactor {
-		if len(partition.Replicas) == 0 {
-			sort.Sort(byLeader{lc})
-			partition.Replicas = append(partition.Replicas, lc[0].Broker)
-		} else {
-			sort.Sort(byFollower{lc})
-			for _, b := range lc {
-				if partition.ReplicasInclude(b.Broker) {
-					continue
+		replicas := partitions[strconv.Itoa(i)]
+		if len(replicas) < replicationFactor {
+			oReplicas := make(map[int]struct{})
+			for _, r := range replicas {
+				if _, ok := oReplicas[r]; !ok {
+					oReplicas[r] = struct{}{}
 				}
-				partition.Replicas = append(partition.Replicas, b.Broker)
-				break
 			}
-		}
-	}
-	return partition
-}
-
-func replicaSpread(ids []string, partitions []P) []leaderCount {
-	lc := make([]leaderCount, len(ids))
-	for i, l := range ids {
-		b, _ := strconv.Atoi(l)
-		lc[i] = leaderCount{Leader: 0, Follower: 0, Broker: b}
-	}
-	for _, p := range partitions {
-		for i, id := range p.Replicas {
-			entry := lc[id]
-			if i == 0 {
-				entry.Leader += 1
-			} else {
-				entry.Follower += 1
+			for _, id := range ids {
+				if len(replicas) == replicationFactor {
+					break
+				}
+				if _, ok := oReplicas[id]; !ok {
+					replicas = append(replicas, id)
+				}
 			}
-			lc[id] = entry
+			partitions[strconv.Itoa(i)] = replicas
 		}
+		ids = append(ids[1:], ids[0])
 	}
-	return lc
+	return partitions
 }

@@ -85,6 +85,7 @@ func Start(cert, key string) {
 	serveFile(r, "/", "index.html")
 	serveFile(r, "/topics", "topics/index.html")
 	serveFile(r, "/topics/add", "topics/add.html")
+	serveFile(r, "/topic/edit", "topic/edit.html")
 	serveFile(r, "/topic/details", "topic/details.html")
 	serveFile(r, "/brokers", "brokers.html")
 	serveFile(r, "/broker/details", "broker/details.html")

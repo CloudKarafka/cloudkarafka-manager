@@ -130,12 +130,21 @@
           <div class="box-header text-center">
             <h2>Total Input/Output</h2>
           </div>
-          <div class="box-body input-output" id="total-throughput">
-            <div class="loading-metric chart" style="display:none;"></div>
-            <div id="axis0"></div>
-            <div id="chart"></div>
-            <div id="axis1"></div>
-          </div>
+          <div class="box-body input-output" id="throughput">
+  <div class="loading-metric chart"></div>
+  <div id="axis0"></div>
+  <div id="chart"></div>
+  <div id="axis1"></div>
+</div>
+
+
+  <script id='tmpl-no-throughput' type='text/x-handlebars-template'>
+    <p class="text-center">
+      <strong> No throughput data is available</strong>
+    </p>
+  </script>
+
+
         </div>
       </div>
     </div>
@@ -382,11 +391,10 @@
       }
       renderTmpl('#user-count', '#tmpl-metric', { unit: "", value: count});
     })
-    
     get('/api/brokers/throughput.json', function(data) {
-      drawChart('#total-throughput', '#chart', '#axis0', '#axis1', data);
+      element("#throughput .loading-metric").hidden = true;
+      drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
     })
-
   </script>
 </main>
 
