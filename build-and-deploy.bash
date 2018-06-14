@@ -2,7 +2,7 @@
 set -eu
 
 function usage {
-    echo $"Usage: $(basename $0) {production|staging}"
+    echo $"Usage: $(basename $0) {production|staging|all}"
     exit 1
 }
 
@@ -24,7 +24,7 @@ function staging {
 }
 
 function production {
-    aws s3 cp cloudkarafka-mgmt.tar.gz s3://cloudkafka-manager/staging/cloudkarafka-mgmt.tar.gz
+    aws s3 cp cloudkarafka-mgmt.tar.gz s3://cloudkafka-manager/production/cloudkarafka-mgmt.tar.gz
 }
 
 [ $# -eq 1 ] || usage
@@ -33,13 +33,16 @@ case "$1" in
 staging)
     build
     staging
-    clean
-;;
+    clean ;;
 production)
     build
     production
-    clean
-;;
+    clean ;;
+all)
+    build
+    staging
+    production
+    clean ;;
 *) usage
 esac
 
