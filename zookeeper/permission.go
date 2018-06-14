@@ -31,7 +31,7 @@ func ParsePermission(s string) Permission {
 		return R
 	case "Write":
 		return W
-	case "Read/Write":
+	case "All", "Read/Write":
 		return RW
 	}
 }
@@ -73,42 +73,26 @@ func (me Permissions) ClusterWrite() bool {
 }
 
 func (me Permissions) TopicRead(t string) bool {
-	return me.Cluster >= R || me.Topics[t] >= R || me.Topics["*"] >= R
+	return me.Topics[t] >= R || me.Topics["*"] >= R
 }
 
 func (me Permissions) TopicWrite(t string) bool {
-	return me.Cluster >= W || me.Topics[t] >= W || me.Topics["*"] >= W
+	return me.Topics[t] >= W || me.Topics["*"] >= W
 }
 
 func (me Permissions) GroupRead(g string) bool {
-	return me.Cluster >= R || me.Groups[g] >= R || me.Groups["*"] >= R
+	return me.Groups[g] >= R || me.Groups["*"] >= R
 }
 
 func (me Permissions) GroupWrite(g string) bool {
-	return me.Cluster >= W || me.Groups[g] >= W || me.Groups["*"] >= W
+	return me.Groups[g] >= W || me.Groups["*"] >= W
 }
 
 func PermissionsFor(username string) Permissions {
-	ar := Permissions{Username: username, Topics: make(map[string]Permission)}
-	ca, _ := ClusterAcl()
-	for _, a := range ca {
-		if a.PermissionType != "Allow" {
-			continue
-		}
-		if a.Principal == fmt.Sprintf("User:%s", username) {
-			switch a.Operation {
-			case "All":
-				ar.Cluster = RW
-			case "Read":
-				ar.Cluster = R
-			case "Write":
-				ar.Cluster = W
-			}
-			break
-		}
-	}
-	ar.Topics = permissionsMap(username, AllAcls(Topics, TopicAcl))
-	ar.Groups = permissionsMap(username, AllAcls(Groups, GroupAcl))
+	ar := Permissions{Username: username}
+	ar.Cluster = permissionsMap(username, AllAcls(ClusterAcls, ClusterAcl))["kafka-cluster"]
+	ar.Topics = permissionsMap(username, AllAcls(TopicsAcls, TopicAcl))
+	ar.Groups = permissionsMap(username, AllAcls(GroupsAcls, GroupAcl))
 	return ar
 }
 

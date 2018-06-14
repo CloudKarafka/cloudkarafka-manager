@@ -1,10 +1,6 @@
 package api
 
 import (
-	"cloudkarafka-mgmt/config"
-	"cloudkarafka-mgmt/jmx"
-	"cloudkarafka-mgmt/zookeeper"
-
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,12 +31,4 @@ func fetchRemote(path string, r *http.Request, out interface{}) error {
 		defer res.Body.Close()
 		return dec.Decode(&out)
 	}
-}
-
-func fetchOffsetMetric(topic, partition string, r *http.Request) (jmx.OffsetMetric, error) {
-	var om jmx.OffsetMetric
-	broker, _ := zookeeper.LeaderFor(topic, partition)
-	path := fmt.Sprintf("http://%s:%s/api/topics/%s/%s/metrics", broker.Host, config.Port, topic, partition)
-	err := fetchRemote(path, r, &om)
-	return om, err
 }

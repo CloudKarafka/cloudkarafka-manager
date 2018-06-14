@@ -1,3 +1,6 @@
 .env
 .DS_Store
 bin
+target
+vendor
+static/api

@@ -43,7 +43,6 @@ func connect(url string) error {
 		conn.Close()
 	}
 	opts := zk.WithDialer(func(network, address string, timeout time.Duration) (net.Conn, error) {
-		fmt.Println("net", network, "addr", address)
 		return net.DialTimeout(network, address, timeout)
 	})
 	conn, _, err = zk.Connect([]string{url}, 30*time.Second, opts)
@@ -77,4 +76,34 @@ func get(path string, v interface{}) error {
 		return err
 	}
 	return json.Unmarshal(data, v)
+}
+
+func createSeq(path string, data interface{}) error {
+	return create(path, data, zk.FlagSequence)
+}
+
+func createPersistent(path string, data interface{}) error {
+	return create(path, data, 0)
+}
+
+func create(path string, data interface{}, flag int) error {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Create(path, raw, int32(flag), zk.WorldACL(zk.PermAll))
+	return err
+}
+
+func set(path string, data interface{}) error {
+	_, stat, err := conn.Exists(path)
+	if err != nil {
+		return err
+	}
+	enc, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	_, err = conn.Set(path, enc, stat.Version)
+	return err
 }

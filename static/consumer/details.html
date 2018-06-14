@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> - Kafka MGMT</title>
+  <link rel="apple-touch-icon" href="/img/logo.png">
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <meta property="og:title" content="The best management interface for Apache Kafka" />
+  <meta name="author" content="84codes Team" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:site_name" content="Kafka MGMT" />
+  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  <script src="/js/handlebars.min.js"></script>
+  <script src="/js/d3.v3.min.js"></script>
+  <script src="/js/rickshaw.min.js"></script>
+  <script src="/js/kafka-auth.js"></script>
+  <script src="/js/kafka-helpers.js"></script>
+  <script src="/js/kafka-charts.js"></script>
+  <script type="text/javascript"> testLoggedIn() </script>
+
+    <style>
+      html,body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+     <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+  <div class="container-fluid">
+    <div>
+      <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+        <span class="hamburger-box">
+          <span class="hamburger-inner"></span>
+        </span>
+      </button>
+    </div>
+    <div class="text-right">
+      <p class="my-2 my-md-0 text-right">
+        <a onclick="signout()">
+          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+      </p>
+    </div>
+  </div>
+</nav>
+
+      <aside class="sidebar-wrapper">
+  <div class="sidebar-header text-center">
+    <a href="/" class="app-logo">
+      <img src="/assets/mgmt-logo.svg"/>
+      <h1 class="logo-text">Kafka MGMT</h1>
+    </a>
+
+  </div>
+  <div class="sidebar-content">
+    <div class="sidebar-info">
+      <h2 class="host">localhost</h2>
+      <p id="username">
+      </p>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        
+        <li class="">
+            <a href="/">
+              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+              <span>Overview</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/topics">
+              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+              <span>Topics</span>
+            </a>
+        </li>
+        
+        <li class=" active">
+            <a href="/consumers">
+              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+              <span>Consumers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/brokers">
+              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+              <span>Brokers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/admin">
+              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+              <span>Admin</span>
+            </a>
+        </li>
+        
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+        <div class="sidebar-backdrop"></div>
+<main class="main-container">
+  <div class="main-heading">
+    <div class="row">
+      <div class="col-4">
+        <h1><a href="/consumers">Consumers</a> / </h1>
+      </div>
+      <div class="col-sm-8 col-12 text-sm-right">
+        <p>
+          <strong>Last updated:</strong> 1 minute ago
+          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> <span>Refresh</span></a>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Topic</th>
+              <th scope="col" class="text-center">Coverage</th>
+              <th scope="col" class="text-center">Total lag</th>
+            </tr>
+          </thead>
+          <tbody id="consumed-topics">
+            <tr>
+              <td class="text-center" colspan="3">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+          
+            <script id='tmpl-consumed-topics' type='text/x-handlebars-template'>
+              {{#consumed_topics}}
+                <tr>
+                  <td><a href="/topic/details?name={{name}}">{{name}}</a></td>
+                  <td class="text-center">{{coverage}}%</td>
+                  <td class="text-center">{{lag}}</td>
+                </tr>
+              {{/consumed_topics}}
+            </script>
+          
+        </table>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12 col-lg-6">
+        <div class="box box-w-header">
+          <div class="box-header">
+            <h2 class="text-center">Consumer Coverage</h2>
+          </div>
+          <div class="box-body consumer-coverage" id="kafka-chart-consumer">
+            <div id="y_axis"></div>
+            <div id="consumer-coverage-chart"></div>
+          </div>
+        </div>
+      </div>
+        <div class="col-md-12 col-lg-6">
+        <div class="box box-w-header">
+          <div class="box-header">
+            <h2 class="text-center">Total Lag</h2>
+          </div>
+          <div class="box-body total-lag" id="kafka-chart-lag">
+            <div id="y_axis2"></div>
+            <div id="total-lag-chart"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row mt-3">
+      <div class="col-12">
+        <h4>Consumed Partitions</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Topic</th>
+              <th scope="col">Partition</th>
+              <th scope="col" class="text-center">Lag</th>
+            </tr>
+          </thead>
+          <tbody id=consumed-partitions>
+            <tr>
+              <td class="text-center" colspan="3">
+                <div class="sk-three-bounce">
+                  <div class="sk-child sk-bounce1"></div>
+                  <div class="sk-child sk-bounce2"></div>
+                  <div class="sk-child sk-bounce3"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        
+          <script id='tmpl-consumed-partitions' type='text/x-handlebars-template'>
+            {{#consumed_partitions}}
+              <tr>
+                <td><a href="/topic/details?name={{topic}}">{{topic}}</a></td>
+                <td class="text-center">{{ partition }}</td>
+                <td class="text-center">{{ lag }}</td>
+              </tr>
+            {{/consumed_partitions}}
+          </script>
+        
+      </div>
+    </div>
+  </div>
+  <footer>
+  <p>
+		Kafka MGMT is developed by
+		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+		</a> and released under
+		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+	</p>
+</footer>
+
+  <script type="text/javascript">
+    var path = '/api/consumers/' + getParameterByName('name') + '.json';
+    get(path, function(consumer) {
+      renderTmpl('#consumed-topics', '#tmpl-consumed-topics', consumer);
+      renderTmpl('#consumed-partitions', '#tmpl-consumed-partitions', consumer);
+    });
+  </script>
+</main>
+
+    </div>
+  
+<script src="/js/jquery-3.3.1.min.js"></script>
+<script src="/js/tether.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/jquery.sparkline.min.js"></script>
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/rickshaw.min.js"></script>
+<script src="/js/kafka-mgmt.js"></script>
+
+
+
+
+
+  </body>
+</html>

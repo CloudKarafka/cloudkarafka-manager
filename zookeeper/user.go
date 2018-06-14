@@ -32,25 +32,24 @@ func User(name string) ([]byte, error) {
 }
 
 func CreateUser(name, password string) error {
-	cryptos := []string{"SCRAM-SHA-256", "SCRAM-SHA-512"}
+	cryptos := []string{"SCRAM-SHA-256"}
 	cfg := make(map[string]string)
 	for _, crypto := range cryptos {
-		salt, storedKey, serverKey, itr := auth.CreateScramLogin(name, password, crypto)
+		salt, storedKey, serverKey, itr := auth.CreateScramLogin(password, crypto)
 		cfg[crypto] = fmt.Sprintf("salt=%s,stored_key=%s,server_key=%s,iterations=%v", salt, storedKey, serverKey, itr)
 	}
 	node := map[string]interface{}{
 		"version": 1,
 		"config":  cfg,
 	}
-	config, err := json.Marshal(node)
-	if err != nil {
-		return nil
-	}
-	_, err = conn.Create("/config/users/"+name, config, 0, zk.WorldACL(zk.PermAll))
+	err := createPersistent("/config/users/"+name, node)
 	if err == zk.ErrNodeExists {
 		err = userAlreadyExists
 	}
-	return err
+	return createSeq("/config/changes/config_change_", map[string]interface{}{
+		"version":     2,
+		"entity_path": "users/" + name,
+	})
 }
 
 func UserCredentials(name string) (string, string) {
@@ -67,7 +66,11 @@ func UserCredentials(name string) (string, string) {
 	}
 	var salt, storedKey string
 	cfg := node["config"].(map[string]interface{})
-	for _, row := range strings.Split(cfg["SCRAM-SHA-512"].(string), ",") {
+	sha256, ok := cfg["SCRAM-SHA-256"].(string)
+	if !ok {
+		return "", ""
+	}
+	for _, row := range strings.Split(sha256, ",") {
 		if strings.HasPrefix(row, "salt=") {
 			salt = strings.Replace(row, "salt=", "", 1)
 		} else if strings.HasPrefix(row, "stored_key=") {
@@ -84,14 +87,21 @@ func ValidateScramLogin(user, pass string) bool {
 	enc := base64.StdEncoding.Strict()
 	s, sk := UserCredentials(user)
 	salt, _ := enc.DecodeString(s)
-	clientKey := enc.EncodeToString(auth.CalculateSha512Key([]byte(pass), []byte("Client Key"), salt, 4096))
-	return clientKey == sk
+	storedKey, _ := auth.CalculateSha256Keys(pass, salt)
+	return storedKey == sk
 }
 
 func DeleteUser(name string) error {
 	_, stats, _ := conn.Get("/config/users/" + name)
 	err := conn.Delete("/config/users/"+name, stats.Version)
 	if err != nil {
+		return err
+	}
+	data := map[string]interface{}{
+		"version":     2,
+		"entity_path": "users/" + name,
+	}
+	if err = createSeq("/config/changes/config_change_", data); err != nil {
 		return err
 	}
 	return DeleteAcls(name)

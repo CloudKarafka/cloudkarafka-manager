@@ -5,12 +5,17 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 const (
 	tPath string = "/kafka-acl/Topic"
-	cPath string = "/kafka-acl/Cluster/kafka-cluster"
+	cPath string = "/kafka-acl/Cluster"
 	gPath string = "/kafka-acl/Group"
+)
+
+var (
+	UnknownResourceType error = fmt.Errorf("[ERROR] unknown resource type; known types are [User, Topic, Cluster]")
 )
 
 type acl struct {
@@ -25,8 +30,8 @@ type aclNode struct {
 	Acls    []acl `json:"acls"`
 }
 
-func ClusterAcl() ([]acl, error) {
-	return aclFor(cPath)
+func ClusterAcl(name string) ([]acl, error) {
+	return aclFor(fmt.Sprintf("%s/%s", cPath, name))
 }
 
 func TopicAcl(t string) ([]acl, error) {
@@ -35,6 +40,21 @@ func TopicAcl(t string) ([]acl, error) {
 
 func GroupAcl(g string) ([]acl, error) {
 	return aclFor(fmt.Sprintf("%s/%s", gPath, g))
+}
+
+func ClusterAcls(_p Permissions) ([]string, error) {
+	children, _, err := conn.Children(cPath)
+	return children, err
+}
+
+func TopicsAcls(_p Permissions) ([]string, error) {
+	children, _, err := conn.Children(tPath)
+	return children, err
+}
+
+func GroupsAcls(_p Permissions) ([]string, error) {
+	children, _, err := conn.Children(gPath)
+	return children, err
 }
 
 func Groups(p Permissions) ([]string, error) {
@@ -58,42 +78,56 @@ type AclFunc func(string) ([]acl, error)
 
 func AllAcls(all AllFunc, details AclFunc) map[string][]acl {
 	acls := make(map[string][]acl)
-	rows, _ := all(Permissions{Cluster: RW})
+	rows, _ := all(Permissions{
+		Cluster: RW,
+		Topics:  map[string]Permission{"*": RW},
+		Groups:  map[string]Permission{"*": RW},
+	})
 	for _, r := range rows {
 		acls[r], _ = details(r)
 	}
 	return acls
 }
 
-func CreateAcl(principal, resource, resourceType string, perm Permission) error {
-	operation := perm.String()
-	if operation == "Read/Write" {
-		operation = "All"
+func CreateAcl(principal, name, resource, permissionType, host, perm string) error {
+	if perm == "Read/Write" {
+		perm = "All"
 	}
 	var (
 		acls []acl
 		err  error
+		path string
 	)
-	path := "/kafka-acl/" + resourceType
-	switch resourceType {
-	case "Group":
-		acls, err = GroupAcl(resource)
-	case "Topic":
-		acls, err = TopicAcl(resource)
-	case "Cluster":
-		acls, err = ClusterAcl()
-		resource = "kafka-cluster"
+	switch resource {
+	case "Group", "group":
+		acls, err = GroupAcl(name)
+		path = gPath
+	case "Topic", "topic":
+		acls, err = TopicAcl(name)
+		path = tPath
+	case "Cluster", "cluster":
+		acls, err = ClusterAcl("kafka-cluster")
+		name = "kafka-cluster"
+		path = cPath
+	default:
+		return UnknownResourceType
 	}
-	path = fmt.Sprintf("%s/%s", path, resource)
-	a := acl{Principal: "User:" + principal, PermissionType: "Allow", Operation: operation, Host: "*"}
 	if err != nil && err != zk.ErrNoNode {
 		return err
 	}
-	acls = append(acls, a)
-	return setAcl(path, acls)
+	if !strings.HasPrefix(principal, "User:") {
+		principal = "User:" + principal
+	}
+	acls = append(acls, acl{Principal: principal,
+		PermissionType: permissionType,
+		Operation:      perm,
+		Host:           host,
+	})
+	return setAcl(path, name, acls)
 }
 
-func setAcl(path string, acls []acl) error {
+func setAcl(root, name string, acls []acl) error {
+	path := fmt.Sprintf("%s/%s", root, name)
 	data, err := json.Marshal(aclNode{
 		Version: 1,
 		Acls:    acls,
@@ -103,68 +137,73 @@ func setAcl(path string, acls []acl) error {
 	}
 	ok, s, _ := conn.Exists(path)
 	if ok && acls == nil {
+		fmt.Println(path)
 		err = conn.Delete(path, s.Version)
 	} else if ok {
 		_, err = conn.Set(path, data, s.Version)
 	} else {
 		_, err = conn.Create(path, data, 0, zk.WorldACL(zk.PermAll))
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	c := fmt.Sprintf("%s:%s", strings.Split(root, "/")[2], name)
+	return createSeq("/kafka-acl-changes/acl_changes_", c)
 }
 
 func DeleteAcl(user, resource, resourceType string) error {
 	var (
+		path string
 		err  error
 		acls []acl
 	)
-	path := "/kafka-acl/" + resourceType
 	switch resourceType {
-	case "Group":
+	case "Group", "group":
 		acls, err = GroupAcl(resource)
 		if err != nil {
 			return err
 		}
-		path = fmt.Sprintf("%s/%s", path, resource)
-		err = setAcl(path, rejectAclFor(user, acls))
-	case "Topic":
+		path = gPath
+	case "Topic", "topic":
+		fmt.Println("delete topic acl:", user, resource, resourceType)
 		acls, err = TopicAcl(resource)
 		if err != nil {
 			return err
 		}
-		path = fmt.Sprintf("%s/%s", path, resource)
-		err = setAcl(path, rejectAclFor(user, acls))
-	case "Cluster":
-		acls, err = ClusterAcl()
+		path = tPath
+	case "Cluster", "cluster":
+		acls, err = ClusterAcl("kafka-cluster")
 		if err != nil {
 			return err
 		}
-		path = fmt.Sprintf("%s/%s", path, "kafka-cluster")
-		err = setAcl(path, rejectAclFor(user, acls))
+		path = cPath
+	default:
+		return UnknownResourceType
 	}
-	return err
+	return setAcl(path, resource, rejectAclFor(user, acls))
 }
 
 func DeleteAcls(user string) error {
 	permissions := PermissionsFor(user)
 	for g, _ := range permissions.Groups {
 		acls, _ := GroupAcl(g)
-		setAcl(fmt.Sprintf("%s/%s", gPath, g), rejectAclFor(user, acls))
+		setAcl(gPath, g, rejectAclFor(user, acls))
 	}
 	for t, _ := range permissions.Topics {
 		acls, _ := TopicAcl(t)
-		setAcl(fmt.Sprintf("%s/%s", tPath, t), rejectAclFor(user, acls))
+		setAcl(tPath, t, rejectAclFor(user, acls))
 	}
-	acls, err := ClusterAcl()
+	acls, err := ClusterAcl("kafka-cluster")
 	if err != nil {
 		return err
 	}
-	return setAcl(cPath, rejectAclFor(user, acls))
+	return setAcl(cPath, "kafka-cluster", rejectAclFor(user, acls))
 }
 
 func rejectAclFor(user string, acls []acl) []acl {
 	var filtered []acl
 	for _, a := range acls {
-		if a.Principal != "User:"+user {
+		if a.Principal != user {
 			filtered = append(filtered, a)
 		}
 	}

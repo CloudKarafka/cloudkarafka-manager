@@ -1,14 +1,48 @@
-#!/bin/bash -ex
+#!/usr/bin/env bash
+set -eu
 
-trap '[ $? -ne 0 ]; rm -rf target' EXIT
+function usage {
+    echo $"Usage: $(basename $0) {production|staging|all}"
+    exit 1
+}
 
-mkdir -p target
+function build {
+    mkdir -p target
+    GOARCH=amd64 GOOS=linux go build -o target/cloudkarafka-mgmt.linux
+    go build -o target/cloudkarafka-mgmt.amd64.osx
+    cp -r static target/static
+    tar -czf cloudkarafka-mgmt.tar.gz target
+}
 
-GOARCH=amd64 GOOS=linux go build -o target/cloudkarafka-mgmt.linux
-go build -o target/cloudkarafka-mgmt.amd64.osx
-cp -r jars target/jars
-cp -r static target/static
-tar -czf cloudkarafka-mgmt.tar.gz target
-rm -rf target
-aws s3 cp cloudkarafka-mgmt.tar.gz s3://cloudkafka-manager/cloudkarafka-mgmt.tar.gz
-rm -rf coudkarafka-mgmt.tar.gz
+function clean {
+    rm -rf target
+    rm -rf coudkarafka-mgmt.tar.gz
+}
+
+function staging {
+    aws s3 cp cloudkarafka-mgmt.tar.gz s3://cloudkafka-manager/staging/cloudkarafka-mgmt.tar.gz
+}
+
+function production {
+    aws s3 cp cloudkarafka-mgmt.tar.gz s3://cloudkafka-manager/production/cloudkarafka-mgmt.tar.gz
+}
+
+[ $# -eq 1 ] || usage
+
+case "$1" in
+staging)
+    build
+    staging
+    clean ;;
+production)
+    build
+    production
+    clean ;;
+all)
+    build
+    staging
+    production
+    clean ;;
+*) usage
+esac
+

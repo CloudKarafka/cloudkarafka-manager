@@ -67,8 +67,8 @@ func decodeUser(r *http.Request) (user, error) {
 		decoder := json.NewDecoder(r.Body)
 		err = decoder.Decode(&u)
 	default:
-		err = r.ParseForm()
-		u = user{Name: r.PostForm.Get("name"), Password: r.PostForm.Get("password")}
+		err = r.ParseMultipartForm(512)
+		u = user{Name: r.PostFormValue("name"), Password: r.PostFormValue("password")}
 	}
 	return u, err
 }

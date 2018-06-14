@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin - Kafka MGMT</title>
+  <link rel="apple-touch-icon" href="/img/logo.png">
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <meta property="og:title" content="The best management interface for Apache Kafka" />
+  <meta name="author" content="84codes Team" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:site_name" content="Kafka MGMT" />
+  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  <script src="/js/handlebars.min.js"></script>
+  <script src="/js/d3.v3.min.js"></script>
+  <script src="/js/rickshaw.min.js"></script>
+  <script src="/js/kafka-auth.js"></script>
+  <script src="/js/kafka-helpers.js"></script>
+  <script src="/js/kafka-charts.js"></script>
+  <script type="text/javascript"> testLoggedIn() </script>
+
+    <style>
+      html,body {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+     <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+  <div class="container-fluid">
+    <div>
+      <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+        <span class="hamburger-box">
+          <span class="hamburger-inner"></span>
+        </span>
+      </button>
+    </div>
+    <div class="text-right">
+      <p class="my-2 my-md-0 text-right">
+        <a onclick="signout()">
+          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+      </p>
+    </div>
+  </div>
+</nav>
+
+      <aside class="sidebar-wrapper">
+  <div class="sidebar-header text-center">
+    <a href="/" class="app-logo">
+      <img src="/assets/mgmt-logo.svg"/>
+      <h1 class="logo-text">Kafka MGMT</h1>
+    </a>
+
+  </div>
+  <div class="sidebar-content">
+    <div class="sidebar-info">
+      <h2 class="host">localhost</h2>
+      <p id="username">
+      </p>
+    </div>
+    <nav class="sidebar-nav">
+      <ul>
+        
+        <li class="">
+            <a href="/">
+              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+              <span>Overview</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/topics">
+              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+              <span>Topics</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/consumers">
+              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+              <span>Consumers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/brokers">
+              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+              <span>Brokers</span>
+            </a>
+        </li>
+        
+        <li class="">
+            <a href="/admin">
+              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+              <span>Admin</span>
+            </a>
+        </li>
+        
+      </ul>
+    </nav>
+  </div>
+</aside>
+
+        <div class="sidebar-backdrop"></div>
+<main class="main-container">
+  <div class="main-heading">
+    <div class="row">
+      <div class="col-sm-4 col-12">
+        <h1>Admin</h1>
+      </div>
+      <div class="col-sm-8 col-12 text-sm-right">
+        <p>
+          <strong>Last updated:</strong> 1 minute ago
+          <a href="#" class="btn btn-outline-secondary btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/sync.svg" /></span> <span>Refresh</span></a>
+          <a href="/users/add" class="btn btn-primary float-sm-none float-right ml-2">+ Add User</a>
+          <a href="/acls/add" class="btn btn-primary float-sm-none float-right ml-2">+ Add Acl</a>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-md-12">
+        <h4>Users</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col" class="text-center">Cluster Permissions</th>
+              <th scope="col" class="text-center">Topics Permissions</th>
+              <th scope="col" class="text-center">Consumer Group Permissions</th>
+              <th scope="col" class="text-center">&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody id="user-rows">
+              <tr>
+                <td class="text-center" colspan="5">
+                  <div class="sk-three-bounce one-liner">
+                    <div class="sk-child sk-bounce1"></div>
+                    <div class="sk-child sk-bounce2"></div>
+                    <div class="sk-child sk-bounce3"></div>
+                  </div>
+                </td>
+              </tr>
+          </tbody>
+        </table>
+        
+          <script id='tmpl-users' type='text/x-handlebars-template'>
+            {{#elements}}
+            <tr>
+              <td>{{username}}</td>
+              <td class="text-center">{{cluster}}</td>
+              <td class="text-center">
+                <ul>
+                {{#each topics}}
+                  <dl>
+                    <dt>
+                      Topic pattern: {{@key}}
+                    </dt>
+                    <dd>
+                      Permission: {{this}}
+                    </dd>
+                  </dl>
+                {{else}}
+                No permission
+                {{/each}}
+                </ul>
+              </td>
+              <td class="text-center">
+                <ul>
+                  {{#each groups}}
+                  <dl>
+                    <dt>
+                      Group pattern: {{@key}}
+                    </dt>
+                    <dd>
+                      Permission: {{this}}
+                    </dd>
+                  </dl>
+                  {{else}}
+                  No permissions
+                  {{/each}}
+                </ul>
+              </td>
+              <td class="text-center">
+                <form action="/api/users/{{username}}" class="user-form">
+                  <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></button>
+                </form>
+              </td>
+            </tr>
+            {{/elements}}
+          </script>
+        
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <h4>Topic ACLs</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Topic name</th>
+              <th scope="col" class="text-center">Principal</th>
+              <th scope="col" class="text-center">Type</th>
+              <th scope="col" class="text-center">Permission</th>
+              <th scope="col" class="text-center">Host</th>
+              <th scope="col" class="text-center">&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody id="topic-acl-rows">
+              <tr>
+                <td class="text-center" colspan="6">
+                  <div class="sk-three-bounce one-liner">
+                    <div class="sk-child sk-bounce1"></div>
+                    <div class="sk-child sk-bounce2"></div>
+                    <div class="sk-child sk-bounce3"></div>
+                  </div>
+                </td>
+              </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <h4>Cluster ACLs</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Cluster name</th>
+              <th scope="col" class="text-center">Principal</th>
+              <th scope="col" class="text-center">Type</th>
+              <th scope="col" class="text-center">Permission</th>
+              <th scope="col" class="text-center">Host</th>
+              <th scope="col" class="text-center">&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody id="cluster-acl-rows">
+              <tr>
+                <td class="text-center" colspan="6">
+                  <div class="sk-three-bounce one-liner">
+                    <div class="sk-child sk-bounce1"></div>
+                    <div class="sk-child sk-bounce2"></div>
+                    <div class="sk-child sk-bounce3"></div>
+                  </div>
+                </td>
+              </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <h4>Group ACLs</h4>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Group name</th>
+              <th scope="col" class="text-center">Principal</th>
+              <th scope="col" class="text-center">Type</th>
+              <th scope="col" class="text-center">Permission</th>
+              <th scope="col" class="text-center">Host</th>
+              <th scope="col" class="text-center">&nbsp;</th>
+            </tr>
+          </thead>
+          <tbody id="group-acl-rows">
+              <tr>
+                <td class="text-center" colspan="6">
+                  <div class="sk-three-bounce one-liner">
+                    <div class="sk-child sk-bounce1"></div>
+                    <div class="sk-child sk-bounce2"></div>
+                    <div class="sk-child sk-bounce3"></div>
+                  </div>
+                </td>
+              </tr>
+          </tbody>
+        </table>
+        
+          <script id='tmpl-acl-row' type='text/x-handlebars-template'>
+            {{#each this}}
+            <tr>
+              <td>{{name}}</td>
+              <td class="text-center">{{principal}}</td>
+              <td class="text-center">{{type}}</td>
+              <td class="text-center">{{permission}}</td>
+              <td class="text-center">{{host}}</td>
+              <td>
+              <form class="acl-form">
+                <input type="hidden" name="resource" value="{{resource}}"/>
+                <input type="hidden" name="name" value="{{name}}"/>
+                <input type="hidden" name="principal" value="{{principal}}"/>
+                <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></button>
+              </form>
+              </td>
+            </tr>
+            {{/each}}
+          </script>
+        
+      </div>
+    </div>
+  </div>
+  <footer>
+  <p>
+		Kafka MGMT is developed by
+		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+		</a> and released under
+		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+	</p>
+</footer>
+
+  <script type="text/javascript">
+    renderListTmpl('#user-rows', '#tmpl-users', '/api/users.json', function() {
+      document.querySelectorAll(".user-form").forEach(function(elem) {
+        elem.addEventListener("submit", function(evt) {
+          evt.preventDefault();
+          del(this.action, function() {
+            location.reload();
+          });
+        })
+      })
+    });
+
+    function list(resource, elements) {
+      var lst = []
+      for (var key in elements) {
+        elements[key].forEach(function(elem) {
+          lst.push({
+            "name": key,
+            "resource": resource,
+            "principal": elem.principal,
+            "type": elem.permissionType,
+            "permission": elem.operation,
+            "host": elem.host,
+          })
+        })
+      }
+      return lst;
+    };
+    get('/api/acls.json', function(acls) {
+      renderTmpl('#cluster-acl-rows', '#tmpl-acl-row', list("cluster", acls.cluster));
+      renderTmpl('#topic-acl-rows', '#tmpl-acl-row', list("topic", acls.topics));
+      renderTmpl('#group-acl-rows', '#tmpl-acl-row', list("group", acls.groups));
+      document.querySelectorAll(".acl-form").forEach(function(elem) {
+        elem.addEventListener("submit", function(evt) {
+          evt.preventDefault();
+          var inputs = this.elements;
+          var resource = inputs["resource"].value;
+          var name = inputs["name"].value;
+          var principal = inputs["principal"].value;
+          del("/api/acls/" + resource + "/" + name + "/" + principal, function() {
+            location.reload();
+          });
+        })
+      });
+    });
+  </script>
+</main>
+
+    </div>
+  
+<script src="/js/jquery-3.3.1.min.js"></script>
+<script src="/js/tether.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script src="/js/jquery.sparkline.min.js"></script>
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/rickshaw.min.js"></script>
+<script src="/js/kafka-mgmt.js"></script>
+
+
+
+
+
+  </body>
+</html>

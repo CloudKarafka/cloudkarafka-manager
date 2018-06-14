@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Kafka MGMT</title>
+  <link rel="apple-touch-icon" href="/img/logo.png">
+
+  <link rel="stylesheet" href="/css/style.css">
+
+  <meta property="og:title" content="The best management interface for Apache Kafka" />
+  <meta name="author" content="84codes Team" />
+  <meta property="og:locale" content="en_US" />
+  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+  <meta property="og:site_name" content="Kafka MGMT" />
+  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  <script src="/js/handlebars.min.js"></script>
+  <script src="/js/d3.v3.min.js"></script>
+  <script src="/js/rickshaw.min.js"></script>
+  <script src="/js/kafka-auth.js"></script>
+  <script src="/js/kafka-helpers.js"></script>
+  <script src="/js/kafka-charts.js"></script>
+  <script type="text/javascript"> testLoggedIn() </script>
+
+    <style>
+      html {
+        min-height: 100%;
+        position: relative;
+      }
+
+      body.login {
+        margin-bottom: 70px;
+      }
+    </style>
+  </head>
+  <body class="login">
+    <main class="login-container">
+  <div class="box">
+    <div class="box-header text-center">
+        <div class="app-logo">
+          <img src="/assets/mgmt-logo.svg"/>
+          <h1 class="logo-text">Kafka MGMT</h1>
+        </div>
+    </div>
+    <div class="box-body">
+      <div class="login-info">
+        <h2 class="host">localhost</h2>
+      </div>
+      <form id="login" action="/">
+        <div class="form-group">
+          <label for="kafka-username">Username</label>
+          <input type="text" class="form-control" id="kafka-username">
+        </div>
+        <div class="form-group password mb-3">
+          <label for="kafka-password">Password</label>
+          <input type="password" class="form-control" id="kafka-password">
+        </div>
+        <div class="pt-3">
+            <button type="submit" class="btn btn-primary">Sign in</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="fixed-bottom">
+    <div class="container text-center">
+        <footer>
+  <p>
+		Kafka MGMT is developed by
+		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+		</a> and released under
+		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+	</p>
+</footer>
+
+    </div>
+  </div>
+  <script type="text/javascript">
+    element("#login").addEventListener("submit", function(evt) {
+      evt.preventDefault();
+      var request = new XMLHttpRequest();
+      var user = element('#kafka-username').value;
+      var pass = element('#kafka-password').value;
+      request.open('GET', '/api/whoami.json', true, user, pass);
+      request.onload = function() {
+        if (request.status >= 200 && request.status < 400) {
+          // Success!
+          var data = JSON.parse(request.responseText);
+          console.log(data);
+          store_cookie({username: user, password: pass});
+          set_auth(user + ":" + pass);
+          redirect('/');
+        }
+      }
+      request.send();
+    });
+  </script>
+</main>
+
+
+  </body>
+</html>

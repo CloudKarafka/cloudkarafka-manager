@@ -7,12 +7,16 @@ import (
 
 	"github.com/gorilla/mux"
 
+	_ "net/http/pprof"
+
 	"fmt"
 	"net/http"
 	"time"
 )
 
-func ah(fn aclScopedHandler) http.HandlerFunc {
+type aclScopedHandler func(http.ResponseWriter, *http.Request, zookeeper.Permissions)
+
+func protected(fn aclScopedHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, pass, ok := r.BasicAuth()
 		if zookeeper.SkipAuthentication() {
@@ -28,70 +32,79 @@ func ah(fn aclScopedHandler) http.HandlerFunc {
 			fn(w, r, p)
 			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else {
-			w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+			w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
 			w.WriteHeader(http.StatusUnauthorized)
 		}
 	}
 }
 
-type aclScopedHandler func(http.ResponseWriter, *http.Request, zookeeper.Permissions)
+func protecedServeFile(r *mux.Router, path, file string) {
+	r.HandleFunc(path, protected(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
+		http.ServeFile(w, req, "static/"+file)
+	}))
+}
 
 func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
-	a.HandleFunc("/acls", ah(api.Acls))
-	a.HandleFunc("/acls/{type}/{resource}/{username}", ah(api.Acl))
-	a.HandleFunc("/brokers", ah(api.Brokers))
-	a.HandleFunc("/brokers/{id}", ah(api.Broker))
-	a.HandleFunc("/brokers/{id}/metrics", ah(api.BrokerMetrics))
-	a.HandleFunc("/topics", ah(api.Topics))
-	a.HandleFunc("/topics/{topic}", ah(api.Topic))
-	a.HandleFunc("/topics/{topic}/metrics", ah(api.TopicMetrics))
-	a.HandleFunc("/topics/{topic}/config", ah(api.Config))
-	a.HandleFunc("/topics/{topic}/reassigning", ah(api.ReassigningTopic))
-	a.HandleFunc("/consumers", ah(api.Consumers))
-	a.HandleFunc("/consumers/{name}", ah(api.Consumer))
-	a.HandleFunc("/consumers/{name}/metrics", ah(api.ConsumerMetrics))
-	a.HandleFunc("/whoami", ah(api.Whoami))
-	a.HandleFunc("/users", ah(api.Users))
-	a.HandleFunc("/users/{name}", ah(api.User))
+	a.HandleFunc("/acls.json", protected(api.Acls))
+	a.HandleFunc("/acls", protected(api.Acls))
+	a.HandleFunc("/acls/{resource}/{name}/{principal}", protected(api.Acl))
+	a.HandleFunc("/brokers.json", protected(api.Brokers))
+	a.HandleFunc("/brokers/throughput.json", protected(api.AllBrokerThroughputTimeseries))
+	a.HandleFunc("/brokers/{id}.json", protected(api.Broker))
+	a.HandleFunc("/brokers/{id}/throughput.json", protected(api.BrokerThroughputTimeseries))
+	a.HandleFunc("/brokers/throughput", protected(api.AllBrokerThroughputTimeseries))
+	a.HandleFunc("/topics.json", protected(api.Topics))
+	a.HandleFunc("/topics", protected(api.Topics))
+	a.HandleFunc("/topics/{topic}.json", protected(api.Topic))
+	a.HandleFunc("/topics/{topic}", protected(api.Topic))
+	a.HandleFunc("/topics/{topic}/config.json", protected(api.Config))
+	a.HandleFunc("/topics/{topic}/config", protected(api.Config))
+	a.HandleFunc("/topics/{topic}/throughput.json", protected(api.TopicThroughput))
+	a.HandleFunc("/consumers.json", protected(api.Consumers))
+	a.HandleFunc("/consumers/{name}.json", protected(api.Consumer))
+	a.HandleFunc("/whoami.json", protected(api.Whoami))
+	a.HandleFunc("/whoami", protected(api.Whoami))
+	a.HandleFunc("/users.json", protected(api.Users))
+	a.HandleFunc("/users", protected(api.Users))
+	a.HandleFunc("/users/{name}.json", protected(api.User))
+	a.HandleFunc("/users/{name}", protected(api.User))
+	a.HandleFunc("/notifications.json", protected(api.Notifications))
+}
+
+func serveFile(r *mux.Router, path, file string) {
+	r.HandleFunc(path, func(w http.ResponseWriter, req *http.Request) {
+		http.ServeFile(w, req, "static/"+file)
+	})
 }
 
 func Start(cert, key string) {
 	r := mux.NewRouter()
 	apiRoutes(r)
 
-	r.HandleFunc("/", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "static/html/home.html")
-	}))
-
-	r.HandleFunc("/api", func(w http.ResponseWriter, req *http.Request) {
-		http.ServeFile(w, req, "static/html/docs.html")
-	})
-
-	r.HandleFunc("/topics/{topic}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "static/html/topic.html")
-	}))
-
-	r.HandleFunc("/brokers/{id}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "static/html/broker.html")
-	}))
-
-	r.HandleFunc("/users/{name}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "static/html/user.html")
-	}))
-
-	r.HandleFunc("/consumers/{name}", ah(func(w http.ResponseWriter, req *http.Request, _ zookeeper.Permissions) {
-		http.ServeFile(w, req, "static/html/consumer.html")
-	}))
+	serveFile(r, "/", "index.html")
+	serveFile(r, "/topics", "topics/index.html")
+	serveFile(r, "/topics/add", "topics/add.html")
+	serveFile(r, "/topic/edit", "topic/edit.html")
+	serveFile(r, "/topic/details", "topic/details.html")
+	serveFile(r, "/brokers", "brokers.html")
+	serveFile(r, "/broker/details", "broker/details.html")
+	serveFile(r, "/consumers", "consumers/index.html")
+	serveFile(r, "/consumer/details", "consumer/details.html")
+	serveFile(r, "/admin", "admin/index.html")
+	serveFile(r, "/users/add", "users/add.html")
+	serveFile(r, "/acls/add", "acls/add.html")
+	serveFile(r, "/login", "login.html")
 
 	http.Handle("/js/", http.FileServer(http.Dir("static/")))
 	http.Handle("/css/", http.FileServer(http.Dir("static/")))
 	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
+	http.Handle("/assets/", http.FileServer(http.Dir("static/")))
 	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%s", config.Port),
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 60 * time.Second,
 	}
 	fmt.Println("Listening on Port", config.Port)
 	fmt.Println(s.ListenAndServe())
