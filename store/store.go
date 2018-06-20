@@ -5,20 +5,20 @@ import (
 	"sort"
 )
 
-type store []Data
+type Store []Data
 
-func (me store) Each(fn func(Data)) {
+func (me Store) Each(fn func(Data)) {
 	for _, d := range me {
 		fn(d)
 	}
 }
 
-func (me store) Any(fn func(Data) bool) bool {
+func (me Store) Any(fn func(Data) bool) bool {
 	selected := me.Select(fn)
 	return selected.Len() > 0
 }
 
-func (me store) Last() Data {
+func (me Store) Last() Data {
 	len := me.Len()
 	if len == 0 {
 		return Data{}
@@ -26,8 +26,8 @@ func (me store) Last() Data {
 	return me[me.Len()-1]
 }
 
-func (me store) Select(fn func(Data) bool) store {
-	var selected store
+func (me Store) Select(fn func(Data) bool) Store {
+	var selected Store
 	for _, d := range me {
 		if fn(d) {
 			selected = append(selected, d)
@@ -36,7 +36,7 @@ func (me store) Select(fn func(Data) bool) store {
 	return selected
 }
 
-func (me store) Find(fn func(Data) bool) (Data, error) {
+func (me Store) Find(fn func(Data) bool) (Data, error) {
 	data := me.Select(fn)
 	if len(data) != 1 {
 		return Data{}, NotFound
@@ -44,30 +44,30 @@ func (me store) Find(fn func(Data) bool) (Data, error) {
 	return data[0], nil
 }
 
-func (me store) GroupByMetric() map[string]store {
+func (me Store) GroupByMetric() map[string]Store {
 	return me.GroupBy(func(d Data) string {
 		return d.Tags["metric"]
 	})
 }
 
-func (me store) GroupByTopic() map[string]store {
+func (me Store) GroupByTopic() map[string]Store {
 	return me.GroupBy(func(d Data) string {
 		return d.Tags["topic"]
 	})
 }
 
-func (me store) GroupByPartition() map[string]store {
+func (me Store) GroupByPartition() map[string]Store {
 	return me.GroupBy(func(d Data) string {
 		return d.Tags["partition"]
 	})
 }
 
-func (me store) GroupBy(fn func(Data) string) map[string]store {
-	grouped := make(map[string]store)
+func (me Store) GroupBy(fn func(Data) string) map[string]Store {
+	grouped := make(map[string]Store)
 	for _, d := range me {
 		name := fn(d)
 		if _, ok := grouped[name]; !ok {
-			grouped[name] = store{}
+			grouped[name] = Store{}
 		}
 		g := grouped[name]
 		g = append(g, d)
@@ -76,7 +76,7 @@ func (me store) GroupBy(fn func(Data) string) map[string]store {
 	return grouped
 }
 
-func (me store) StringMap(fn func(Data) string) []string {
+func (me Store) StringMap(fn func(Data) string) []string {
 	strings := make([]string, len(me))
 	for i, d := range me {
 		strings[i] = fn(d)
@@ -84,21 +84,21 @@ func (me store) StringMap(fn func(Data) string) []string {
 	return strings
 }
 
-func (me store) Sort() store {
+func (me Store) Sort() Store {
 	sort.Sort(me)
 	return me
 }
 
-func (me store) Len() int {
+func (me Store) Len() int {
 	return len(me)
 }
 
-func (me store) Less(i, j int) bool {
+func (me Store) Less(i, j int) bool {
 	iElem, jElem := me[i], me[j]
 	return iElem.Timestamp < jElem.Timestamp
 }
 
-func (me store) Swap(i, j int) {
+func (me Store) Swap(i, j int) {
 	iElem, jElem := me[i], me[j]
 	me[j] = iElem
 	me[i] = jElem

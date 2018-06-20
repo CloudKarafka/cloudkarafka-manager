@@ -75,36 +75,49 @@ func baseTopic(t T) (T, error) {
 	return t, nil
 }
 
+func partitionMetric(p Partition, data store.Store) Partition {
+	for m, d := range data.GroupByMetric() {
+		sort.Sort(d)
+		value := d.Last().Value
+		switch m {
+		case "LogStartOffset":
+			p.LogStartOffset = value
+		case "LogEndOffset":
+			p.LogEndOffset = value
+		case "Size":
+			p.Size = value
+		}
+	}
+	return p
+}
+
 func TopicMetrics(t T) T {
 	partitions := store.SelectWithIndex(t.Name).GroupByPartition()
-	total := 0
-	totalSize := 0
 	for partition, data := range partitions {
-		var p Partition
 		if partition != "" {
-			num, _ := strconv.Atoi(partition)
-			p = t.Partitions[num]
-		}
-		for m, d := range data.GroupByMetric() {
-			sort.Sort(d)
-			value := d.Last().Value
-			switch m {
-			case "LogStartOffset":
-				p.LogStartOffset = value
-			case "LogEndOffset":
-				p.LogEndOffset = value
-			case "Size":
-				totalSize += value
-				p.Size = value
-			case "BytesInPerSec":
-				t.BytesInPerSec = value
-			case "BytesOutPerSec":
-				t.BytesOutPerSec = value
-			case "MessagesInPerSec":
-				t.MessagesInPerSec = value
+			if num, _ := strconv.Atoi(partition); num < len(t.Partitions) {
+				t.Partitions[num] = partitionMetric(t.Partitions[num], data)
+			}
+		} else {
+			for m, d := range data.GroupByMetric() {
+				sort.Sort(d)
+				value := d.Last().Value
+				switch m {
+				case "BytesInPerSec":
+					t.BytesInPerSec = value
+				case "BytesOutPerSec":
+					t.BytesOutPerSec = value
+				case "MessagesInPerSec":
+					t.MessagesInPerSec = value
+				}
 			}
 		}
+	}
+	total := 0
+	totalSize := 0
+	for _, p := range t.Partitions {
 		total += p.LogEndOffset - p.LogStartOffset
+		totalSize += p.Size
 	}
 	sort.Sort(t.Partitions)
 	t.MessageCount = total

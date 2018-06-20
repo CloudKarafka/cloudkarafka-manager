@@ -8,7 +8,7 @@ import (
 
 type backend struct {
 	sync.RWMutex
-	segments   []store
+	segments   []Store
 	indices    map[string][]idx
 	indexTypes map[string][]string
 }
@@ -20,13 +20,13 @@ type idx struct {
 
 func newBackend() backend {
 	return backend{
-		segments:   make([]store, 0),
+		segments:   make([]Store, 0),
 		indices:    make(map[string][]idx),
 		indexTypes: make(map[string][]string),
 	}
 }
 
-func (me backend) Intersection(indexNames ...string) store {
+func (me backend) Intersection(indexNames ...string) Store {
 	me.RLock()
 	defer me.RUnlock()
 	seen := make(map[idx]struct{})
@@ -54,7 +54,7 @@ func (me backend) Intersection(indexNames ...string) store {
 	return me.subset(intersection...)
 }
 
-func (me backend) Union(indexNames ...string) store {
+func (me backend) Union(indexNames ...string) Store {
 	me.RLock()
 	defer me.RUnlock()
 	set := make(map[idx]struct{})
@@ -72,7 +72,7 @@ func (me backend) Union(indexNames ...string) store {
 	return me.subset(union...)
 }
 
-func (me backend) SelectWithIndex(indexName string) store {
+func (me backend) SelectWithIndex(indexName string) Store {
 	me.RLock()
 	defer me.RUnlock()
 	return me.subset(me.indices[indexName]...)
@@ -84,10 +84,10 @@ func (me backend) IndexedNames(name string) []string {
 	return me.indexTypes[name]
 }
 
-func (me *backend) subset(indices ...idx) store {
+func (me *backend) subset(indices ...idx) Store {
 	me.RLock()
 	defer me.RUnlock()
-	selected := make(store, len(indices))
+	selected := make(Store, len(indices))
 	for i, index := range indices {
 		selected[i] = me.segments[index.Segment][index.Pos]
 	}
@@ -103,7 +103,7 @@ func (me *backend) Put(data Data, indexOn []string) {
 	}
 	nrSegments := len(me.segments)
 	if nrSegments == 0 || len(me.segments[nrSegments-1]) >= 1000 {
-		me.segments = append(me.segments, make(store, 0))
+		me.segments = append(me.segments, make(Store, 0))
 		nrSegments = len(me.segments)
 	}
 	currentSegment := me.segments[nrSegments-1]

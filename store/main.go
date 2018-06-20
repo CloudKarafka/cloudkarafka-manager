@@ -17,15 +17,15 @@ func Put(data Data, indexOn []string) {
 	b.Put(data, indexOn)
 }
 
-func Intersection(indexNames ...string) store {
+func Intersection(indexNames ...string) Store {
 	return b.Intersection(indexNames...)
 }
 
-func Union(indexNames ...string) store {
+func Union(indexNames ...string) Store {
 	return b.Intersection(indexNames...)
 }
 
-func SelectWithIndex(indexName string) store {
+func SelectWithIndex(indexName string) Store {
 	return b.SelectWithIndex(indexName)
 }
 

@@ -85,7 +85,6 @@ func (me conn) TopicExists(name string) bool {
 			break
 		}
 	}
-	exists = false
 	return exists
 }
 
