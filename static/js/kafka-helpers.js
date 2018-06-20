@@ -18,6 +18,11 @@ function getParameterByName(name, url) {
   return decodeURIComponent(results[2].replace(/\+/g, " "));
 }
 
+function periodicGet(path, callback) {
+  get(path, callback);
+  setTimeout(function() { periodicGet(path, callback) }, 5000);
+}
+
 function get(path, callback) {
   req('GET', path, callback);
 };

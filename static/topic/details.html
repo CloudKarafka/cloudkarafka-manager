@@ -262,8 +262,8 @@
           <div class="box-body input-output" id="throughput">
   <div class="loading-metric chart"></div>
   <div id="axis0"></div>
-  <div id="chart"></div>
   <div id="axis1"></div>
+  <div id="chart"></div>
 </div>
 
 
@@ -280,13 +280,6 @@
     <div class="row mt-3">
       <div class="col-4">
         <h4>Partitions</h4>
-      </div>
-      <div class="col-sm-8 col-12 text-sm-right">
-        <div>
-          <span class="mr-2">For testing:</span>
-          <a href="#" class="btn btn-outline-secondary float-sm-none float-right"><span>Publish Message</span></a>
-          <a href="#" class="btn btn-outline-secondary float-sm-none float-right"><span>Consume Message</span></a>
-        </div>
       </div>
     </div>
     <div class="row">
@@ -323,7 +316,7 @@
                 <td class="text-center">{{ leader }}</td>
                 <td class="text-center">{{ replicas }}</td>
                 <td class="text-center">{{ isr }}</td>
-                <td class="text-center">{{ toLocaleString size }}</td>
+                <td class="text-center">{{ humanFileSize size }}</td>
                 <td class="text-center">{{ toLocaleString log_start_offset }}</td>
                 <td class="text-center">{{ toLocaleString log_end_offset }}</td>
               </tr>
@@ -367,16 +360,16 @@
         redirect("/topics");
       })
     })
-    get(path, function(topic) {
-      renderTmpl('#topic-overview', '#tmpl-topic-overview', topic);
-      renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
-      renderTmpl('#topic-config', '#tmpl-topic-config', topic);
-      renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
-    })
+    periodicGet(path, function(topic) {
+        renderTmpl('#topic-overview', '#tmpl-topic-overview', topic);
+        renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
+        renderTmpl('#topic-config', '#tmpl-topic-config', topic);
+        renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
+    });
     get('/api/topics/' + name + '/throughput.json', function(data) {
-      element("#throughput .loading-metric").hidden = true;
-      drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
-    })
+        element("#throughput .loading-metric").hidden = true;
+        drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
+    });
   </script>
 </main>
 

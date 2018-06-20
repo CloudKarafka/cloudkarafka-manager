@@ -1,26 +1,9 @@
-function drawChart(containerId, id, xId, yId, data) {
+function drawChart(containerId, id, yaxis, xaxis, data) {
   if (data.in.length === 0 || data.out.length === 0) {
     renderTmpl('#throughput', '#tmpl-no-throughput');
     return;
   }
-  var setScale = function(series, type) {
-    min = Number.MAX_VALUE;
-    max = Number.MIN_VALUE;
-    for (_l = 0, _len2 = series.length; _l < _len2; _l++) {
-      point = series[_l];
-      min = Math.min(min, point.y);
-      max = Math.max(max, point.y);
-    }
-    if (type === 'linear') {
-      return d3.scale.linear().domain([min, max]).nice();
-    } else {
-      return d3.scale.pow().domain([min, max]).nice();
-    }
-  };
-  var scales = {
-    in: setScale(data.in),
-    out: setScale(data.out, 'linear')
-  };
+
   var graph = new Rickshaw.Graph({
     element: element(id),
     renderer: 'line',
@@ -29,48 +12,49 @@ function drawChart(containerId, id, xId, yId, data) {
         color: 'steelblue',
         data: data.in,
         name: 'Input',
-        scale: scales.in
       }, {
         color: 'lightblue',
         data: data.out,
         name: 'Output',
-        scale: scales.out
       }
     ]
   })
 
- new Rickshaw.Graph.Axis.Y.Scaled({
-    element: document.getElementById(xId),
+  var yAxis = new Rickshaw.Graph.Axis.Y({
     graph: graph,
+    width: 80,
     orientation: 'left',
-    scale: scales.in,
-    tickFormat: Rickshaw.Fixtures.Number.formatKMBT
+    tickFormat: function(x){
+      var fs = humanFileSize(x)
+      return fs.value + " " + fs.unit + "/s";
+    },
+    element: yaxis
   });
 
-  new Rickshaw.Graph.Axis.Y.Scaled({
-    element: document.getElementById(yId),
-    graph: graph,
-    grid: false,
-    orientation: 'right',
-    scale: scales.out,
-    tickFormat: Rickshaw.Fixtures.Number.formatKMBT
-  });
-
-  new Rickshaw.Graph.Axis.Time({
-    graph: graph
-  });
-
+  var xAxis = new Rickshaw.Graph.Axis.X({
+      graph: graph,
+      pixelsPerTick: 100,
+      tickFormat: function(x){
+        return new Date(x * 1000).toLocaleTimeString();
+      }
+  })
   new Rickshaw.Graph.HoverDetail({
-    graph: graph
+    graph: graph,
+    yFormatter: function(x) {
+      var fs = humanFileSize(x)
+      return fs.value + " " + fs.unit + "/s";
+    }
   });
 
   var resize = function() {
     var chart = element(containerId);
     graph.configure({
-      width: chart.clientWidth - 58 ,
+      width: chart.clientWidth - 96 ,
       height: chart.clientHeight - 32
     });
     graph.render();
+    yAxis.render();
+    xAxis.render();
   }
   window.addEventListener('resize', resize);
   resize();
