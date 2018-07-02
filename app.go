@@ -16,8 +16,6 @@ import (
 var (
 	port = flag.String("port", "8080", "Port to run HTTP server on")
 	kh   = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
-	key  = flag.String("key", "", "Path to CA key")
-	cert = flag.String("cert", "", "Path to CA cert")
 	auth = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
 )
 
@@ -36,7 +34,7 @@ func main() {
 	kafka.Start(*kh)
 	// HTTP server
 	config.Port = *port
-	go server.Start(*cert, *key)
+	go server.Start()
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	//Wait for term
 	<-signals

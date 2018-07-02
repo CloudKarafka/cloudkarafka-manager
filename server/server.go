@@ -78,7 +78,7 @@ func serveFile(r *mux.Router, path, file string) {
 	})
 }
 
-func Start(cert, key string) {
+func Start() {
 	r := mux.NewRouter()
 	apiRoutes(r)
 
