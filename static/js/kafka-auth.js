@@ -8,6 +8,7 @@ function testLoggedIn() {
   }
   get('/api/whoami.json', function() {
     setUsername();
+    setClusterName();
     if (location.pathname == "/login") {
       redirect('/')
     }
@@ -16,6 +17,11 @@ function testLoggedIn() {
 
 function setUsername() {
   element("#username").innerText = get_cookie_value("username");
+}
+
+function setClusterName() {
+  var hostname = location.host.split('.')[0];
+  element("#cluster-name").innerText = hostname;
 }
 
 function auth_header() {
