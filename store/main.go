@@ -21,10 +21,6 @@ func Intersection(indexNames ...string) Store {
 	return b.Intersection(indexNames...)
 }
 
-func Union(indexNames ...string) Store {
-	return b.Intersection(indexNames...)
-}
-
 func SelectWithIndex(indexName string) Store {
 	return b.SelectWithIndex(indexName)
 }
