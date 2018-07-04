@@ -2,6 +2,7 @@ package api
 
 import (
 	"cloudkarafka-mgmt/store"
+	"cloudkarafka-mgmt/zookeeper"
 	"fmt"
 	"net/http"
 	"strings"
@@ -9,12 +10,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func StatsOverview(w http.ResponseWriter, r *http.Request) {
+func StatsOverview(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	data := store.IndexedNames("type")
 	writeJson(w, data)
 }
 
-func Stats(w http.ResponseWriter, r *http.Request) {
+func Stats(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	metric := vars["metric"]
 	data := store.
@@ -44,7 +45,7 @@ func promKey(d store.Data) string {
 		d.Tags["measure"])
 }
 
-func StatsPrometheus(w http.ResponseWriter, r *http.Request) {
+func StatsPrometheus(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	fmt.Println("Prom request", mux.Vars(r))
 	for _, metric := range store.IndexedNames("type") {
 		data := store.

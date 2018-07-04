@@ -70,6 +70,9 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/users/{name}.json", protected(api.User))
 	a.HandleFunc("/users/{name}", protected(api.User))
 	a.HandleFunc("/notifications.json", protected(api.Notifications))
+	a.HandleFunc("/stats", protected(api.StatsOverview))
+	a.HandleFunc("/stats/{metric}", protected(api.Stats))
+	a.HandleFunc("/prometheus", protected(api.StatsPrometheus))
 }
 
 func serveFile(r *mux.Router, path, file string) {
