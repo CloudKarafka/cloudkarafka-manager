@@ -29,6 +29,7 @@ func metricMessage(msg *sarama.ConsumerMessage) {
 	case "kafka.server":
 		storeKafkaServer(keys, value, ts)
 	}
+	storeKafkaStats(keys, value, ts)
 }
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts int64) {
@@ -43,6 +44,45 @@ func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts i
 		brokerTopicMetrics(broker, keys, value, ts)
 	case "ReplicaManager":
 		replicaManager(broker, keys, value, ts)
+	}
+}
+
+type Metric []string
+
+func (v Metric) Matches(keys map[string]string) bool {
+	return keys["domain"] == v[0] &&
+		(v[1] == "*" || keys["type"] == v[1]) &&
+		(v[2] == "*" || keys["name"] == v[2]) &&
+		(v[3] == "*" || keys["request"] == v[3])
+}
+func (v Metric) String() string {
+	return strings.Join(v, ".")
+}
+
+var statsMetrics = []Metric{
+	Metric{"kafka.network", "RequestMetrics", "TotalTimeMs", "Produce", "Mean"},
+	Metric{"kafka.network", "RequestMetrics", "TotalTimeMs", "Fetch", "Mean"},
+	Metric{"kafka.network", "RequestChannel", "RequestQueueSize", "*", "Mean"},
+	Metric{"kafka.server", "ReplicaManager", "UnderReplicatedPartitions", "*", "OneMinuteRate"},
+}
+
+func storeKafkaStats(keys map[string]string, value map[string]interface{}, ts int64) {
+	for _, m := range statsMetrics {
+		if m.Matches(keys) {
+			for k, v := range value {
+				if k == "BrokerId" {
+					continue
+				}
+				keys["measure"] = k
+				data := store.Data{
+					Tags:      keys,
+					Value:     int(v.(float64)),
+					Timestamp: ts,
+				}
+				store.Put(data, []string{"type"})
+			}
+			return
+		}
 	}
 }
 
