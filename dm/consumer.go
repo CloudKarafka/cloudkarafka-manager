@@ -55,7 +55,12 @@ func ConsumerMetrics(consumer string) ConsumerMetric {
 	//total := 0
 	//totalSize := 0
 	for topicName, data := range cps {
-		t := TopicMetrics(T{Name: topicName})
+		t, err := baseTopic(T{Name: topicName})
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		t = TopicMetrics(t)
 		sort.Sort(data)
 		tLag := 0
 		for partition, d := range data.GroupByPartition() {
@@ -73,12 +78,18 @@ func ConsumerMetrics(consumer string) ConsumerMetric {
 			p := t.Partitions[pNr]
 			lag := p.LogEndOffset - value
 			tLag += lag
-			cm.ConsumedPartitions = append(cm.ConsumedPartitions,
-				consumedPartition{Topic: topicName, Partition: pNr, Lag: lag})
+			cm.ConsumedPartitions = append(cm.ConsumedPartitions, consumedPartition{
+				Topic:     topicName,
+				Partition: pNr,
+				Lag:       lag,
+			})
 		}
 		c := int(float64(len(cm.ConsumedPartitions)) / float64(len(t.Partitions)) * 100)
-		cm.ConsumedTopics = append(cm.ConsumedTopics,
-			consumedTopic{Name: topicName, Lag: tLag, Coverage: c})
+		cm.ConsumedTopics = append(cm.ConsumedTopics, consumedTopic{
+			Name:     topicName,
+			Lag:      tLag,
+			Coverage: c,
+		})
 	}
 	sort.Sort(cm.ConsumedTopics)
 	sort.Sort(cm.ConsumedPartitions)
