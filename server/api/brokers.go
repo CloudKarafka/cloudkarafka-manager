@@ -25,7 +25,9 @@ func Brokers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		internalError(w, err)
 		return
 	}
-	writeJson(w, brokers)
+	if p.ClusterRead() {
+		writeJson(w, brokers)
+	}
 }
 
 func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {

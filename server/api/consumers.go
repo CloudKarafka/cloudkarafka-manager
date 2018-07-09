@@ -33,45 +33,22 @@ type partitionLag struct {
 }
 
 func Consumers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	consumers := store.IndexedNames("group")
-	writeJson(w, consumers)
+	allConsumers := store.IndexedNames("group")
+	var myConsumers []string
+	for _, c := range allConsumers {
+		if p.GroupRead(c) {
+			myConsumers = append(myConsumers, c)
+		}
+	}
+	writeJson(w, myConsumers)
 }
 
 func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	data := dm.ConsumerMetrics(vars["name"])
+	var data interface{}
+	topicName := vars["name"]
+	if p.TopicRead(topicName) {
+		data = dm.ConsumerMetrics(topicName)
+	}
 	writeJson(w, data)
 }
-
-/*
-	var topics []consumedTopicVM
-	for topic, data := range cts {
-		partitions := data.GroupByPartition()
-		if p.TopicRead(topic) {
-			t, _ := zookeeper.Topic(topic)
-			pl := partitionsLag(topic, p)
-			c := int(math.Trunc(float64(len(partitions)) / float64(len(pl)) * 100))
-			topics = append(topics, consumedTopicVM{
-				Name:         topic,
-				Coverage:     c,
-				PartitionLag: pl,
-			})
-		}
-	}
-	writeJson(w, consumerVM{Name: vars["name"], Topics: topics})
-}
-
-func partitionsLag(topic string, p zookeeper.Permissions) []partitionLag {
-	var lags []partitionLag
-	cts := store.SelectWithIndex(topic).GroupByTopic()
-	for t, topics := range cts {
-		if p.TopicRead(t) {
-			partitions := topics.GroupByPartition()
-			for part, _ := range partitions {
-				lag := om.LogEndOffset - off.Value
-				lags = append(lags, partitionLag{Topic: topic, Partition: part, Lag: lag})
-			}
-		}
-	}
-	return lags
-}*/

@@ -19,6 +19,10 @@ func Whoami(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 }
 
 func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	if !p.ClusterRead() {
+		http.NotFound(w, r)
+		return
+	}
 	switch r.Method {
 	case "GET":
 		users(w, p)
@@ -37,6 +41,10 @@ func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 }
 
 func User(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	if !p.ClusterWrite() {
+		http.NotFound(w, r)
+		return
+	}
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":

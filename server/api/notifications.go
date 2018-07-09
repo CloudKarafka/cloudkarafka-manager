@@ -10,7 +10,11 @@ import (
 func Notifications(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	switch r.Method {
 	case "GET":
-		writeJson(w, dm.Notifications())
+		var data interface{}
+		if s.ClusterRead() {
+			data = dm.Notifications()
+		}
+		writeJson(w, data)
 	default:
 		http.NotFound(w, r)
 	}

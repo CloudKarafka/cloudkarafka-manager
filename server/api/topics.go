@@ -43,28 +43,28 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		if !p.TopicRead(vars["topic"]) {
-			http.NotFound(w, r)
-			return
+		if p.TopicRead(vars["topic"]) {
+			getTopic(w, vars["topic"])
+			break
 		}
-		getTopic(w, vars["topic"])
+		fallthrough
 	case "PUT":
-		if !p.ClusterWrite() {
-			http.NotFound(w, r)
-			return
+		if p.ClusterWrite() {
+			t, err := decodeTopic(r)
+			if err != nil {
+				internalError(w, err.Error())
+			} else {
+				updateTopic(w, vars["topic"], t)
+			}
+			break
 		}
-		t, err := decodeTopic(r)
-		if err != nil {
-			internalError(w, err.Error())
-		} else {
-			updateTopic(w, vars["topic"], t)
-		}
+		fallthrough
 	case "DELETE":
-		if !p.ClusterWrite() {
-			http.NotFound(w, r)
-			return
+		if p.ClusterWrite() {
+			deleteTopic(w, vars["topic"])
+			break
 		}
-		deleteTopic(w, vars["topic"])
+		fallthrough
 	default:
 		http.NotFound(w, r)
 	}
@@ -74,9 +74,13 @@ func TopicThroughput(w http.ResponseWriter, r *http.Request, p zookeeper.Permiss
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		in := dm.ThroughputTimeseries("BytesInPerSec", vars["topic"])
-		out := dm.ThroughputTimeseries("BytesOutPerSec", vars["topic"])
-		writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
+		if p.TopicRead(vars["topic"]) {
+			in := dm.ThroughputTimeseries("BytesInPerSec", vars["topic"])
+			out := dm.ThroughputTimeseries("BytesOutPerSec", vars["topic"])
+			writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
+			break
+		}
+		fallthrough
 	default:
 		http.NotFound(w, r)
 	}
@@ -151,11 +155,17 @@ func deleteTopic(w http.ResponseWriter, topic string) {
 }
 
 func topics(w http.ResponseWriter, p zookeeper.Permissions) {
-	topics, err := zookeeper.Topics(p)
+	allTopics, err := zookeeper.Topics(p)
+	var myTopics []string
+	for _, t := range allTopics {
+		if p.TopicRead(t) {
+			myTopics = append(myTopics, t)
+		}
+	}
 	if err != nil {
 		internalError(w, err.Error())
 	} else {
-		writeJson(w, topics)
+		writeJson(w, myTopics)
 	}
 }
 

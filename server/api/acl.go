@@ -17,7 +17,11 @@ type aclVM struct {
 	Permission zookeeper.Permission `json:"permission"`
 }
 
-func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
+func Acls(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	if !p.ClusterRead() {
+		http.NotFound(w, r)
+		return
+	}
 	switch r.Method {
 	case "GET":
 		topics := zookeeper.AllAcls(zookeeper.TopicsAcls, zookeeper.TopicAcl)
@@ -52,7 +56,11 @@ func Acls(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 
 }
 
-func Acl(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
+func Acl(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	if !p.ClusterWrite() {
+		http.NotFound(w, r)
+		return
+	}
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "DELETE":
