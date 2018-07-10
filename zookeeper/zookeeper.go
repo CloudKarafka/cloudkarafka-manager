@@ -87,11 +87,19 @@ func createPersistent(path string, data interface{}) error {
 }
 
 func create(path string, data interface{}, flag int) error {
-	raw, err := json.Marshal(data)
+	var (
+		bytes []byte
+		err   error
+	)
+	if str, ok := data.(string); ok {
+		bytes = []byte(str)
+	} else {
+		bytes, err = json.Marshal(data)
+	}
 	if err != nil {
 		return err
 	}
-	_, err = conn.Create(path, raw, int32(flag), zk.WorldACL(zk.PermAll))
+	_, err = conn.Create(path, bytes, int32(flag), zk.WorldACL(zk.PermAll))
 	return err
 }
 
