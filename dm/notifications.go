@@ -49,7 +49,7 @@ func checkUneven(index, msg string) ([]notification, bool) {
 		}
 		values.Sort()
 		value := values.Last()
-		q := float64(value.Value) / float64(sum)
+		q := float64(len(grouped)*value.Value) / float64(sum)
 		var (
 			level string
 		)
