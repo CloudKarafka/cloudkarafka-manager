@@ -122,12 +122,11 @@ func socketServerMetrics(broker string, keys map[string]string, value map[string
 		"network_processor": keys["networkProcessor"],
 	}
 	index := []string{"metric", "broker"}
-	for _, attr := range []string{"connection-count", "failed-authentication-total"} {
-		id["attr"] = attr
-		val, _ := value[attr].(float64)
-		data := store.Data{Tags: id, Value: int(val), Timestamp: ts}
-		store.Put(data, index)
-	}
+	attr := "connection-count"
+	id["attr"] = attr
+	val, _ := value[attr].(float64)
+	data := store.Data{Tags: id, Value: int(val), Timestamp: ts}
+	store.Put(data, index)
 }
 
 func brokerTopicMetrics(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
