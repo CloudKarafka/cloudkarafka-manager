@@ -71,7 +71,6 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 }
 
 func SpreadPartitions(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
 	switch r.Method {
 	case "POST":
 		internalError(w, "Not yet implemented.")
