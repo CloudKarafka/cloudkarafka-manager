@@ -1,3 +1,11 @@
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function setup() {
+  testLoggedIn();
+}
+
 function testLoggedIn() {
   var hash = location.hash;
   if (hash.startsWith("#/login")) {

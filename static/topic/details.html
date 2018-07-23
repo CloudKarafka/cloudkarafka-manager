@@ -20,10 +20,11 @@
   <script src="/js/handlebars.min.js"></script>
   <script src="/js/d3.v3.min.js"></script>
   <script src="/js/rickshaw.min.js"></script>
+  <script src="/js/notific8.min.js"></script>
   <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
   <script src="/js/kafka-charts.js"></script>
-  <script type="text/javascript"> testLoggedIn() </script>
+  <script type="text/javascript"> setup() </script>
 
     <style>
       html,body {
@@ -114,6 +115,13 @@
       <div class="col-4">
         <h1><a href="/topics/">Topics</a> </h1>
       </div>
+      <div class="col-8">
+        <form id="spread-partitions" method="post">
+          <button class="btn btn-primary btn-sm float-right">
+            Spread partitions
+          </button>
+        </form>
+      </div>
     </div>
   </div>
   <div class="container-fluid">
@@ -121,7 +129,9 @@
       <div class="col-md-6 col-lg-4">
         <div class="box box-w-header">
           <div class="box-header"><a href="#" class="btn btn-sm btn-primary float-right edit">Edit</a>
-            <h2>Overview</h2>
+            <h2>
+              Overview
+            </h2>
           </div>
           <div class="box-body p-0">
             <div class="clearfix">
@@ -353,15 +363,19 @@
         redirect("/topics");
       })
     })
+    element("#spread-partitions").addEventListener("submit", function(evt) {
+      evt.preventDefault();
+      post("/api/topics/" + name + "/spread-partitions");
+    })
     periodicGet(path, function(topic) {
-        renderTmpl('#topic-overview', '#tmpl-topic-overview', topic);
-        renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
-        renderTmpl('#topic-config', '#tmpl-topic-config', topic);
-        renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
+      renderTmpl('#topic-overview', '#tmpl-topic-overview', topic);
+      renderTmpl('#topic-metrics', '#tmpl-topic-metrics', topic);
+      renderTmpl('#topic-config', '#tmpl-topic-config', topic);
+      renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
     });
     get('/api/topics/' + name + '/throughput.json', function(data) {
-        element("#throughput .loading-metric").hidden = true;
-        drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
+      element("#throughput .loading-metric").hidden = true;
+      drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
     });
   </script>
 </main>

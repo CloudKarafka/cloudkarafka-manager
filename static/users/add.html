@@ -20,10 +20,11 @@
   <script src="/js/handlebars.min.js"></script>
   <script src="/js/d3.v3.min.js"></script>
   <script src="/js/rickshaw.min.js"></script>
+  <script src="/js/notific8.min.js"></script>
   <script src="/js/kafka-auth.js"></script>
   <script src="/js/kafka-helpers.js"></script>
   <script src="/js/kafka-charts.js"></script>
-  <script type="text/javascript"> testLoggedIn() </script>
+  <script type="text/javascript"> setup() </script>
 
     <style>
       html,body {
@@ -143,10 +144,10 @@
 
   <script type="text/javascript"> 
     element("#userForm").addEventListener('submit', function(ev) {
+      ev.preventDefault();
       postForm("/api/users", "#userForm", function(usr) {
         redirect('/admin');
       });
-      ev.preventDefault();
     })
   </script>
 </main>

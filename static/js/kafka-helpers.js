@@ -31,6 +31,10 @@ function del(path, callback) {
   req('DELETE', path, callback);
 };
 
+function post(path, callback) {
+  req('POST', path, callback);
+};
+
 function putForm(path, formId, callback) {
   var formElement = element(formId)
   req('PUT', path, callback, new FormData(formElement));
@@ -57,6 +61,16 @@ function req(method, path, callback, data) {
   }
 };
 
+function notify(msg, config) {
+  var color = 'cobalt';
+  if (config.level === 'warn') {
+    color = 'honey';
+  } else if (config.level === 'error') {
+    color = 'ruby';
+  }
+  notific8(msg, {theme: 'chicchat', color: color});
+}
+
 function onLoad(request, callback) {
   return function() {
     if (request.status == 401) {
@@ -69,7 +83,7 @@ function onLoad(request, callback) {
       }
       callback(data)
     } else {
-      console.log(request.responseText);
+      notify(request.responseText, 'error');
     }
   }
 }
