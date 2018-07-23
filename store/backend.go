@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	"sync"
 	"time"
 )
@@ -97,9 +96,9 @@ func (me *backend) subset(indices ...idx) Store {
 func (me *backend) Put(data Data, indexOn []string) {
 	me.Lock()
 	defer me.Unlock()
-
-	if data.Timestamp == 0 {
-		data.Timestamp = time.Now().UTC().Unix()
+	now := time.Now().Unix()
+	if data.Timestamp == 0 || data.Timestamp > now {
+		data.Timestamp = now
 	}
 	nrSegments := len(me.segments)
 	if nrSegments == 0 || len(me.segments[nrSegments-1]) >= 1000 {
@@ -150,9 +149,6 @@ func (me *backend) GC() time.Duration {
 		var idxsToKeep []idx
 		for _, i := range idxs {
 			if i.Segment > firstSegmentToKeep {
-				if (i.Segment - firstSegmentToKeep) < 0 {
-					fmt.Println(i.Segment, firstSegmentToKeep)
-				}
 				idxsToKeep = append(idxsToKeep, idx{
 					Segment: i.Segment - firstSegmentToKeep,
 					Pos:     i.Pos,

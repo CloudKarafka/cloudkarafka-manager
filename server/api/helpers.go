@@ -9,8 +9,13 @@ import (
 var client = http.Client{}
 
 func internalError(w http.ResponseWriter, bytes interface{}) {
-	fmt.Println(bytes)
 	w.WriteHeader(http.StatusInternalServerError)
+	fmt.Println(bytes)
+	str, ok := bytes.(string)
+	if ok {
+		fmt.Fprintf(w, str)
+		return
+	}
 	writeJson(w, bytes)
 }
 

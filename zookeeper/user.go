@@ -44,7 +44,7 @@ func CreateUser(name, password string) error {
 	}
 	err := createPersistent("/config/users/"+name, node)
 	if err == zk.ErrNodeExists {
-		err = userAlreadyExists
+		return userAlreadyExists
 	}
 	return createSeq("/config/changes/config_change_", map[string]interface{}{
 		"version":     2,

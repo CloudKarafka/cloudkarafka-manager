@@ -37,7 +37,7 @@ type P struct {
 	Isr      []int  `json:"isr"`
 }
 
-type Reassignment struct {
+type reassignment struct {
 	Topic     string `json:"topic"`
 	Partition int    `json:"partition"`
 	Replicas  []int  `json:"replicas"`
@@ -114,7 +114,7 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 		return onlyIncreasePartitionCount
 	}
 	t.Partitions = spreadReplicas(partitionCount, replicationFactor, t.Partitions)
-	ReassignPartitions(name, t.Partitions)
+	reassignPartitions(name, t.Partitions)
 	fmt.Printf("[INFO] partition_count=%v replication_factor=%v\n", partitionCount, replicationFactor)
 	err := set(path, t)
 	if err != nil {
@@ -126,10 +126,34 @@ func UpdateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	return err
 }
 
-func ReassigningPartitions(topic string) ([]Reassignment, error) {
+func SpreadPartitionEvenly(name string) error {
+	t, err := Topic(name)
+	if err != nil {
+		return err
+	}
+	brokers, err := Brokers()
+	if err != nil {
+		return err
+	}
+	ids := make([]int, len(brokers))
+	for i, b := range brokers {
+		ids[i], _ = strconv.Atoi(b)
+	}
+	partitions := make(map[string][]int)
+	r := len(t.Partitions["0"])
+	var id int
+	for p, _ := range t.Partitions {
+		partitions[p] = ids[:r]
+		id, ids = ids[0], ids[1:]
+		ids = append(ids, id)
+	}
+	return reassignPartitions(name, partitions)
+}
+
+func ReassigningPartitions(topic string) ([]reassignment, error) {
 	var (
 		node = make(map[string]interface{})
-		rs   = []Reassignment{}
+		rs   = []reassignment{}
 	)
 	err := get("/admin/reassign_partitions", &node)
 	if err == zk.ErrNoNode {
@@ -137,38 +161,34 @@ func ReassigningPartitions(topic string) ([]Reassignment, error) {
 	} else if err != nil {
 		return rs, err
 	}
-	rs, ok := node["partitions"].([]Reassignment)
+	rs, ok := node["partitions"].([]reassignment)
 	if !ok {
 		return rs, unexpectedFormat
 	}
-	flt := rs[:0]
-	for _, r := range rs {
-		if r.Topic == topic {
-			flt = append(flt, r)
-		}
-	}
-	fmt.Println(rs)
 	return rs, nil
 }
 
-func ReassignPartitions(topic string, partitions map[string][]int) error {
-	var reasignments []Reassignment
+func reassignPartitions(topic string, partitions map[string][]int) error {
+	rs, err := ReassigningPartitions(topic)
+	if err != nil {
+		return err
+	}
+	if len(rs) > 0 {
+		return fmt.Errorf("Reassignment in progress, please wait until it has finished.")
+	}
+	var reasignments []reassignment
 	for part, replicas := range partitions {
 		p, _ := strconv.Atoi(part)
-		reasignments = append(reasignments, Reassignment{
+		reasignments = append(reasignments, reassignment{
 			Topic:     topic,
 			Partition: p,
 			Replicas:  replicas,
 		})
 	}
-	node := map[string]interface{}{
+	return createPersistent("/admin/reassign_partitions", map[string]interface{}{
 		"version":    1,
 		"partitions": reasignments,
-	}
-
-	data, _ := json.Marshal(node)
-	_, err := conn.Create("/admin/reassign_partitions", data, 0, zk.WorldACL(zk.PermAll))
-	return err
+	})
 }
 
 func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[string]interface{}) error {
@@ -179,6 +199,9 @@ func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[str
 	topic := newTopic(name, partitionCount, replicationFactor)
 	path := topicPath(name)
 	err := createPersistent(path, topic)
+	if err == zk.ErrNodeExists {
+		return fmt.Errorf("Topic %s already exists.", name)
+	}
 	if err != nil {
 		return err
 	}

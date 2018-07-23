@@ -60,6 +60,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/topics/{topic}", protected(api.Topic))
 	a.HandleFunc("/topics/{topic}/config.json", protected(api.Config))
 	a.HandleFunc("/topics/{topic}/config", protected(api.Config))
+	a.HandleFunc("/topics/{topic}/spread-partitions", protected(api.SpreadPartitions))
 	a.HandleFunc("/topics/{topic}/throughput.json", protected(api.TopicThroughput))
 	a.HandleFunc("/consumers.json", protected(api.Consumers))
 	a.HandleFunc("/consumers/{name}.json", protected(api.Consumer))

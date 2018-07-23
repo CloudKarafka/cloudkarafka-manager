@@ -70,6 +70,23 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	}
 }
 
+func SpreadPartitions(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	vars := mux.Vars(r)
+	switch r.Method {
+	case "POST":
+		internalError(w, "Not yet implemented.")
+		return
+	/*	err := zookeeper.SpreadPartitionEvenly(vars["topic"])
+		if err != nil {
+			internalError(w, err.Error())
+		} else {
+			fmt.Fprintf(w, string("Partition reassignment in progress"))
+		}*/
+	default:
+		http.NotFound(w, r)
+	}
+}
+
 func TopicThroughput(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {

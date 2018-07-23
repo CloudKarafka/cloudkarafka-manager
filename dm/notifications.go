@@ -17,7 +17,6 @@ type notificationFn func() ([]notification, bool)
 func Notifications() []notification {
 	var notifications []notification
 	fns := []notificationFn{
-		checkFailedLogins,
 		checkUnevenPartitions,
 		checkUnevenLeaders,
 	}
