@@ -77,6 +77,9 @@ func ConsumerMetrics(consumer string) ConsumerMetric {
 			value := d.Last().Value
 			p := t.Partitions[pNr]
 			lag := p.LogEndOffset - value
+			if lag < 0 {
+				lag = 0
+			}
 			tLag += lag
 			cm.ConsumedPartitions = append(cm.ConsumedPartitions, consumedPartition{
 				Topic:     topicName,
