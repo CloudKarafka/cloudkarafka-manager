@@ -1,5 +1,6 @@
 package api
 
+/*
 import (
 	"cloudkarafka-mgmt/store"
 	"cloudkarafka-mgmt/zookeeper"
@@ -58,4 +59,4 @@ func StatsPrometheus(w http.ResponseWriter, r *http.Request, s zookeeper.Permiss
 			fmt.Fprintf(w, "%s %v\n", promKey(d), d.Value)
 		}
 	}
-}
+}*/

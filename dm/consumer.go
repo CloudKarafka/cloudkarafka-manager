@@ -5,7 +5,6 @@ import (
 	//"cloudkarafka-mgmt/zookeeper"
 	"fmt"
 	"sort"
-	"strconv"
 )
 
 type ConsumerMetric struct {
@@ -16,7 +15,7 @@ type ConsumerMetric struct {
 
 type consumedPartition struct {
 	Topic     string `json:"topic"`
-	Partition int    `json:"partition"`
+	Partition string `json:"partition"`
 	Lag       int    `json:"lag"`
 }
 
@@ -49,41 +48,35 @@ func (pm consumedTopics) Less(i, j int) bool {
 	return in < jn
 }
 
-func ConsumerMetrics(consumer string) ConsumerMetric {
-	cm := ConsumerMetric{Name: consumer}
-	cps := store.Intersection("consumer", consumer).GroupByTopic()
-	//total := 0
-	//totalSize := 0
-	for topicName, data := range cps {
+func ConsumerMetrics(name string) ConsumerMetric {
+	cm := ConsumerMetric{Name: name}
+	consumer := store.Consumer(name)
+	for topicName, partitions := range consumer {
 		t, err := baseTopic(T{Name: topicName})
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
 		t = TopicMetrics(t)
-		sort.Sort(data)
 		tLag := 0
-		for partition, d := range data.GroupByPartition() {
-			pNr, err := strconv.Atoi(partition)
-			if err != nil {
-				fmt.Println(err)
+		for partition, ts := range partitions {
+			var p Partition
+			for _, p = range t.Partitions {
+				if p.Number == partition {
+					break
+				} else {
+					p = Partition{Number: "-1"}
+				}
+			}
+			if p.Number == "-1" {
+				fmt.Println("Partition number", partition)
 				continue
 			}
-			if len(t.Partitions) <= pNr {
-				fmt.Println("Partition number", pNr)
-				continue
-			}
-			sort.Sort(d)
-			value := d.Last().Value
-			p := t.Partitions[pNr]
-			lag := p.LogEndOffset - value
-			if lag < 0 {
-				lag = 0
-			}
+			lag := p.LogEndOffset - ts.Latest()
 			tLag += lag
 			cm.ConsumedPartitions = append(cm.ConsumedPartitions, consumedPartition{
 				Topic:     topicName,
-				Partition: pNr,
+				Partition: partition,
 				Lag:       lag,
 			})
 		}

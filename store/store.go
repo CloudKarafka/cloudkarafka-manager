@@ -1,105 +1,112 @@
 package store
 
 import (
-	//"cloudkarafka-mgmt/zookeeper"
-	"sort"
+	"fmt"
 )
 
-type Store []Data
+var (
+	cs = &consumerStore{store: make(map[string]consumedTopics)}
+	bs = &brokerStore{store: make(map[string]broker)}
+	ts = &topicStore{store: make(map[string]topic)}
+)
 
-func (me Store) Each(fn func(Data)) {
-	for _, d := range me {
-		fn(d)
-	}
-}
-
-func (me Store) Any(fn func(Data) bool) bool {
-	selected := me.Select(fn)
-	return selected.Len() > 0
-}
-
-func (me Store) Last() Data {
-	len := me.Len()
-	if len == 0 {
-		return Data{}
-	}
-	return me[me.Len()-1]
-}
-
-func (me Store) Select(fn func(Data) bool) Store {
-	var selected Store
-	for _, d := range me {
-		if fn(d) {
-			selected = append(selected, d)
+func Put(metric string, value int, timestamp int64, keys ...string) {
+	switch metric {
+	case "broker":
+		switch keys[0] {
+		case "KafkaVersion":
+			bs.Version(keys[1], keys[2])
+		case "ConnectionCount":
+			bs.Connections(keys[1], keys[2], value)
+		case "BytesInPerSec":
+			bs.BytesInPerSec(keys[1], value, timestamp)
+		case "BytesOutPerSec":
+			bs.BytesOutPerSec(keys[1], value, timestamp)
+		case "MessagesInPerSec":
+			bs.MessagesInPerSec(keys[1], value, timestamp)
+		case "LeaderCount":
+			bs.LeaderCount(keys[1], value, timestamp)
+		case "PartitionCount":
+			bs.PartitionCount(keys[1], value, timestamp)
+		case "ReplicationBytesInPerSec":
+		case "FailedIsrUpdatesPerSec":
+		case "FailedProduceRequestsPerSec":
+		case "TotalFetchRequestsPerSec":
+		case "IsrExpandsPerSec":
+		case "RequestQueueSize":
+		case "BytesRejectedPerSec":
+		case "IsrShrinksPerSec":
+		case "TotalTimeMs":
+		case "ReplicationBytesOutPerSec":
+		case "UnderReplicatedPartitions":
+		case "TotalProduceRequestsPerSec":
+		case "FailedFetchRequestsPerSec":
+		case "ProduceMessageConversionsPerSec":
+		case "OfflineReplicaCount":
+		case "UnderMinIsrPartitionCount":
+		case "FetchMessageConversionsPerSec":
+		default:
+			fmt.Printf("[ERROR] Unknown key (broker) (%s)\n", keys[0])
 		}
-	}
-	return selected
-}
-
-func (me Store) Find(fn func(Data) bool) (Data, error) {
-	data := me.Select(fn)
-	if len(data) != 1 {
-		return Data{}, NotFound
-	}
-	return data[0], nil
-}
-
-func (me Store) GroupByMetric() map[string]Store {
-	return me.GroupBy(func(d Data) string {
-		return d.Tags["metric"]
-	})
-}
-
-func (me Store) GroupByTopic() map[string]Store {
-	return me.GroupBy(func(d Data) string {
-		return d.Tags["topic"]
-	})
-}
-
-func (me Store) GroupByPartition() map[string]Store {
-	return me.GroupBy(func(d Data) string {
-		return d.Tags["partition"]
-	})
-}
-
-func (me Store) GroupBy(fn func(Data) string) map[string]Store {
-	grouped := make(map[string]Store)
-	for _, d := range me {
-		name := fn(d)
-		if _, ok := grouped[name]; !ok {
-			grouped[name] = Store{}
+	case "topic":
+		switch keys[0] {
+		case "LogStartOffset":
+			ts.LogStartOffset(keys[1], keys[2], value, timestamp)
+		case "LogEndOffset":
+			ts.LogEndOffset(keys[1], keys[2], value, timestamp)
+		case "Size":
+			ts.Size(keys[1], keys[2], value)
+		case "BytesInPerSec":
+			ts.BytesInPerSec(keys[1], value, timestamp)
+		case "BytesOutPerSec":
+			ts.BytesOutPerSec(keys[1], value, timestamp)
+		case "MessagesInPerSec":
+			ts.MessagesInPerSec(keys[1], value, timestamp)
+		case "NumLogSegments":
+		case "TotalFetchRequestsPerSec":
+		case "time-since-last-run-ms":
+		case "FailedProduceRequestsPerSec":
+		case "max-dirty-percent":
+		case "BytesRejectedPerSec":
+		case "cleaner-recopy-percent":
+		case "TotalProduceRequestsPerSec":
+		case "FailedFetchRequestsPerSec":
+		case "max-clean-time-secs":
+		case "max-buffer-utilization-percent":
+		case "LogDirectoryOffline":
+		case "OfflineLogDirectoryCount":
+		case "FetchMessageConversionsPerSec":
+		case "ProduceMessageConversionsPerSec":
+		default:
+			fmt.Printf("[ERROR] Unknown key (topic) (%s)\n", keys[0])
 		}
-		g := grouped[name]
-		g = append(g, d)
-		grouped[name] = g
+	case "consumer":
+		cs.Put(value, timestamp, keys[0], keys[1], keys[2])
+	default:
+		fmt.Printf("Unknown metric (%s)\n", metric)
 	}
-	return grouped
 }
 
-func (me Store) StringMap(fn func(Data) string) []string {
-	strings := make([]string, len(me))
-	for i, d := range me {
-		strings[i] = fn(d)
-	}
-	return strings
+func Brokers() []string {
+	return bs.Brokers()
 }
 
-func (me Store) Sort() Store {
-	sort.Sort(me)
-	return me
+func Broker(id string) broker {
+	return bs.Broker(id)
 }
 
-func (me Store) Len() int {
-	return len(me)
+func Topics() []string {
+	return ts.Topics()
 }
 
-func (me Store) Less(i, j int) bool {
-	iElem, jElem := me[i], me[j]
-	return iElem.Timestamp < jElem.Timestamp
+func Topic(name string) topic {
+	return ts.Topic(name)
 }
 
-func (me Store) Swap(i, j int) {
-	iElem, jElem := me[i], me[j]
-	me[j] = iElem
-	me[i] = jElem
+func Consumers() []string {
+	return cs.Consumers()
+}
+
+func Consumer(name string) consumedTopics {
+	return cs.Consumer(name)
 }

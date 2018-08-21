@@ -90,17 +90,17 @@ func TopicThroughput(w http.ResponseWriter, r *http.Request, p zookeeper.Permiss
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "GET":
-		if p.TopicRead(vars["topic"]) {
-			in := dm.ThroughputTimeseries("BytesInPerSec", vars["topic"])
-			out := dm.ThroughputTimeseries("BytesOutPerSec", vars["topic"])
-			writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
+		topic := vars["topic"]
+		if p.TopicRead(topic) {
+			in := dm.TopicBytesIn(topic)
+			out := dm.TopicBytesOut(topic)
+			writeJson(w, map[string]dm.Series{"in": in, "out": out})
 			break
 		}
 		fallthrough
 	default:
 		http.NotFound(w, r)
 	}
-
 }
 
 func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {

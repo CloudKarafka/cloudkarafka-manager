@@ -33,7 +33,7 @@ type partitionLag struct {
 }
 
 func Consumers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	allConsumers := store.IndexedNames("group")
+	allConsumers := store.Consumers()
 	var myConsumers []string
 	for _, c := range allConsumers {
 		if p.GroupRead(c) {

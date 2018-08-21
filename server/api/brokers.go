@@ -58,13 +58,13 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 
 func BrokerThroughputTimeseries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	in := dm.ThroughputTimeseries("BytesInPerSec", vars["id"])
-	out := dm.ThroughputTimeseries("BytesOutPerSec", vars["id"])
+	in := dm.BrokerBytesIn(vars["id"])
+	out := dm.BrokerBytesOut(vars["id"])
 	writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
 }
 
 func AllBrokerThroughputTimeseries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	in := dm.AllBrokerThroughputTimeseries("BytesInPerSec")
-	out := dm.AllBrokerThroughputTimeseries("BytesOutPerSec")
+	in := dm.AllBrokerBytesInPerSec()
+	out := dm.AllBrokerBytesOutPerSec()
 	writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
 }

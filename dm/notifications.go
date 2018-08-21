@@ -28,27 +28,20 @@ func Notifications() []notification {
 	return notifications
 }
 
-func checkUneven(index, msg string) ([]notification, bool) {
+func checkUneven(grouped map[string]int, msg string) ([]notification, bool) {
 	var (
 		n   []notification
 		any = false
 	)
-	grouped := store.
-		SelectWithIndex(index).
-		GroupBy(func(d store.Data) string { return d.Tags["broker"] })
 	sum := 0
-	for _, values := range grouped {
-		values.Sort()
-		value := values.Last()
-		sum += value.Value
+	for _, count := range grouped {
+		sum += count
 	}
-	for id, values := range grouped {
+	for id, count := range grouped {
 		if sum == 0 {
 			break
 		}
-		values.Sort()
-		value := values.Last()
-		q := float64(len(grouped)*value.Value) / float64(sum)
+		q := float64(len(grouped)*count) / float64(sum)
 		var (
 			level string
 		)
@@ -73,15 +66,25 @@ func checkUneven(index, msg string) ([]notification, bool) {
 
 func checkUnevenPartitions() ([]notification, bool) {
 	msg := "Your cluster has a uneven partition spread. Broker %s has %v%% of the total number (%v) of partitions. This will have negative impact on the throughput."
-	return checkUneven("PartitionCount", msg)
+	group := make(map[string]int)
+	for _, id := range store.Brokers() {
+		b := store.Broker(id)
+		group[id] = b.PartitionCount
+	}
+	return checkUneven(group, msg)
 }
 
 func checkUnevenLeaders() ([]notification, bool) {
 	msg := "Your cluster has a uneven leader spread. Broker %s is leader of %v%% of the total number (%v) of partitions. This will have negative impact on the throughput."
-	return checkUneven("LeaderCount", msg)
+	group := make(map[string]int)
+	for _, id := range store.Brokers() {
+		b := store.Broker(id)
+		group[id] = b.LeaderCount
+	}
+	return checkUneven(group, msg)
 }
 
-func checkFailedLogins() ([]notification, bool) {
+/*func checkFailedLogins() ([]notification, bool) {
 	any := store.SelectWithIndex("socket-server").Any(func(d store.Data) bool {
 		return d.Tags["attr"] == "failed-authentication-total" && d.Value > 0
 	})
@@ -94,4 +97,4 @@ func checkFailedLogins() ([]notification, bool) {
 		})
 	}
 	return n, any
-}
+}*/

@@ -8,7 +8,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
+	"strconv"
 )
 
 func consumerOffsetsMessage(msg *sarama.ConsumerMessage) {
@@ -61,17 +61,8 @@ func consumerOffsetsMessage(msg *sarama.ConsumerMessage) {
 	if topic == "__consumer_offsets" || topic == "__cloudkarafka_metrics" {
 		return
 	}
-	data := store.Data{
-		Tags: map[string]string{
-			"group":     group,
-			"topic":     topic,
-			"partition": fmt.Sprintf("%v", partition),
-			"metric":    "consumer",
-		},
-		Value:     int(offset),
-		Timestamp: int64(timestamp),
-	}
-	store.Put(data, []string{"group", "topic", "metric"})
+	p := strconv.Itoa(int(partition))
+	store.Put("consumer", int(offset), int64(timestamp), group, topic, p)
 }
 
 func readString(buf *bytes.Buffer) (string, error) {

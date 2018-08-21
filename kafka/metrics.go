@@ -7,6 +7,7 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -67,6 +68,8 @@ var statsMetrics = []Metric{
 }
 
 func storeKafkaStats(keys map[string]string, value map[string]interface{}, ts int64) {
+	brokerId, _ := value["BrokerId"].(float64)
+	id := strconv.Itoa(int(brokerId))
 	for _, m := range statsMetrics {
 		if m.Matches(keys) {
 			for k, v := range value {
@@ -74,12 +77,12 @@ func storeKafkaStats(keys map[string]string, value map[string]interface{}, ts in
 					continue
 				}
 				keys["measure"] = k
-				data := store.Data{
+				/*data := store.Data{
 					Tags:      keys,
 					Value:     int(v.(float64)),
 					Timestamp: ts,
-				}
-				store.Put(data, []string{"type"})
+				}*/
+				store.Put("broker", int(v.(float64)), ts, keys["name"], id, keys["request"])
 			}
 			return
 		}
@@ -87,27 +90,18 @@ func storeKafkaStats(keys map[string]string, value map[string]interface{}, ts in
 }
 
 func storeLogOffset(keys map[string]string, value map[string]interface{}, ts int64) {
-	brokerId, _ := value["BrokerId"].(float64)
+	//brokerId, _ := value["BrokerId"].(float64)
+	//id := strconv.Itoa(int(brokerId))
 	v, ok := value["Value"].(float64)
 	if !ok {
 		return
 	}
-	data := store.Data{
-		Tags: map[string]string{
-			"metric":    keys["name"],
-			"broker":    fmt.Sprintf("%v", brokerId),
-			"topic":     keys["topic"],
-			"partition": keys["partition"],
-		},
-		Value:     int(v),
-		Timestamp: ts,
-	}
-	store.Put(data, []string{"metric", "topic", "partition", "broker"})
+	store.Put("topic", int(v), ts, keys["name"], keys["topic"], keys["partition"])
 }
 
 func kafkaVersion(broker string, version interface{}) {
 	if val, ok := version.(string); ok {
-		store.KafkaVersion[broker] = val
+		store.Put("broker", 0, 0, "KafkaVersion", broker, val)
 	}
 }
 
@@ -115,44 +109,25 @@ func socketServerMetrics(broker string, keys map[string]string, value map[string
 	if keys["listener"] == "" {
 		return
 	}
-	id := map[string]string{
-		"metric":            "socket-server",
-		"broker":            broker,
-		"listener":          keys["listener"],
-		"network_processor": keys["networkProcessor"],
-	}
-	index := []string{"metric", "broker"}
-	attr := "connection-count"
-	id["attr"] = attr
-	val, _ := value[attr].(float64)
-	data := store.Data{Tags: id, Value: int(val), Timestamp: ts}
-	store.Put(data, index)
+	val, _ := value["connection-count"].(float64)
+	store.Put("broker", int(val), ts, "ConnectionCount", broker, keys["listener"])
 }
 
 func brokerTopicMetrics(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
 	topic := keys["topic"]
 	val, _ := value["OneMinuteRate"].(float64)
-	id := map[string]string{"metric": keys["name"], "broker": broker}
-	index := []string{"metric"}
 	if topic == "" {
-		index = append(index, "broker")
+		store.Put("broker", int(val), ts, keys["name"], keys["BrokerId"])
 	} else {
-		id["topic"] = topic
-		index = append(index, "topic")
+		store.Put("topic", int(val), ts, keys["name"], topic)
 	}
-	data := store.Data{Tags: id, Value: int(val), Timestamp: ts}
-	store.Put(data, index)
 }
 
 func replicaManager(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
-	id := map[string]string{"metric": keys["name"], "broker": broker}
-	index := []string{"metric", "broker"}
 	if val, ok := value["OneMinuteRate"]; ok {
-		data := store.Data{Tags: id, Value: int(val.(float64)), Timestamp: ts}
-		store.Put(data, index)
+		store.Put("broker", int(val.(float64)), ts, keys["name"], broker)
 	} else if val, ok := value["Value"]; ok {
-		data := store.Data{Tags: id, Value: int(val.(float64)), Timestamp: ts}
-		store.Put(data, index)
+		store.Put("broker", int(val.(float64)), ts, keys["name"], broker)
 	}
 }
 
