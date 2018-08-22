@@ -23,9 +23,6 @@ func (me *consumerStore) Put(value int, ts int64, group, topic, partition string
 		g[topic] = make(consumedPartitions)
 	}
 	ct := g[topic]
-	if _, ok := ct[partition]; !ok {
-		ct[partition] = make(Timeseries, 0)
-	}
 	ct[partition] = ct[partition].Add(value, ts)
 	g[topic] = ct
 	me.store[group] = g

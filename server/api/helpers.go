@@ -16,10 +16,10 @@ func internalError(w http.ResponseWriter, bytes interface{}) {
 		fmt.Fprintf(w, str)
 		return
 	}
-	writeJson(w, bytes)
+	WriteJson(w, bytes)
 }
 
-func writeJson(w http.ResponseWriter, bytes interface{}) {
+func WriteJson(w http.ResponseWriter, bytes interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(bytes)
 }

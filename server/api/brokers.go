@@ -26,7 +26,7 @@ func Brokers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		return
 	}
 	if p.ClusterRead() {
-		writeJson(w, brokers)
+		WriteJson(w, brokers)
 	}
 }
 
@@ -53,18 +53,18 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	}
 	t := time.Unix(ts/1000, 0)
 	bvm.Uptime = strings.TrimSpace(humanize.RelTime(time.Now(), t, "", ""))
-	writeJson(w, bvm)
+	WriteJson(w, bvm)
 }
 
 func BrokerThroughputTimeseries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	in := dm.BrokerBytesIn(vars["id"])
 	out := dm.BrokerBytesOut(vars["id"])
-	writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
+	WriteJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
 }
 
 func AllBrokerThroughputTimeseries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	in := dm.AllBrokerBytesInPerSec()
 	out := dm.AllBrokerBytesOutPerSec()
-	writeJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
+	WriteJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
 }

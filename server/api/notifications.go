@@ -14,7 +14,7 @@ func Notifications(w http.ResponseWriter, r *http.Request, s zookeeper.Permissio
 		if s.ClusterRead() {
 			data = dm.Notifications()
 		}
-		writeJson(w, data)
+		WriteJson(w, data)
 	default:
 		http.NotFound(w, r)
 	}

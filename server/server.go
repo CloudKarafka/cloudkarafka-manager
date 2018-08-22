@@ -11,6 +11,7 @@ import (
 
 	"fmt"
 	"net/http"
+	"runtime"
 	"time"
 )
 
@@ -71,6 +72,17 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/users/{name}.json", protected(api.User))
 	a.HandleFunc("/users/{name}", protected(api.User))
 	a.HandleFunc("/notifications.json", protected(api.Notifications))
+	a.HandleFunc("/notifications.json", protected(api.Notifications))
+	a.HandleFunc("/debug/memory-usage", protected(func(w http.ResponseWriter, _r *http.Request, _p zookeeper.Permissions) {
+		var m runtime.MemStats
+		runtime.ReadMemStats(&m)
+		api.WriteJson(w, map[string]string{
+			"Alloc":      fmt.Sprintf("%v MiB", m.Alloc/1024/1024),
+			"TotalAlloc": fmt.Sprintf("%v MiB", m.TotalAlloc/1024/1024),
+			"Sys":        fmt.Sprintf("%v MiB", m.Sys/1024/1024),
+			"NumGC":      fmt.Sprintf("%v", m.NumGC),
+		})
+	}))
 	//a.HandleFunc("/stats", protected(api.StatsOverview))
 	//a.HandleFunc("/stats/{metric}", protected(api.Stats))
 	//a.HandleFunc("/prometheus", protected(api.StatsPrometheus))

@@ -32,7 +32,7 @@ func Acls(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 			"groups":  groups,
 			"cluster": cluster,
 		}
-		writeJson(w, resp)
+		WriteJson(w, resp)
 	case "POST":
 		acl, err := decodeAcl(r)
 		if err != nil {

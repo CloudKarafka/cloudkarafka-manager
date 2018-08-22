@@ -13,7 +13,7 @@ import (
 
 func StatsOverview(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	data := store.IndexedNames("type")
-	writeJson(w, data)
+	WriteJson(w, data)
 }
 
 func Stats(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
@@ -28,7 +28,7 @@ func Stats(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	for _, v := range data {
 		d = append(d, v.Sort().Last())
 	}
-	writeJson(w, d)
+	WriteJson(w, d)
 }
 
 func promKey(d store.Data) string {

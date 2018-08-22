@@ -15,7 +15,7 @@ type user struct {
 }
 
 func Whoami(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	writeJson(w, p)
+	WriteJson(w, p)
 }
 
 func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -53,7 +53,7 @@ func User(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 			return
 		}
 		user := zookeeper.PermissionsFor(vars["name"])
-		writeJson(w, user)
+		WriteJson(w, user)
 	case "DELETE":
 		fmt.Println(p.ClusterWrite())
 		if !p.ClusterWrite() {
@@ -86,7 +86,7 @@ func users(w http.ResponseWriter, p zookeeper.Permissions) {
 	if err != nil {
 		internalError(w, err.Error())
 	} else {
-		writeJson(w, users)
+		WriteJson(w, users)
 	}
 }
 

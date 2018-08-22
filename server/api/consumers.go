@@ -40,7 +40,7 @@ func Consumers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) 
 			myConsumers = append(myConsumers, c)
 		}
 	}
-	writeJson(w, myConsumers)
+	WriteJson(w, myConsumers)
 }
 
 func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
@@ -50,5 +50,5 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	if p.TopicRead(topicName) {
 		data = dm.ConsumerMetrics(topicName)
 	}
-	writeJson(w, data)
+	WriteJson(w, data)
 }

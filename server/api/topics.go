@@ -94,7 +94,7 @@ func TopicThroughput(w http.ResponseWriter, r *http.Request, p zookeeper.Permiss
 		if p.TopicRead(topic) {
 			in := dm.TopicBytesIn(topic)
 			out := dm.TopicBytesOut(topic)
-			writeJson(w, map[string]dm.Series{"in": in, "out": out})
+			WriteJson(w, map[string]dm.Series{"in": in, "out": out})
 			break
 		}
 		fallthrough
@@ -158,7 +158,7 @@ func getTopic(w http.ResponseWriter, name string) {
 		http.NotFound(w, nil)
 		return
 	}
-	writeJson(w, t)
+	WriteJson(w, t)
 }
 
 func deleteTopic(w http.ResponseWriter, topic string) {
@@ -181,7 +181,7 @@ func topics(w http.ResponseWriter, p zookeeper.Permissions) {
 	if err != nil {
 		internalError(w, err.Error())
 	} else {
-		writeJson(w, myTopics)
+		WriteJson(w, myTopics)
 	}
 }
 
