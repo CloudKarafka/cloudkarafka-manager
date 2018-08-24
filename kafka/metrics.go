@@ -3,7 +3,7 @@ package kafka
 import (
 	"cloudkarafka-mgmt/store"
 
-	"github.com/Shopify/sarama"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"encoding/json"
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-func metricMessage(msg *sarama.ConsumerMessage) {
+func metricMessage(msg *kafka.Message) {
 	keys, err := parseKey(string(msg.Key))
 	if err != nil {
 		fmt.Println("[ERROR]", err)

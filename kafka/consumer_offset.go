@@ -3,7 +3,7 @@ package kafka
 import (
 	"cloudkarafka-mgmt/store"
 
-	"github.com/Shopify/sarama"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"bytes"
 	"encoding/binary"
@@ -11,7 +11,7 @@ import (
 	"strconv"
 )
 
-func consumerOffsetsMessage(msg *sarama.ConsumerMessage) {
+func consumerOffsetsMessage(msg *kafka.Message) {
 	var keyver, valver uint16
 	var group, topic string
 	var partition uint32

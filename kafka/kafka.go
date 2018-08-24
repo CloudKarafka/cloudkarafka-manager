@@ -1,11 +1,10 @@
 package kafka
 
 import (
-	"github.com/Shopify/sarama"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"fmt"
 	"os"
-	"sync"
 	"time"
 )
 
@@ -14,106 +13,89 @@ var (
 )
 
 type conn struct {
-	client    sarama.Client
-	consumers []sarama.Consumer
-	l         sync.Mutex
+	consumer *kafka.Consumer
 }
 
-func (me conn) ConsumeTopic(topic string, handleMessage func(*sarama.ConsumerMessage)) {
-	consumer, err := sarama.NewConsumerFromClient(me.client)
-	if err != nil {
-		fmt.Println("[ERROR] failed-to-create-consumer retrying")
-		fmt.Println(err)
-		time.Sleep(30 * time.Second)
-		me.ConsumeTopic(topic, handleMessage)
-		return
-	}
-	me.l.Lock()
-	me.consumers = append(me.consumers, consumer)
-	me.l.Unlock()
-	partitions, err := consumer.Partitions(topic)
+func (me conn) ConsumeTopic(topic string) {
+	meta, err := me.consumer.GetMetadata(&topic, true, 5000)
 	if err != nil {
 		fmt.Printf("[ERROR] failed-to-get-partitions topic=%s\n", topic)
 		fmt.Println(err)
 		time.Sleep(30 * time.Second)
-		me.ConsumeTopic(topic, handleMessage)
+		me.ConsumeTopic(topic)
 		return
 	}
-	for _, part := range partitions {
-		go me.consumePartition(topic, part, consumer, handleMessage)
-	}
-}
-
-func (me conn) consumePartition(topic string, partition int32, consumer sarama.Consumer, fn func(*sarama.ConsumerMessage)) {
-	ts := time.Now().Add(-60 * time.Minute).UTC().Unix()
-	offset, _ := me.client.GetOffset(topic, partition, ts*1000)
-	pc, err := consumer.ConsumePartition(topic, partition, offset)
-	if err != nil {
-		fmt.Printf("[ERROR] failed-to-consume topic=%s partition=%v\n", topic, partition)
-		fmt.Println(err)
-		time.Sleep(30 * time.Second)
-		me.consumePartition(topic, partition, consumer, fn)
-		return
-	}
-
-	defer func() {
-		if err := pc.Close(); err != nil {
-			fmt.Println("[ERROR]", err)
+	if t, ok := meta.Topics[topic]; ok {
+		var (
+			i     = 0
+			times = make([]kafka.TopicPartition, len(t.Partitions))
+		)
+		for _, p := range t.Partitions {
+			times[i] = kafka.TopicPartition{
+				Topic:     &topic,
+				Partition: p.ID,
+				Offset:    kafka.Offset((time.Now().Unix() - 12*60*60) * 1000),
+			}
+			i++
 		}
-	}()
-
-	for {
-		select {
-		case msg := <-pc.Messages():
-			fn(msg)
-		case err := <-pc.Errors():
+		offsets, err := me.consumer.OffsetsForTimes(times, 5000)
+		if err != nil {
 			fmt.Println(err)
+			return
+		}
+		err = me.consumer.Assign(offsets)
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
 	}
 }
 
 func (me conn) TopicExists(name string) bool {
-	topics, err := me.client.Topics()
+	meta, err := me.consumer.GetMetadata(&name, true, 5000)
 	if err != nil {
 		fmt.Println(err)
 		return false
 	}
-	exists := false
-	for _, t := range topics {
-		if t == name {
-			exists = true
-			break
-		}
-	}
-	return exists
+	_, ok := meta.Topics[name]
+	return ok
 }
 
 func (me conn) Stop() {
-	me.l.Lock()
-	for _, c := range me.consumers {
-		c.Close()
-	}
-	me.l.Unlock()
-	me.client.Close()
+	me.consumer.Close()
 }
 
 func Start(hostname string) {
-	config := sarama.NewConfig()
 	h, _ := os.Hostname()
-	config.ClientID = fmt.Sprintf("CloudKarafka-mgmt-%s", h)
-	config.Consumer.Return.Errors = true
-	config.Version = sarama.V0_11_0_0
-	client, err := sarama.NewClient([]string{hostname}, config)
+	cfg := &kafka.ConfigMap{
+		"bootstrap.servers": hostname,
+		"client.id":         fmt.Sprintf("CloudKarafka-mgmt-%s", h),
+		"group.id":          fmt.Sprintf("CloudKarafka-mgmt-%s", h),
+	}
+	consumer, err := kafka.NewConsumer(cfg)
 	if err != nil {
 		fmt.Println("[ERROR]", err)
 		return
 	}
-	c = conn{client: client}
+	c = conn{consumer: consumer}
 	if c.TopicExists("__consumer_offsets") {
-		go c.ConsumeTopic("__consumer_offsets", consumerOffsetsMessage)
+		c.ConsumeTopic("__consumer_offsets")
 	}
 	if c.TopicExists("__cloudkarafka_metrics") {
-		go c.ConsumeTopic("__cloudkarafka_metrics", metricMessage)
+		c.ConsumeTopic("__cloudkarafka_metrics")
+	}
+	for {
+		msg, err := consumer.ReadMessage(-1)
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		switch *msg.TopicPartition.Topic {
+		case "__consumer_offsets":
+			consumerOffsetsMessage(msg)
+		case "__cloudkarafka_metrics":
+			metricMessage(msg)
+		}
 	}
 }
 
