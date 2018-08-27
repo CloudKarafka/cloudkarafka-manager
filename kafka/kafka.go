@@ -34,7 +34,7 @@ func (me conn) ConsumeTopic(topic string) {
 			times[i] = kafka.TopicPartition{
 				Topic:     &topic,
 				Partition: p.ID,
-				Offset:    kafka.Offset((time.Now().Unix() - 12*60*60) * 1000),
+				Offset:    kafka.Offset((time.Now().Unix() - 5*60) * 1000),
 			}
 			i++
 		}

@@ -25,7 +25,7 @@ func (me Timeseries) Add(val int, ts int64) Timeseries {
 	}
 	oldest := me.oldestKey()
 	//Oldest is older than 5 minutes, delete the entry
-	if oldest < time.Now().Unix()-12*60*60 {
+	if oldest < time.Now().Unix()-5*60 {
 		delete(me, oldest)
 	}
 	me[ts] = val
