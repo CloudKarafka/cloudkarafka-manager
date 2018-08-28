@@ -1,5 +1,6 @@
 package config
 
 var (
-	Port string
+	Port      string
+	Retention int64
 )

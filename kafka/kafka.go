@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"cloudkarafka-mgmt/config"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"fmt"
@@ -34,7 +35,7 @@ func (me conn) ConsumeTopic(topic string) {
 			times[i] = kafka.TopicPartition{
 				Topic:     &topic,
 				Partition: p.ID,
-				Offset:    kafka.Offset((time.Now().Unix() - 5*60) * 1000),
+				Offset:    kafka.Offset((time.Now().Unix() - config.Retention) * 1000),
 			}
 			i++
 		}

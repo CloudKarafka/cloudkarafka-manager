@@ -32,9 +32,11 @@ func main() {
 	zookeeper.SetAuthentication(*auth)
 	// Runtime metrics, collect metrics every 30s
 	// Consumer offsets
+	config.Retention = 1 * 60
 	go kafka.Start(*kh)
 	// HTTP server
 	config.Port = *port
+	// 5 minutes in seconds
 	go server.Start()
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	printMemUsage()
