@@ -142,6 +142,11 @@ func decodeTopic(r *http.Request) (dm.T, error) {
 					continue
 				}
 				cols := strings.Split(row, "=")
+				if len(cols) != 2 {
+					fmt.Printf("[INFO] unexteced format (%s) expects (key=value)\n", row)
+					//log error to user
+					continue
+				}
 				key := strings.Trim(cols[0], " \n\r")
 				val := strings.Trim(cols[1], " \n\r")
 				cfg[key] = val
