@@ -42,6 +42,7 @@ func main() {
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	printMemUsage()
 	//Wait for term
+loop:
 	for {
 		select {
 		case <-signals:
@@ -49,6 +50,7 @@ func main() {
 				fmt.Println("[ERROR] could not exit in reasonable time")
 				os.Exit(1)
 			})
+			break loop
 		case <-time.After(10 * time.Second):
 			printMemUsage()
 		}
