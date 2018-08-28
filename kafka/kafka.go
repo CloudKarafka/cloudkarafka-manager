@@ -39,7 +39,7 @@ func (me conn) ConsumeTopic(topic string) {
 			}
 			i++
 		}
-		offsets, err := me.consumer.OffsetsForTimes(times, 5000)
+		offsets, err := me.consumer.OffsetsForTimes(times, 10000)
 		if err != nil {
 			fmt.Printf("[ERROR] failed to get offsets for topic (%s)\n", topic)
 			fmt.Println(err)
