@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	port = flag.String("port", "8080", "Port to run HTTP server on")
-	kh   = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
-	auth = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
+	port      = flag.String("port", "8080", "Port to run HTTP server on")
+	kh        = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
+	auth      = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
+	retention = flag.Int("retention", 60, "Retention for in-memory historic data")
 )
 
 func main() {
@@ -32,7 +33,7 @@ func main() {
 	zookeeper.SetAuthentication(*auth)
 	// Runtime metrics, collect metrics every 30s
 	// Consumer offsets
-	config.Retention = 1 * 60
+	config.Retention = int64(*retention)
 	go kafka.Start(*kh)
 	// HTTP server
 	config.Port = *port
