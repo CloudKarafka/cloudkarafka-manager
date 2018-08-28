@@ -72,8 +72,8 @@ func Start(hostname string) {
 		"bootstrap.servers":          hostname,
 		"client.id":                  fmt.Sprintf("CloudKarafka-mgmt-%s", h),
 		"group.id":                   fmt.Sprintf("CloudKarafka-mgmt-%s", h),
-		"queued.max.messages.kbytes": 10240,
-		"fetch.max.bytes":            5242880,
+		"queued.max.messages.kbytes": 1024,
+		"fetch.max.bytes":            1048576,
 	}
 	consumer, err := kafka.NewConsumer(cfg)
 	if err != nil {
