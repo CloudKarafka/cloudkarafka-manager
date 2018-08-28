@@ -69,9 +69,10 @@ func (me conn) Stop() {
 func Start(hostname string) {
 	h, _ := os.Hostname()
 	cfg := &kafka.ConfigMap{
-		"bootstrap.servers": hostname,
-		"client.id":         fmt.Sprintf("CloudKarafka-mgmt-%s", h),
-		"group.id":          fmt.Sprintf("CloudKarafka-mgmt-%s", h),
+		"bootstrap.servers":          hostname,
+		"client.id":                  fmt.Sprintf("CloudKarafka-mgmt-%s", h),
+		"group.id":                   fmt.Sprintf("CloudKarafka-mgmt-%s", h),
+		"queued.max.messages.kbytes": 10240,
 	}
 	consumer, err := kafka.NewConsumer(cfg)
 	if err != nil {
