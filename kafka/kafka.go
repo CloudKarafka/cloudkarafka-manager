@@ -41,6 +41,7 @@ func (me conn) ConsumeTopic(topic string) {
 		}
 		offsets, err := me.consumer.OffsetsForTimes(times, 5000)
 		if err != nil {
+			fmt.Printf("[ERROR] failed to get offsets for topic (%s)\n", topic)
 			fmt.Println(err)
 			return
 		}
@@ -74,7 +75,7 @@ func Start(hostname string) {
 		"group.id":                   fmt.Sprintf("CloudKarafka-mgmt-%s", h),
 		"queued.max.messages.kbytes": 1024,
 		"fetch.max.bytes":            1048576,
-		"queued.min.messages":        100,
+		"queued.min.messages":        1000,
 	}
 	consumer, err := kafka.NewConsumer(cfg)
 	if err != nil {
