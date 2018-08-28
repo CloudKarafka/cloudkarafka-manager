@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"time"
 )
 
@@ -36,14 +37,31 @@ func main() {
 	config.Port = *port
 	go server.Start()
 	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
+	printMemUsage()
 	//Wait for term
-	<-signals
-	time.AfterFunc(2*time.Second, func() {
-		fmt.Println("[ERROR] could not exit in reasonable time")
-		os.Exit(1)
-	})
+	for {
+		select {
+		case <-signals:
+			time.AfterFunc(2*time.Second, func() {
+				fmt.Println("[ERROR] could not exit in reasonable time")
+				os.Exit(1)
+			})
+		case <-time.After(10 * time.Second):
+			printMemUsage()
+		}
+	}
+	fmt.Println("Stopping mgmt")
 	kafka.Stop()
 	zookeeper.Stop()
 	fmt.Println("Stopped successfully")
 	return
+}
+
+func printMemUsage() {
+	var m runtime.MemStats
+	runtime.ReadMemStats(&m)
+	fmt.Printf("Alloc %v MiB\t", m.Alloc/1024/1024)
+	fmt.Printf("TotalAlloc %v MiB\t", m.TotalAlloc/1024/1024)
+	fmt.Printf("Sys %v MiB\t", m.Sys/1024/1024)
+	fmt.Printf("NumGC %v\n", m.NumGC)
 }
