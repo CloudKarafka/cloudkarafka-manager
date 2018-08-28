@@ -18,7 +18,7 @@ var (
 	port      = flag.String("port", "8080", "Port to run HTTP server on")
 	kh        = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
 	auth      = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
-	retention = flag.Int("retention", 60, "Retention for in-memory historic data")
+	retention = flag.Int("retention", 5*60, "Retention (in seconds) for in-memory historic data")
 )
 
 func main() {
