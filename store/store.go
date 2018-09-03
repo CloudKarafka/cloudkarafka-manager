@@ -39,6 +39,7 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		case "TotalTimeMs":
 		case "ReplicationBytesOutPerSec":
 		case "UnderReplicatedPartitions":
+			bs.UnderReplicatedPartitions(keys[1], value, timestamp)
 		case "TotalProduceRequestsPerSec":
 		case "FailedFetchRequestsPerSec":
 		case "ProduceMessageConversionsPerSec":

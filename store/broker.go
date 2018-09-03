@@ -5,13 +5,14 @@ import (
 )
 
 type broker struct {
-	Version          string
-	Connections      map[string]Timeseries
-	LeaderCount      int
-	PartitionCount   int
-	BytesInPerSec    Timeseries
-	BytesOutPerSec   Timeseries
-	MessagesInPerSec Timeseries
+	Version                   string
+	Connections               map[string]Timeseries
+	LeaderCount               int
+	PartitionCount            int
+	UnderReplicatedPartitions int
+	BytesInPerSec             Timeseries
+	BytesOutPerSec            Timeseries
+	MessagesInPerSec          Timeseries
 }
 
 type brokerStore struct {
@@ -83,6 +84,13 @@ func (me *brokerStore) PartitionCount(brokerId string, value int, _ts int64) {
 	defer me.Unlock()
 	b := me.store[brokerId]
 	b.PartitionCount = value
+	me.store[brokerId] = b
+}
+func (me *brokerStore) UnderReplicatedPartitions(brokerId string, value int, _ts int64) {
+	me.Lock()
+	defer me.Unlock()
+	b := me.store[brokerId]
+	b.UnderReplicatedPartitions = value
 	me.store[brokerId] = b
 }
 

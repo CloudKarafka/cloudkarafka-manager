@@ -19,6 +19,7 @@ func Notifications() []notification {
 	fns := []notificationFn{
 		checkUnevenPartitions,
 		checkUnevenLeaders,
+		checkURP,
 	}
 	for _, fn := range fns {
 		if n, any := fn(); any {
@@ -82,6 +83,25 @@ func checkUnevenLeaders() ([]notification, bool) {
 		group[id] = b.LeaderCount
 	}
 	return checkUneven(group, msg)
+}
+
+func checkURP() ([]notification, bool) {
+	msg := "You have %d under replicated partitions on broker %s"
+	var n []notification
+	any := false
+	for _, id := range store.Brokers() {
+		b := store.Broker(id)
+		v := b.UnderReplicatedPartitions
+		if v > 0 {
+			n = append(n, notification{
+				Type:    "Under replicated partitions",
+				Level:   "warning",
+				Message: fmt.Sprintf(msg, v, id),
+			})
+			any = true
+		}
+	}
+	return n, any
 }
 
 /*func checkFailedLogins() ([]notification, bool) {
