@@ -9,62 +9,57 @@ import (
 	"time"
 )
 
-var (
-	c conn
-)
-
-type conn struct {
-	consumer *kafka.Consumer
-}
-
-func (me conn) ConsumeTopic(topic string) {
-	meta, err := me.consumer.GetMetadata(&topic, true, 5000)
+func topicMetadata(consumer *kafka.Consumer, topic string) ([]kafka.TopicPartition, error) {
+	meta, err := consumer.GetMetadata(&topic, true, 5000)
 	if err != nil {
-		fmt.Printf("[ERROR] failed-to-get-partitions topic=%s\n", topic)
-		fmt.Println(err)
-		time.Sleep(30 * time.Second)
-		me.ConsumeTopic(topic)
-		return
+		return nil, err
 	}
 	if t, ok := meta.Topics[topic]; ok {
 		var (
-			i     = 0
-			times = make([]kafka.TopicPartition, len(t.Partitions))
+			i      = 0
+			toppar = make([]kafka.TopicPartition, len(t.Partitions))
 		)
 		for _, p := range t.Partitions {
-			times[i] = kafka.TopicPartition{
+			toppar[i] = kafka.TopicPartition{
 				Topic:     &topic,
 				Partition: p.ID,
 				Offset:    kafka.Offset((time.Now().Unix() - config.Retention) * 1000),
 			}
 			i++
 		}
-		offsets, err := me.consumer.OffsetsForTimes(times, -1)
-		if err != nil {
-			fmt.Printf("[ERROR] failed to get offsets for topic (%s)\n", topic)
-			fmt.Println(err)
-			return
-		}
-		err = me.consumer.Assign(offsets)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		return toppar, nil
 	}
+	return nil, fmt.Errorf("Topic %s doesn't exists", topic)
 }
 
-func (me conn) TopicExists(name string) bool {
-	meta, err := me.consumer.GetMetadata(&name, true, 5000)
+func consumeTopics(consumer *kafka.Consumer, topics []string) error {
+	toppar := make([]kafka.TopicPartition, 0)
+	i := 0
+	topic := topics[i]
+	for {
+		meta, err := topicMetadata(consumer, topic)
+		if err == nil {
+			toppar = append(toppar, meta...)
+			i = i + 1
+			if i > len(topics)-1 {
+				break
+			}
+			topic = topics[i]
+		} else {
+			fmt.Printf("[ERROR] failed-to-get-partitions topic=%s\n", topic)
+			fmt.Println(err)
+			time.Sleep(30 * time.Second)
+		}
+	}
+	offsets, err := consumer.OffsetsForTimes(toppar, -1)
 	if err != nil {
-		fmt.Println(err)
-		return false
+		return err
 	}
-	_, ok := meta.Topics[name]
-	return ok
-}
-
-func (me conn) Stop() {
-	me.consumer.Close()
+	err = consumer.Assign(offsets)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Start(hostname string) {
@@ -77,17 +72,15 @@ func Start(hostname string) {
 		"fetch.message.max.bytes":    1048576,
 		"queued.min.messages":        1000,
 	}
+	topics := []string{"__cloudkarafka_metrics", "__consumer_offsets"}
 	consumer, err := kafka.NewConsumer(cfg)
 	if err != nil {
 		fmt.Println("[ERROR]", err)
 		return
 	}
-	c = conn{consumer: consumer}
-	if c.TopicExists("__consumer_offsets") {
-		c.ConsumeTopic("__consumer_offsets")
-	}
-	if c.TopicExists("__cloudkarafka_metrics") {
-		c.ConsumeTopic("__cloudkarafka_metrics")
+	if err := consumeTopics(consumer, topics); err != nil {
+		fmt.Println("[ERROR]", err)
+		return
 	}
 	for {
 		msg, err := consumer.ReadMessage(-1)
@@ -102,8 +95,4 @@ func Start(hostname string) {
 			metricMessage(msg)
 		}
 	}
-}
-
-func Stop() {
-	c.Stop()
 }

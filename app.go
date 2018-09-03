@@ -56,7 +56,6 @@ loop:
 		}
 	}
 	fmt.Println("Stopping mgmt")
-	kafka.Stop()
 	zookeeper.Stop()
 	fmt.Println("Stopped successfully")
 	return
