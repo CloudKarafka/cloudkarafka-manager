@@ -83,7 +83,7 @@ function onLoad(request, callback) {
       }
       callback(data)
     } else {
-      notify(request.responseText, 'error');
+      notify(request.responseText, { level: "error" });
     }
   }
 }
