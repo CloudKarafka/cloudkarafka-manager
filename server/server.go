@@ -85,7 +85,7 @@ func apiRoutes(r *mux.Router) {
 			"NumGC":      fmt.Sprintf("%v", m.NumGC),
 		})
 	}))
-	//a.HandleFunc("/stats", protected(api.StatsOverview))
+	a.HandleFunc("/stats/admin", protected(api.AdminStats))
 	//a.HandleFunc("/stats/{metric}", protected(api.Stats))
 	//a.HandleFunc("/prometheus", protected(api.StatsPrometheus))
 }
