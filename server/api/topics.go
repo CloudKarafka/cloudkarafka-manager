@@ -3,6 +3,7 @@ package api
 import (
 	"cloudkarafka-mgmt/dm"
 	"cloudkarafka-mgmt/zookeeper"
+
 	"github.com/gorilla/mux"
 
 	"encoding/json"
@@ -120,16 +121,21 @@ func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 
 func decodeTopic(r *http.Request) (dm.T, error) {
 	var (
-		t   dm.T
-		err error
+		t             dm.T
+		err           error
+		invalidConfig []string
 	)
 	switch r.Header.Get("content-type") {
 	case "application/json":
 		decoder := json.NewDecoder(r.Body)
-		err = decoder.Decode(&t)
 		defer r.Body.Close()
+		if err = decoder.Decode(&t); err != nil {
+			return t, errors.New("Couldn't decode the json body in the request")
+		}
 	default:
-		err = r.ParseMultipartForm(512)
+		if err = r.ParseMultipartForm(512); err != nil {
+			return t, errors.New("Couldn't parse the request body")
+		}
 		t.Name = r.PostForm.Get("name")
 		t.PartitionCount, err = strconv.Atoi(r.PostForm.Get("partition_count"))
 		t.ReplicationFactor, err = strconv.Atoi(r.PostForm.Get("replication_factor"))
@@ -143,8 +149,7 @@ func decodeTopic(r *http.Request) (dm.T, error) {
 				}
 				cols := strings.Split(row, "=")
 				if len(cols) != 2 {
-					fmt.Printf("[INFO] unexteced format (%s) expects (key=value)\n", row)
-					//log error to user
+					invalidConfig = append(invalidConfig, row)
 					continue
 				}
 				key := strings.Trim(cols[0], " \n\r")
@@ -154,7 +159,57 @@ func decodeTopic(r *http.Request) (dm.T, error) {
 			t.Config = cfg
 		}
 	}
-	return t, err
+	invalidConfig = append(invalidConfig, validateTopicConfig(t.Config)...)
+	if len(invalidConfig) > 0 {
+		return t, fmt.Errorf("Invalid config settings:<br />%s", strings.Join(invalidConfig, "<br />"))
+	}
+	return t, nil
+}
+
+var validConfigKeys = []string{
+	"cleanup.policy",
+	"compression.type",
+	"delete.retention.ms",
+	"file.delete.delay.ms",
+	"flush.messages",
+	"flush.ms",
+	"follower.replication.throttled.replicas",
+	"index.interval.bytes",
+	"leader.replication.throttled.replicas",
+	"max.message.bytes",
+	"message.format.version",
+	"message.timestamp.difference.max.ms",
+	"message.timestamp.type",
+	"min.cleanable.dirty.ratio",
+	"min.compaction.lag.ms",
+	"min.insync.replicas",
+	"preallocate",
+	"retention.bytes",
+	"retention.ms",
+	"segment.bytes",
+	"segment.index.bytes",
+	"segment.jitter.ms",
+	"segment.ms",
+	"unclean.leader.election.enable",
+	"message.downconversion.enable",
+}
+
+func isValidConfigKey(key string) bool {
+	for _, vck := range validConfigKeys {
+		if key == vck {
+			return true
+		}
+	}
+	return false
+}
+func validateTopicConfig(cfg map[string]interface{}) []string {
+	var errs []string
+	for k, v := range cfg {
+		if !isValidConfigKey(k) {
+			errs = append(errs, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+	return errs
 }
 
 func getTopic(w http.ResponseWriter, name string) {
