@@ -105,8 +105,8 @@ function renderTmpl(attachToId, tmplId, elements) {
 function renderListTmpl(attachToId, tmplId, path, clb) {
   //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
   get(path, function(elements) {
-    if (elements !== null) {
-      var l = elements.length;
+    var l = elements ? elements.length : 0;
+    if (l > 0) {
       var result = [];
       elements.forEach(function(e) {
         get(path.replace('.json', '/') + e + '.json', function(elem) {

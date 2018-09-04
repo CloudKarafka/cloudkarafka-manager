@@ -197,6 +197,10 @@
                 </form>
               </td>
             </tr>
+			{{ else }}
+			<tr>
+              <td colspan="5">No users</td>
+            </tr>
             {{/elements}}
           </script>
         
@@ -313,6 +317,10 @@
                 <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></button>
               </form>
               </td>
+            </tr>
+			{{ else }}
+			<tr>
+              <td colspan="6">No rules configured</td>
             </tr>
             {{/each}}
           </script>
