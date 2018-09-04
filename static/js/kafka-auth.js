@@ -24,12 +24,18 @@ function testLoggedIn() {
 }
 
 function setUsername() {
-  element("#username").innerText = get_cookie_value("username");
+  var el = element("#username");
+  if (el) {
+    el.innerText = get_cookie_value("username");
+  }
 }
 
 function setClusterName() {
-  var hostname = location.host.split('.')[0];
-  element("#cluster-name").innerText = hostname;
+  var hostname = location.host.split(".")[0];
+  var el = element("#cluster-name");
+  if (el) {
+    el.innerText = hostname;
+  }
 }
 
 function auth_header() {
