@@ -7,6 +7,7 @@ import (
 
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -28,9 +29,8 @@ func metricMessage(msg *kafka.Message) {
 		storeLogOffset(keys, value, ts)
 	case "kafka.server":
 		storeKafkaServer(keys, value, ts)
-	case "kafka.network":
-		storeKafkaNetwork(keys, value, ts)
 	}
+	storeKafkaStats(keys, value, ts)
 }
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts int64) {
@@ -48,18 +48,44 @@ func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts i
 	}
 }
 
-func storeKafkaNetwork(keys map[string]string, value map[string]interface{}, ts int64) {
-	if keys["type"] == "RequestMetrics" && keys["name"] == "TotalTimeMs" {
-		if keys["request"] == "Fetch" || keys["request"] == "Produce" {
-			v := int(value["Mean"].(float64))
-			store.Put("broker", v, ts, keys["name"], keys["request"])
-			fmt.Println("network", keys["name"], keys["request"], v)
+type Metric []string
+
+func (v Metric) Matches(keys map[string]string) bool {
+	return keys["domain"] == v[0] &&
+		(v[1] == "*" || keys["type"] == v[1]) &&
+		(v[2] == "*" || keys["name"] == v[2]) &&
+		(v[3] == "*" || keys["request"] == v[3])
+}
+func (v Metric) String() string {
+	return strings.Join(v, ".")
+}
+
+var statsMetrics = []Metric{
+	Metric{"kafka.network", "RequestMetrics", "TotalTimeMs", "Produce", "Mean"},
+	Metric{"kafka.network", "RequestMetrics", "TotalTimeMs", "Fetch", "Mean"},
+	Metric{"kafka.network", "RequestChannel", "RequestQueueSize", "*", "Mean"},
+	Metric{"kafka.server", "ReplicaManager", "UnderReplicatedPartitions", "*", "OneMinuteRate"},
+}
+
+func storeKafkaStats(keys map[string]string, value map[string]interface{}, ts int64) {
+	brokerId, _ := value["BrokerId"].(float64)
+	id := strconv.Itoa(int(brokerId))
+	for _, m := range statsMetrics {
+		if m.Matches(keys) {
+			for k, v := range value {
+				if k == "BrokerId" {
+					continue
+				}
+				keys["measure"] = k
+				/*data := store.Data{
+					Tags:      keys,
+					Value:     int(v.(float64)),
+					Timestamp: ts,
+				}*/
+				store.Put("broker", int(v.(float64)), ts, keys["name"], id, keys["request"])
+			}
+			return
 		}
-	}
-	if keys["type"] == "RequestChannel" && keys["name"] == "RequestQueueSize" {
-		v := int(value["Value"].(float64))
-		store.Put("broker", v, ts, keys["name"])
-		fmt.Println("network", keys, v)
 	}
 }
 
