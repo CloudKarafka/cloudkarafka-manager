@@ -26,6 +26,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:664d37ea261f0fc73dd17f4a1f5f46d01fbb0b0d75f6375af064824424109b7d"
+  name = "github.com/gorilla/handlers"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7e0847f9db758cdebd26c149d0ae9d5d0b9c98ce"
+  version = "v1.4.0"
+
+[[projects]]
   digest = "1:e73f5b0152105f18bc131fba127d9949305c8693f8a762588a82a48f61756f5f"
   name = "github.com/gorilla/mux"
   packages = ["."]
@@ -47,7 +55,7 @@
   name = "golang.org/x/crypto"
   packages = ["pbkdf2"]
   pruneopts = "UT"
-  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
+  revision = "182538f80094b6a8efaade63a8fd8e0d9d5843dd"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -55,6 +63,7 @@
   input-imports = [
     "github.com/confluentinc/confluent-kafka-go/kafka",
     "github.com/dustin/go-humanize",
+    "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/samuel/go-zookeeper/zk",
     "golang.org/x/crypto/pbkdf2",
