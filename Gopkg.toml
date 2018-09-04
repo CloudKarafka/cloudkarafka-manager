@@ -22,10 +22,6 @@
 
 
 [[constraint]]
-  name = "github.com/Shopify/sarama"
-  branch = "master"
-
-[[constraint]]
   name = "github.com/gorilla/mux"
   version = "1.6.1"
 
