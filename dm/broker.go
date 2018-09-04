@@ -5,14 +5,15 @@ import (
 )
 
 type BrokerMetric struct {
-	BytesInPerSec    int            `json:"bytes_in_per_sec"`
-	BytesOutPerSec   int            `json:"bytes_out_per_sec"`
-	MessagesInPerSec int            `json:"messages_in_per_sec"`
-	KafkaVersion     string         `json:"kafka_version"`
-	BrokerId         string         `json:"broker_id"`
-	LeaderCount      int            `json:"leader_count"`
-	PartitionCount   int            `json:"partition_count"`
-	Connections      []SocketServer `json:"connections"`
+	BytesInPerSec             int            `json:"bytes_in_per_sec"`
+	BytesOutPerSec            int            `json:"bytes_out_per_sec"`
+	MessagesInPerSec          int            `json:"messages_in_per_sec"`
+	KafkaVersion              string         `json:"kafka_version"`
+	BrokerId                  string         `json:"broker_id"`
+	LeaderCount               int            `json:"leader_count"`
+	PartitionCount            int            `json:"partition_count"`
+	UnderReplicatedPartitions int            `json:"under_replicated_partitions"`
+	Connections               []SocketServer `json:"connections"`
 }
 
 type SocketServer struct {
@@ -41,14 +42,15 @@ func SocketServers(brokerId string) []SocketServer {
 func BrokerMetrics(id string) BrokerMetric {
 	broker := store.Broker(id)
 	return BrokerMetric{
-		KafkaVersion:     broker.Version,
-		BrokerId:         id,
-		Connections:      SocketServers(id),
-		BytesInPerSec:    broker.BytesInPerSec.Latest(),
-		BytesOutPerSec:   broker.BytesOutPerSec.Latest(),
-		MessagesInPerSec: broker.MessagesInPerSec.Latest(),
-		LeaderCount:      broker.LeaderCount,
-		PartitionCount:   broker.PartitionCount,
+		KafkaVersion:              broker.Version,
+		BrokerId:                  id,
+		Connections:               SocketServers(id),
+		BytesInPerSec:             broker.BytesInPerSec.Latest(),
+		BytesOutPerSec:            broker.BytesOutPerSec.Latest(),
+		MessagesInPerSec:          broker.MessagesInPerSec.Latest(),
+		LeaderCount:               broker.LeaderCount,
+		PartitionCount:            broker.PartitionCount,
+		UnderReplicatedPartitions: broker.UnderReplicatedPartitions,
 	}
 }
 
