@@ -148,6 +148,16 @@ Handlebars.registerHelper('humanFileSize', function(bytes) {
     res.value + "<small>" + res.unit + "</small>"
   );
 })
+var onlyDigitsRe = /^\d+$/;
+Handlebars.registerHelper("humanize", function(value) {
+  if (onlyDigitsRe.test(value)) {
+    value = new Number(value);
+    value = value.toLocaleString();
+  } else if (typeof value === "number") {
+    value = value.toLocaleString();
+  }
+  return value;
+});
 
 //Handlebars.registerHelper('humanFileSize', humanFileSize)
 Handlebars.registerHelper('toLocaleString', function(elem) {
