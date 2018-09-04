@@ -95,7 +95,7 @@ func checkURP() ([]notification, bool) {
 		if v > 0 {
 			n = append(n, notification{
 				Type:    "Under replicated partitions",
-				Level:   "warning",
+				Level:   "danger",
 				Message: fmt.Sprintf(msg, v, id),
 			})
 			any = true
