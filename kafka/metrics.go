@@ -116,8 +116,10 @@ func socketServerMetrics(broker string, keys map[string]string, value map[string
 func brokerTopicMetrics(broker string, keys map[string]string, value map[string]interface{}, ts int64) {
 	topic := keys["topic"]
 	val, _ := value["OneMinuteRate"].(float64)
+	brokerId, _ := value["BrokerId"].(float64)
+	id := strconv.Itoa(int(brokerId))
 	if topic == "" {
-		store.Put("broker", int(val), ts, keys["name"], keys["BrokerId"])
+		store.Put("broker", int(val), ts, keys["name"], id)
 	} else {
 		store.Put("topic", int(val), ts, keys["name"], topic)
 	}
