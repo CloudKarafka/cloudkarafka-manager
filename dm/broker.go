@@ -23,6 +23,13 @@ type SocketServer struct {
 	FailedAuthenticationTotal int    `json:"failed_authentication_total"`
 }
 
+type BrokerJvmMetric struct {
+	KafkaVersion  string       `json:"kafka_version"`
+	BrokerId      string       `json:"broker_id"`
+	HeapMemory    store.Memory `json:"heap_memory"`
+	NonHeapMemory store.Memory `json:"non_heap_memory"`
+}
+
 func SocketServers(brokerId string) []SocketServer {
 	broker := store.Broker(brokerId)
 	var (
@@ -51,6 +58,16 @@ func BrokerMetrics(id string) BrokerMetric {
 		LeaderCount:               broker.LeaderCount,
 		PartitionCount:            broker.PartitionCount,
 		UnderReplicatedPartitions: broker.UnderReplicatedPartitions,
+	}
+}
+
+func BrokerJvmMetrics(id string) BrokerJvmMetric {
+	broker := store.Broker(id)
+	return BrokerJvmMetric{
+		KafkaVersion:  broker.Version,
+		BrokerId:      id,
+		HeapMemory:    broker.Jvm.Heap,
+		NonHeapMemory: broker.Jvm.NonHeap,
 	}
 }
 

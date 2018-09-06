@@ -83,6 +83,13 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		}
 	case "consumer":
 		cs.Put(value, timestamp, keys[0], keys[1], keys[2])
+	case "jvm":
+		switch keys[1] {
+		case "HeapMemoryUsage":
+			bs.HeapMemory(keys[0], keys[2], value)
+		case "NonHeapMemoryUsage":
+			bs.NonHeapMemory(keys[0], keys[2], value)
+		}
 	default:
 		fmt.Printf("Unknown metric (%s)\n", metric)
 	}

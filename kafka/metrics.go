@@ -29,6 +29,8 @@ func metricMessage(msg *kafka.Message) {
 		storeLogOffset(keys, value, ts)
 	case "kafka.server":
 		storeKafkaServer(keys, value, ts)
+	case "java.lang":
+		storeJvmMetrics(keys, value, ts)
 	}
 }
 
@@ -55,6 +57,22 @@ func storeLogOffset(keys map[string]string, value map[string]interface{}, ts int
 		return
 	}
 	store.Put("topic", int(v), ts, keys["name"], keys["topic"], keys["partition"])
+}
+
+func storeJvmMetrics(keys map[string]string, value map[string]interface{}, ts int64) {
+	brokerId, _ := value["BrokerId"].(float64)
+	broker := fmt.Sprintf("%v", brokerId)
+	switch keys["type"] {
+	case "OperatingSystem":
+		// Ignore for the moment
+	case "Memory":
+		metrics := []string{"HeapMemoryUsage", "NonHeapMemoryUsage"}
+		for _, metric := range metrics {
+			for k, v := range value[metric].(map[string]interface{}) {
+				store.Put("jvm", int(v.(float64)), ts, broker, metric, k)
+			}
+		}
+	}
 }
 
 func kafkaVersion(broker string, version interface{}) {

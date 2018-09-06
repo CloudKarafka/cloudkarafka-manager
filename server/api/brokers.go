@@ -3,6 +3,7 @@ package api
 import (
 	"cloudkarafka-mgmt/dm"
 	"cloudkarafka-mgmt/zookeeper"
+
 	"github.com/dustin/go-humanize"
 	"github.com/gorilla/mux"
 
@@ -54,6 +55,12 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	t := time.Unix(ts/1000, 0)
 	bvm.Uptime = strings.TrimSpace(humanize.RelTime(time.Now(), t, "", ""))
 	WriteJson(w, bvm)
+}
+
+func BrokerJvm(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	vars := mux.Vars(r)
+	m := dm.BrokerJvmMetrics(vars["id"])
+	WriteJson(w, m)
 }
 
 func BrokerThroughputTimeseries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {

@@ -4,6 +4,17 @@ import (
 	"sync"
 )
 
+type Memory struct {
+	Init     int `json:"init"`
+	Commited int `json:"commited"`
+	Max      int `json:"max"`
+	Used     int `json:"used"`
+}
+type jvm struct {
+	Heap    Memory
+	NonHeap Memory
+}
+
 type broker struct {
 	Version                   string
 	Connections               map[string]Timeseries
@@ -13,6 +24,7 @@ type broker struct {
 	BytesInPerSec             Timeseries
 	BytesOutPerSec            Timeseries
 	MessagesInPerSec          Timeseries
+	Jvm                       jvm
 }
 
 type brokerStore struct {
@@ -91,6 +103,33 @@ func (me *brokerStore) UnderReplicatedPartitions(brokerId string, value int, _ts
 	defer me.Unlock()
 	b := me.store[brokerId]
 	b.UnderReplicatedPartitions = value
+	me.store[brokerId] = b
+}
+
+func updateMemory(mem *Memory, memoryKey string, value int) {
+	switch memoryKey {
+	case "init":
+		mem.Init = value
+	case "committed":
+		mem.Commited = value
+	case "used":
+		mem.Used = value
+	case "max":
+		mem.Max = value
+	}
+}
+func (me *brokerStore) HeapMemory(brokerId, memoryKey string, value int) {
+	me.Lock()
+	defer me.Unlock()
+	b := me.store[brokerId]
+	updateMemory(&b.Jvm.Heap, memoryKey, value)
+	me.store[brokerId] = b
+}
+func (me *brokerStore) NonHeapMemory(brokerId, memoryKey string, value int) {
+	me.Lock()
+	defer me.Unlock()
+	b := me.store[brokerId]
+	updateMemory(&b.Jvm.NonHeap, memoryKey, value)
 	me.store[brokerId] = b
 }
 

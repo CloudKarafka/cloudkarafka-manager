@@ -55,6 +55,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/brokers.json", protected(api.Brokers))
 	a.HandleFunc("/brokers/throughput.json", protected(api.AllBrokerThroughputTimeseries))
 	a.HandleFunc("/brokers/{id}.json", protected(api.Broker))
+	a.HandleFunc("/brokers/{id}/jvm.json", protected(api.BrokerJvm))
 	a.HandleFunc("/brokers/{id}/throughput.json", protected(api.BrokerThroughputTimeseries))
 	a.HandleFunc("/brokers/throughput", protected(api.AllBrokerThroughputTimeseries))
 	a.HandleFunc("/topics.json", protected(api.Topics))
