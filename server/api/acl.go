@@ -2,6 +2,8 @@ package api
 
 import (
 	"cloudkarafka-mgmt/zookeeper"
+	"fmt"
+
 	"github.com/gorilla/mux"
 
 	"encoding/json"
@@ -32,6 +34,7 @@ func Acls(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 			"groups":  groups,
 			"cluster": cluster,
 		}
+		fmt.Printf("[INFO] action=list-acl user=%s\n", p.Username)
 		WriteJson(w, resp)
 	case "POST":
 		acl, err := decodeAcl(r)
@@ -39,6 +42,8 @@ func Acls(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 			internalError(w, err)
 			return
 		}
+		fmt.Printf("[INFO] action=create-acl user=%s acl=[resource=%s,name=%s,principal=%s]\n",
+			p.Username, acl.Resource, acl.Name, acl.Principal)
 		err = zookeeper.CreateAcl(acl.Principal,
 			acl.Name,
 			acl.Resource,
@@ -64,6 +69,8 @@ func Acl(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	switch r.Method {
 	case "DELETE":
+		fmt.Printf("[INFO] action=delete-acl user=%s acl=[resource=%s,name=%s,principal=%s]\n",
+			p.Username, vars["resource"], vars["name"], vars["principal"])
 		err := zookeeper.DeleteAcl(vars["principal"], vars["name"], vars["resource"])
 		if err != nil {
 			internalError(w, err)

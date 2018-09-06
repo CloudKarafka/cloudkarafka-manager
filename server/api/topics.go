@@ -33,6 +33,8 @@ func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		if err != nil {
 			internalError(w, err.Error())
 		} else {
+			fmt.Printf("[INFO] action=create-topic user=%s topic=%s\n",
+				p.Username, t.Name)
 			createTopic(w, t)
 		}
 	default:
@@ -55,6 +57,8 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 			if err != nil {
 				internalError(w, err.Error())
 			} else {
+				fmt.Printf("[INFO] action=update-topic user=%s topic=%s\n",
+					p.Username, t.Name)
 				updateTopic(w, vars["topic"], t)
 			}
 			break
@@ -62,6 +66,8 @@ func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		fallthrough
 	case "DELETE":
 		if p.ClusterWrite() {
+			fmt.Printf("[INFO] action=delete-topic user=%s topic=%s\n",
+				p.Username, vars["topic"])
 			deleteTopic(w, vars["topic"])
 			break
 		}
