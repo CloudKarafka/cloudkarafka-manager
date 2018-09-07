@@ -13,6 +13,7 @@ type BrokerMetric struct {
 	LeaderCount               int            `json:"leader_count"`
 	PartitionCount            int            `json:"partition_count"`
 	UnderReplicatedPartitions int            `json:"under_replicated_partitions"`
+	ActiveController          bool           `json:"active_controller"`
 	Connections               []SocketServer `json:"connections"`
 }
 
@@ -58,6 +59,7 @@ func BrokerMetrics(id string) BrokerMetric {
 		LeaderCount:               broker.LeaderCount,
 		PartitionCount:            broker.PartitionCount,
 		UnderReplicatedPartitions: broker.UnderReplicatedPartitions,
+		ActiveController:          broker.ActiveController,
 	}
 }
 

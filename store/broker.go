@@ -21,6 +21,7 @@ type broker struct {
 	LeaderCount               int
 	PartitionCount            int
 	UnderReplicatedPartitions int
+	ActiveController          bool
 	BytesInPerSec             Timeseries
 	BytesOutPerSec            Timeseries
 	MessagesInPerSec          Timeseries
@@ -103,6 +104,13 @@ func (me *brokerStore) UnderReplicatedPartitions(brokerId string, value int, _ts
 	defer me.Unlock()
 	b := me.store[brokerId]
 	b.UnderReplicatedPartitions = value
+	me.store[brokerId] = b
+}
+func (me *brokerStore) ActiveController(brokerId string, value bool) {
+	me.Lock()
+	defer me.Unlock()
+	b := me.store[brokerId]
+	b.ActiveController = value
 	me.store[brokerId] = b
 }
 

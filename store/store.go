@@ -46,8 +46,15 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		case "OfflineReplicaCount":
 		case "UnderMinIsrPartitionCount":
 		case "FetchMessageConversionsPerSec":
+		case "ActiveControllerCount":
+			bs.ActiveController(keys[1], value == 1)
+		case "GlobalPartitionCount":
+		case "PreferredReplicaImbalanceCount":
+		case "OfflinePartitionsCount":
+		case "ControllerState":
+		case "GlobalTopicCount":
 		default:
-			fmt.Printf("[ERROR] Unknown key (broker) (%s)\n", keys[0])
+			fmt.Printf("[INFO] Unknown key (broker) (%s)\n", keys[0])
 		}
 	case "topic":
 		switch keys[0] {
@@ -79,7 +86,7 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		case "FetchMessageConversionsPerSec":
 		case "ProduceMessageConversionsPerSec":
 		default:
-			fmt.Printf("[ERROR] Unknown key (topic) (%s)\n", keys[0])
+			fmt.Printf("[INFO] Unknown key (topic) (%s)\n", keys[0])
 		}
 	case "consumer":
 		cs.Put(value, timestamp, keys[0], keys[1], keys[2])
@@ -89,9 +96,11 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 			bs.HeapMemory(keys[0], keys[2], value)
 		case "NonHeapMemoryUsage":
 			bs.NonHeapMemory(keys[0], keys[2], value)
+		default:
+			fmt.Printf("[INFO] Unknown key (jvm) (%s)\n", keys[0])
 		}
 	default:
-		fmt.Printf("Unknown metric (%s)\n", metric)
+		fmt.Printf("[INFO] Unknown metric (%s)\n", metric)
 	}
 }
 

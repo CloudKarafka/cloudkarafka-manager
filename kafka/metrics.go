@@ -29,9 +29,16 @@ func metricMessage(msg *kafka.Message) {
 		storeLogOffset(keys, value, ts)
 	case "kafka.server":
 		storeKafkaServer(keys, value, ts)
+	case "kafka.controller":
+		storeKafkaController(keys, value, ts)
 	case "java.lang":
 		storeJvmMetrics(keys, value, ts)
 	}
+}
+
+func getBrokerId(value map[string]interface{}) string {
+	brokerId, _ := value["BrokerId"].(float64)
+	return fmt.Sprintf("%v", brokerId)
 }
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts int64) {
@@ -75,6 +82,15 @@ func storeJvmMetrics(keys map[string]string, value map[string]interface{}, ts in
 	}
 }
 
+func storeKafkaController(keys map[string]string, value map[string]interface{}, ts int64) {
+	brokerId := getBrokerId(value)
+	switch keys["type"] {
+	case "KafkaController":
+		v := int(value["Value"].(float64))
+		store.Put("broker", v, ts, keys["name"], brokerId)
+	}
+
+}
 func kafkaVersion(broker string, version interface{}) {
 	if val, ok := version.(string); ok {
 		store.Put("broker", 0, 0, "KafkaVersion", broker, val)
