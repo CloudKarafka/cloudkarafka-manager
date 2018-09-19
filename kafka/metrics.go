@@ -31,6 +31,8 @@ func metricMessage(msg *kafka.Message) {
 		storeKafkaServer(keys, value, ts)
 	case "kafka.controller":
 		storeKafkaController(keys, value, ts)
+	case "kafka.network":
+		storeKafkaNetwork(keys, value, ts)
 	case "java.lang":
 		storeJvmMetrics(keys, value, ts)
 	}
@@ -39,6 +41,32 @@ func metricMessage(msg *kafka.Message) {
 func getBrokerId(value map[string]interface{}) string {
 	brokerId, _ := value["BrokerId"].(float64)
 	return fmt.Sprintf("%v", brokerId)
+}
+
+func storeKafkaNetwork(keys map[string]string, value map[string]interface{}, ts int64) {
+	brokerId, _ := value["BrokerId"].(float64)
+	broker := fmt.Sprintf("%v", brokerId)
+	switch keys["type"] {
+	case "RequestMetrics":
+		s := store.BrokerStore()
+		switch keys["name"] {
+		case "RequestsPerSec":
+			if v, ok := value["OneMinuteRate"].(float64); ok {
+				s.RequestCount(broker, int(v), keys["request"])
+			}
+		case "RequestQueueTimeMs":
+			fallthrough
+		case "LocalTimeMs":
+			fallthrough
+		case "RemoteTimeMs":
+			fallthrough
+		case "ResponseQueueTimeMs":
+			fallthrough
+		case "ResponseSendTimeMs":
+			v := store.NewBrokerRequestValue(value)
+			store.BrokerStore().RequestTime(broker, v, keys["name"], keys["request"])
+		}
+	}
 }
 
 func storeKafkaServer(keys map[string]string, value map[string]interface{}, ts int64) {
@@ -72,6 +100,16 @@ func storeJvmMetrics(keys map[string]string, value map[string]interface{}, ts in
 	switch keys["type"] {
 	case "OperatingSystem":
 		// Ignore for the moment
+	case "GarbageCollector":
+		metrics := []string{"G1 Young Generation", "G1 Old Generation"}
+		for _, metric := range metrics {
+			if keys["name"] == metric {
+				c := int(value["CollectionCount"].(float64))
+				t := int(value["CollectionTime"].(float64))
+				store.Put("jvm", c, ts, broker, metric, "CollectionCount")
+				store.Put("jvm", t, ts, broker, metric, "CollectionTime")
+			}
+		}
 	case "Memory":
 		metrics := []string{"HeapMemoryUsage", "NonHeapMemoryUsage"}
 		for _, metric := range metrics {
@@ -88,9 +126,14 @@ func storeKafkaController(keys map[string]string, value map[string]interface{}, 
 	case "KafkaController":
 		v := int(value["Value"].(float64))
 		store.Put("broker", v, ts, keys["name"], brokerId)
+	case "ControllerStats":
+		if keys["name"] == "UncleanLeaderElectionsPerSec" {
+			v := int(value["OneMinuteRate"].(float64))
+			store.Put("broker", v, ts, keys["name"], brokerId)
+		}
 	}
-
 }
+
 func kafkaVersion(broker string, version interface{}) {
 	if val, ok := version.(string); ok {
 		store.Put("broker", 0, 0, "KafkaVersion", broker, val)

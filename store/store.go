@@ -33,10 +33,11 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		case "FailedProduceRequestsPerSec":
 		case "TotalFetchRequestsPerSec":
 		case "IsrExpandsPerSec":
+			bs.IsrExpandsPerSec(keys[1], value)
+		case "IsrShrinksPerSec":
+			bs.IsrShrinksPerSec(keys[1], value)
 		case "RequestQueueSize":
 		case "BytesRejectedPerSec":
-		case "IsrShrinksPerSec":
-		case "TotalTimeMs":
 		case "ReplicationBytesOutPerSec":
 		case "UnderReplicatedPartitions":
 			bs.UnderReplicatedPartitions(keys[1], value, timestamp)
@@ -47,12 +48,15 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		case "UnderMinIsrPartitionCount":
 		case "FetchMessageConversionsPerSec":
 		case "ActiveControllerCount":
-			bs.ActiveController(keys[1], value == 1)
+			bs.ControllerCount(keys[1], value)
 		case "GlobalPartitionCount":
 		case "PreferredReplicaImbalanceCount":
 		case "OfflinePartitionsCount":
+			bs.OfflinePartitionsCount(keys[1], value)
 		case "ControllerState":
 		case "GlobalTopicCount":
+		case "UncleanLeaderElectionsPerSec":
+			bs.UncleanLeaderElectionsPerSec(keys[1], value)
 		default:
 			fmt.Printf("[INFO] Unknown key (broker) (%s)\n", keys[0])
 		}
@@ -96,6 +100,10 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 			bs.HeapMemory(keys[0], keys[2], value)
 		case "NonHeapMemoryUsage":
 			bs.NonHeapMemory(keys[0], keys[2], value)
+		case "G1 Young Generation":
+			fallthrough
+		case "G1 Old Generation":
+			bs.JvmGc(keys[0], keys[1], keys[2], value)
 		default:
 			fmt.Printf("[INFO] Unknown key (jvm) (%s)\n", keys[0])
 		}
@@ -103,7 +111,9 @@ func Put(metric string, value int, timestamp int64, keys ...string) {
 		fmt.Printf("[INFO] Unknown metric (%s)\n", metric)
 	}
 }
-
+func BrokerStore() *brokerStore {
+	return bs
+}
 func Brokers() []string {
 	return bs.Brokers()
 }

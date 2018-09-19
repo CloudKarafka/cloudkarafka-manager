@@ -29,6 +29,17 @@ type BrokerJvmMetric struct {
 	BrokerId      string       `json:"broker_id"`
 	HeapMemory    store.Memory `json:"heap_memory"`
 	NonHeapMemory store.Memory `json:"non_heap_memory"`
+	YoungGen      store.Gc     `json:"young_gen"`
+	OldGen        store.Gc     `json:"old_gen"`
+}
+
+type BrokerHealthMetric struct {
+	UnderReplicatedPartitions    int                            `json:"under_replicated_partitions"`
+	ControllerCount              int                            `json:"controller_count"`
+	IsrDelta                     int                            `json:"isr_delta"`
+	UncleanLeaderElectionsPerSec int                            `json:"unclean_leader_elections"`
+	OfflinePartitionsCount       int                            `json:"offline_partitions"`
+	Requests                     map[string]store.BrokerRequest `json:"requests"`
 }
 
 func SocketServers(brokerId string) []SocketServer {
@@ -50,16 +61,31 @@ func SocketServers(brokerId string) []SocketServer {
 func BrokerMetrics(id string) BrokerMetric {
 	broker := store.Broker(id)
 	return BrokerMetric{
-		KafkaVersion:              broker.Version,
-		BrokerId:                  id,
-		Connections:               SocketServers(id),
-		BytesInPerSec:             broker.BytesInPerSec.Latest(),
-		BytesOutPerSec:            broker.BytesOutPerSec.Latest(),
-		MessagesInPerSec:          broker.MessagesInPerSec.Latest(),
-		LeaderCount:               broker.LeaderCount,
-		PartitionCount:            broker.PartitionCount,
-		UnderReplicatedPartitions: broker.UnderReplicatedPartitions,
-		ActiveController:          broker.ActiveController,
+		KafkaVersion:     broker.Version,
+		BrokerId:         id,
+		Connections:      SocketServers(id),
+		BytesInPerSec:    broker.BytesInPerSec.Latest(),
+		BytesOutPerSec:   broker.BytesOutPerSec.Latest(),
+		MessagesInPerSec: broker.MessagesInPerSec.Latest(),
+		LeaderCount:      broker.LeaderCount,
+		PartitionCount:   broker.PartitionCount,
+		ActiveController: broker.ControllerCount == 1,
+	}
+}
+func BrokerHealthMetrics(id string) BrokerHealthMetric {
+	broker := store.Broker(id)
+	requests := map[string]store.BrokerRequest{
+		"producer":       broker.ProduceRequests,
+		"fetch_consumer": broker.FetchConsumerRequests,
+		"fetch_follower": broker.FetchFollowerRequests,
+	}
+	return BrokerHealthMetric{
+		UnderReplicatedPartitions:    broker.UnderReplicatedPartitions,
+		ControllerCount:              broker.ControllerCount,
+		IsrDelta:                     broker.IsrDelta(),
+		UncleanLeaderElectionsPerSec: broker.UncleanLeaderElectionsPerSec,
+		OfflinePartitionsCount:       broker.OfflinePartitionsCount,
+		Requests:                     requests,
 	}
 }
 
@@ -70,6 +96,8 @@ func BrokerJvmMetrics(id string) BrokerJvmMetric {
 		BrokerId:      id,
 		HeapMemory:    broker.Jvm.Heap,
 		NonHeapMemory: broker.Jvm.NonHeap,
+		YoungGen:      broker.Jvm.YoungGen,
+		OldGen:        broker.Jvm.OldGen,
 	}
 }
 

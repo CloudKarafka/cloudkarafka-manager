@@ -4,7 +4,6 @@ import (
 	"cloudkarafka-mgmt/config"
 	"cloudkarafka-mgmt/server/api"
 	"cloudkarafka-mgmt/zookeeper"
-	"os"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -56,6 +55,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/brokers/throughput.json", protected(api.AllBrokerThroughputTimeseries))
 	a.HandleFunc("/brokers/{id}.json", protected(api.Broker))
 	a.HandleFunc("/brokers/{id}/jvm.json", protected(api.BrokerJvm))
+	a.HandleFunc("/brokers/{id}/health.json", protected(api.BrokerHealth))
 	a.HandleFunc("/brokers/{id}/throughput.json", protected(api.BrokerThroughputTimeseries))
 	a.HandleFunc("/brokers/throughput", protected(api.AllBrokerThroughputTimeseries))
 	a.HandleFunc("/topics.json", protected(api.Topics))
@@ -120,7 +120,7 @@ func Start() {
 	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
 	http.Handle("/assets/", http.FileServer(http.Dir("static/")))
 
-	http.Handle("/", handlers.RecoveryHandler()(handlers.LoggingHandler(os.Stdout, r)))
+	http.Handle("/", handlers.RecoveryHandler()(r))
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%s", config.Port),
 		ReadTimeout:  60 * time.Second,

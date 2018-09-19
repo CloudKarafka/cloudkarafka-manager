@@ -35,6 +35,7 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	broker, err := zookeeper.Broker(vars["id"])
 	if err != nil {
+		internalError(w, err)
 		return
 	}
 	var (
@@ -60,6 +61,12 @@ func Broker(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 func BrokerJvm(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	m := dm.BrokerJvmMetrics(vars["id"])
+	WriteJson(w, m)
+}
+
+func BrokerHealth(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	vars := mux.Vars(r)
+	m := dm.BrokerHealthMetrics(vars["id"])
 	WriteJson(w, m)
 }
 
