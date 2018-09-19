@@ -1,10 +1,9 @@
 package server
 
 import (
-	"cloudkarafka-mgmt/config"
-	"cloudkarafka-mgmt/server/api"
-	"cloudkarafka-mgmt/zookeeper"
-
+	"github.com/84codes/cloudkarafka-mgmt/config"
+	"github.com/84codes/cloudkarafka-mgmt/server/api"
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
@@ -46,6 +45,13 @@ func protecedServeFile(r *mux.Router, path, file string) {
 	}))
 }
 
+type Version struct {
+	GitCommit string `json:"git_commit"`
+	Version   string `json:"version"`
+}
+
+var CurrentVersion Version
+
 func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
 	a.HandleFunc("/acls.json", protected(api.Acls))
@@ -76,6 +82,9 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/users/{name}", protected(api.User))
 	a.HandleFunc("/notifications.json", protected(api.Notifications))
 	a.HandleFunc("/notifications.json", protected(api.Notifications))
+	a.HandleFunc("/version", func(w http.ResponseWriter, _r *http.Request) {
+		api.WriteJson(w, CurrentVersion)
+	})
 	a.HandleFunc("/debug/memory-usage", protected(func(w http.ResponseWriter, _r *http.Request, _p zookeeper.Permissions) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
@@ -86,9 +95,6 @@ func apiRoutes(r *mux.Router) {
 			"NumGC":      fmt.Sprintf("%v", m.NumGC),
 		})
 	}))
-	//a.HandleFunc("/stats", protected(api.StatsOverview))
-	//a.HandleFunc("/stats/{metric}", protected(api.Stats))
-	//a.HandleFunc("/prometheus", protected(api.StatsPrometheus))
 }
 
 func serveFile(r *mux.Router, path, file string) {
@@ -126,6 +132,6 @@ func Start() {
 		ReadTimeout:  60 * time.Second,
 		WriteTimeout: 60 * time.Second,
 	}
-	fmt.Println("Listening on Port", config.Port)
+	fmt.Println("[INFO] Listening on Port", config.Port)
 	fmt.Println(s.ListenAndServe())
 }

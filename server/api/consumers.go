@@ -1,11 +1,10 @@
 package api
 
 import (
-	//"cloudkarafka-mgmt/kafka"
-	"cloudkarafka-mgmt/dm"
-	"cloudkarafka-mgmt/store"
-	"cloudkarafka-mgmt/zookeeper"
+	"github.com/84codes/cloudkarafka-mgmt/dm"
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 
+	"github.com/84codes/cloudkarafka-mgmt/store"
 	"github.com/gorilla/mux"
 
 	"net/http"

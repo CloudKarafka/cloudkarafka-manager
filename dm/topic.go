@@ -1,8 +1,8 @@
 package dm
 
 import (
-	"cloudkarafka-mgmt/store"
-	"cloudkarafka-mgmt/zookeeper"
+	"github.com/84codes/cloudkarafka-mgmt/store"
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 
 	"sort"
 	"strconv"

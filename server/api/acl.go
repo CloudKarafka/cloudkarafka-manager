@@ -1,8 +1,9 @@
 package api
 
 import (
-	"cloudkarafka-mgmt/zookeeper"
 	"fmt"
+
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 
 	"github.com/gorilla/mux"
 

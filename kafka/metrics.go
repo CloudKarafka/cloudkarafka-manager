@@ -1,7 +1,7 @@
 package kafka
 
 import (
-	"cloudkarafka-mgmt/store"
+	"github.com/84codes/cloudkarafka-mgmt/store"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 

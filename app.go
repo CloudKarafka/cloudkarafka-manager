@@ -1,17 +1,17 @@
 package main
 
 import (
-	"cloudkarafka-mgmt/config"
-	"cloudkarafka-mgmt/kafka"
-	"cloudkarafka-mgmt/server"
-	"cloudkarafka-mgmt/zookeeper"
-
 	"flag"
 	"fmt"
 	"os"
 	"os/signal"
 	"runtime"
 	"time"
+
+	"github.com/84codes/cloudkarafka-mgmt/config"
+	"github.com/84codes/cloudkarafka-mgmt/kafka"
+	"github.com/84codes/cloudkarafka-mgmt/server"
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 )
 
 var (
@@ -21,15 +21,28 @@ var (
 	retention = flag.Int("retention", 5*60, "Retention (in seconds) for in-memory historic data")
 )
 
+// Auto populated field during build time
+var (
+	GitCommit string
+	Version   string
+)
+
 func main() {
 	flag.Parse()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
+	server.CurrentVersion = server.Version{
+		GitCommit, Version,
+	}
+	fmt.Printf("Build info\n Version:\t%s\n Git commit:\t%s\n", Version, GitCommit)
+	fmt.Printf("Runtime\n HTTP Port:\t%s\n Kafka host:\t%s\n Auth typen:\t%s\n Retention:\t%d\n", *port, *kh, *auth, *retention)
+	fmt.Println()
+	// fmt.Printf("[INFO] authentication-method=%s\n", *auth)
+
 	// Basic info
 	zookeeper.Start()
 	// Set authentication method for HTTP api
-	fmt.Printf("[INFO] authentication-method=%s\n", *auth)
 	zookeeper.SetAuthentication(*auth)
 	// Runtime metrics, collect metrics every 30s
 	// Consumer offsets
@@ -39,7 +52,6 @@ func main() {
 	config.Port = *port
 	// 5 minutes in seconds
 	go server.Start()
-	fmt.Println("CloudKarafka mgmt interface for Apache Kafka started")
 	printMemUsage()
 	//Wait for term
 loop:
@@ -55,16 +67,16 @@ loop:
 			printMemUsage()
 		}
 	}
-	fmt.Println("Stopping mgmt")
+	fmt.Println("[INFO] Stopping mgmt")
 	zookeeper.Stop()
-	fmt.Println("Stopped successfully")
+	fmt.Println("[INFO] Stopped successfully")
 	return
 }
 
 func printMemUsage() {
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-	fmt.Printf("Alloc %v MiB\t", m.Alloc/1024/1024)
+	fmt.Printf("[INFO] Alloc %v MiB\t", m.Alloc/1024/1024)
 	fmt.Printf("TotalAlloc %v MiB\t", m.TotalAlloc/1024/1024)
 	fmt.Printf("Sys %v MiB\t", m.Sys/1024/1024)
 	fmt.Printf("NumGC %v\n", m.NumGC)

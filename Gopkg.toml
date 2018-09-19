@@ -32,6 +32,10 @@
 [[constraint]]
   name = "golang.org/x/crypto"
 
+[[constraint]]
+  name = "github.com/confluentinc/confluent-kafka-go"
+  version = "0.11.4"
+
 [prune]
   go-tests = true
   unused-packages = true

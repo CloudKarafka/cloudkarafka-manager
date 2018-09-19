@@ -1,7 +1,7 @@
 package dm
 
 import (
-	"cloudkarafka-mgmt/store"
+	"github.com/84codes/cloudkarafka-mgmt/store"
 )
 
 type BrokerMetric struct {

@@ -1,8 +1,8 @@
 package api
 
 import (
-	"cloudkarafka-mgmt/dm"
-	"cloudkarafka-mgmt/zookeeper"
+	"github.com/84codes/cloudkarafka-mgmt/dm"
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 
 	"net/http"
 )

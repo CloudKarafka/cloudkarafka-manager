@@ -1,8 +1,7 @@
 package zookeeper
 
 import (
-	"cloudkarafka-mgmt/server/auth"
-
+	"github.com/84codes/cloudkarafka-mgmt/server/auth"
 	"github.com/samuel/go-zookeeper/zk"
 
 	"encoding/base64"

@@ -1,7 +1,7 @@
 package store
 
 import (
-	"cloudkarafka-mgmt/config"
+	"github.com/84codes/cloudkarafka-mgmt/config"
 
 	"sort"
 	"time"

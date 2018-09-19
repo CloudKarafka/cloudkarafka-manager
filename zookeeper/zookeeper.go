@@ -4,7 +4,6 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 
 	"encoding/json"
-	"fmt"
 	"net"
 	"time"
 )
@@ -51,8 +50,6 @@ func connect(url string) error {
 		connect(url)
 		return err
 	}
-	fmt.Printf("[INFO] %v zookeeper shovel connected\n", url)
-
 	return nil
 }
 
