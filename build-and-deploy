@@ -33,6 +33,7 @@ def build(target = 'staging')
   until system("ssh ubuntu@#{hostname} << EOF
     tar -xf cloudkarafka-mgmt.tar -C /home/ubuntu/go/src/cloudkarafka-mgmt
     cd /home/ubuntu/go/src/cloudkarafka-mgmt
+    go get
     go build -tags static
     rm -rf target
     mkdir target
