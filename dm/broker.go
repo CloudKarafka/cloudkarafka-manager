@@ -34,6 +34,7 @@ type BrokerJvmMetric struct {
 }
 
 type BrokerHealthMetric struct {
+	BrokerId                     string                         `json:"broker_id"`
 	UnderReplicatedPartitions    int                            `json:"under_replicated_partitions"`
 	ControllerCount              int                            `json:"controller_count"`
 	IsrDelta                     int                            `json:"isr_delta"`
@@ -80,6 +81,7 @@ func BrokerHealthMetrics(id string) BrokerHealthMetric {
 		"fetch_follower": broker.FetchFollowerRequests,
 	}
 	return BrokerHealthMetric{
+		BrokerId:                     id,
 		UnderReplicatedPartitions:    broker.UnderReplicatedPartitions,
 		ControllerCount:              broker.ControllerCount,
 		IsrDelta:                     broker.IsrDelta(),
@@ -92,7 +94,6 @@ func BrokerHealthMetrics(id string) BrokerHealthMetric {
 func BrokerJvmMetrics(id string) BrokerJvmMetric {
 	broker := store.Broker(id)
 	return BrokerJvmMetric{
-		KafkaVersion:  broker.Version,
 		BrokerId:      id,
 		HeapMemory:    broker.Jvm.Heap,
 		NonHeapMemory: broker.Jvm.NonHeap,
