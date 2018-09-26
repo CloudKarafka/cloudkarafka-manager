@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"cloudkarafka-mgmt/config"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"fmt"
@@ -10,7 +11,7 @@ import (
 )
 
 func topicMetadata(consumer *kafka.Consumer, topic string) ([]kafka.TopicPartition, error) {
-	meta, err := consumer.GetMetadata(&topic, true, 5000)
+	meta, err := consumer.GetMetadata(&topic, false, 5000)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +47,7 @@ func consumeTopics(consumer *kafka.Consumer, topics []string) error {
 			}
 			topic = topics[i]
 		} else {
-			fmt.Printf("[ERROR] failed-to-get-partitions topic=%s\n", topic)
-			fmt.Println(err)
+			fmt.Printf("[WARN] failed-to-get-partitions topic=%s, err=%s\n", topic, err)
 			time.Sleep(30 * time.Second)
 		}
 	}
