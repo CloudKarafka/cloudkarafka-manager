@@ -27,10 +27,10 @@ def build(target = 'staging')
   `git archive head -o cloudkarafka-mgmt.tar --format=tar`
   i = JSON.parse(`aws ec2 describe-instances --instance-ids i-4b79b7cb`)
   hostname = i["Reservations"][0]["Instances"][0]["PublicDnsName"]
-  until system("scp cloudkarafka-mgmt.tar ubuntu@#{hostname}:")
+  until system("scp -o StrictHostKeyChecking=no cloudkarafka-mgmt.tar ubuntu@#{hostname}:")
     sleep 1
   end
-  until system("ssh ubuntu@#{hostname} << EOF
+  until system("ssh -o StrictHostKeyChecking=no ubuntu@#{hostname} << EOF
     tar -xf cloudkarafka-mgmt.tar -C /home/ubuntu/go/src/cloudkarafka-mgmt
     cd /home/ubuntu/go/src/cloudkarafka-mgmt
     go get
