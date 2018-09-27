@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"runtime"
 	"time"
 
 	"github.com/84codes/cloudkarafka-mgmt/config"
@@ -18,7 +17,7 @@ var (
 	port      = flag.String("port", "8080", "Port to run HTTP server on")
 	kh        = flag.String("kafka", "localhost:9092", "Hostname and port that the Kafka client should connect to")
 	auth      = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
-	retention = flag.Int("retention", 5*60, "Retention (in seconds) for in-memory historic data")
+	retention = flag.Int("retention", 10*60, "Retention (in seconds) for in-memory historic data")
 )
 
 // Auto populated field during build time
@@ -50,34 +49,16 @@ func main() {
 	go kafka.Start(*kh)
 	// HTTP server
 	config.Port = *port
-	// 5 minutes in seconds
 	go server.Start()
-	printMemUsage()
 	//Wait for term
-loop:
-	for {
-		select {
-		case <-signals:
-			time.AfterFunc(2*time.Second, func() {
-				fmt.Println("[ERROR] could not exit in reasonable time")
-				os.Exit(1)
-			})
-			break loop
-		case <-time.After(10 * time.Second):
-			printMemUsage()
-		}
-	}
+	<-signals
+	time.AfterFunc(2*time.Second, func() {
+		fmt.Println("[ERROR] could not exit in reasonable time")
+		os.Exit(1)
+	})
 	fmt.Println("[INFO] Stopping mgmt")
 	zookeeper.Stop()
+	kafka.Stop()
 	fmt.Println("[INFO] Stopped successfully")
 	return
-}
-
-func printMemUsage() {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	fmt.Printf("[INFO] Alloc %v MiB\t", m.Alloc/1024/1024)
-	fmt.Printf("TotalAlloc %v MiB\t", m.TotalAlloc/1024/1024)
-	fmt.Printf("Sys %v MiB\t", m.Sys/1024/1024)
-	fmt.Printf("NumGC %v\n", m.NumGC)
 }

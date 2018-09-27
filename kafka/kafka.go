@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+var (
+	consumer *kafka.Consumer
+)
+
 func topicMetadata(consumer *kafka.Consumer, topic string) ([]kafka.TopicPartition, error) {
 	meta, err := consumer.GetMetadata(&topic, false, 5000)
 	if err != nil {
@@ -72,7 +76,8 @@ func Start(hostname string) {
 		"queued.min.messages":        10,
 	}
 	topics := []string{"__cloudkarafka_metrics", "__consumer_offsets"}
-	consumer, err := kafka.NewConsumer(cfg)
+	var err error
+	consumer, err = kafka.NewConsumer(cfg)
 	if err != nil {
 		fmt.Println("[ERROR]", err)
 		return
@@ -94,4 +99,8 @@ func Start(hostname string) {
 			metricMessage(msg)
 		}
 	}
+}
+
+func Stop() {
+	consumer.Close()
 }
