@@ -22,15 +22,22 @@ type topicStore struct {
 	store map[string]topic
 }
 
-func (me *topicStore) partition(topicName, partitionName string) (topic, partition) {
-	if _, ok := me.store[topicName]; !ok {
-		me.store[topicName] = topic{Partitions: make(map[string]partition)}
+func (me topicStore) partition(topicName, partitionName string) (topic, partition) {
+	var (
+		t  topic
+		p  partition
+		ok bool
+	)
+	if t, ok = me.store[topicName]; !ok {
+		t = topic{Partitions: make(map[string]partition)}
 	}
-	t := me.store[topicName]
-	if _, ok := t.Partitions[partitionName]; !ok {
-		t.Partitions[partitionName] = partition{}
+	if t.Partitions == nil {
+		t.Partitions = make(map[string]partition)
 	}
-	return t, t.Partitions[partitionName]
+	if p, ok = t.Partitions[partitionName]; !ok {
+		p = partition{}
+	}
+	return t, p
 }
 
 func (me *topicStore) LogStartOffset(topic, partition string, value int, _ts int64) {
@@ -51,13 +58,13 @@ func (me *topicStore) LogEndOffset(topic, partition string, value int, _ts int64
 	me.store[topic] = t
 }
 
-func (me *topicStore) Size(topic, partition string, value int) {
+func (me *topicStore) Size(topicName, partitionNr string, value int) {
 	me.Lock()
 	defer me.Unlock()
-	t, p := me.partition(topic, partition)
+	t, p := me.partition(topicName, partitionNr)
 	p.Size = value
-	t.Partitions[partition] = p
-	me.store[topic] = t
+	t.Partitions[partitionNr] = p
+	me.store[topicName] = t
 }
 
 func (me *topicStore) BytesInPerSec(topic string, value int, ts int64) {
