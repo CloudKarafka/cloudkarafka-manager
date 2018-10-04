@@ -18,3 +18,4 @@ curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 dep ensure -update
 go build -ldflags "-X main.GitCommit=$COMMIT -X main.Version=0.0.2" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
 go test -v ./...
+
