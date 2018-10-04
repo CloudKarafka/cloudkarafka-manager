@@ -13,9 +13,5 @@
 * Start kafka `./bin/kafka-server-start config/server.properties`
 * Run Management interface with `go run app.go --authentication=none-with-write`
 
-## TODO
-
-* Replace Sarama with confluent-kafka-go
-* Always browse topic from beginning?
 
 
