@@ -1,8 +1,6 @@
 package kafka
 
 import (
-	"fmt"
-
 	"github.com/84codes/cloudkarafka-mgmt/store"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -62,7 +60,6 @@ func consumerOffsetsMessage(msg *kafka.Message) {
 	if topic == "__consumer_offsets" || topic == "__cloudkarafka_metrics" {
 		return
 	}
-	fmt.Printf("Consumer info: %s/%s/%d %d\n", group, topic, partition, offset)
 	p := strconv.Itoa(int(partition))
 	store.Put("consumer", int(offset), int64(timestamp), group, topic, p)
 }

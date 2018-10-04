@@ -1,5 +1,7 @@
 # CloudKarafka Mgmt
 
+ [![Run Status](https://api.shippable.com/projects/5bab6ccbe8c96c070042aa6c/badge?branch=master)]() 
+ 
 ## Development
 
 * Clone this repo into $GOPATH/src/cloudkarafka-mgmt
@@ -11,9 +13,5 @@
 * Start kafka `./bin/kafka-server-start config/server.properties`
 * Run Management interface with `go run app.go --authentication=none-with-write`
 
-## TODO
-
-* Replace Sarama with confluent-kafka-go
-* Always browse topic from beginning?
 
 
