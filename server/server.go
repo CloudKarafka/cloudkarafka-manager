@@ -4,7 +4,6 @@ import (
 	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/server/api"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	_ "net/http/pprof"
@@ -126,7 +125,7 @@ func Start() {
 	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
 	http.Handle("/assets/", http.FileServer(http.Dir("static/")))
 
-	http.Handle("/", r) //handlers.RecoveryHandler()(r))
+	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%s", config.Port),
 		ReadTimeout:  60 * time.Second,
