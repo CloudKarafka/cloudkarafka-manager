@@ -17,5 +17,7 @@ mkdir -p /root/bin
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 dep ensure -update
 go build -ldflags "-X main.GitCommit=$COMMIT -X main.Version=0.0.2" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
-go test -v ./...
+go get -u github.com/jstemmer/go-junit-report
+mkdir -p shippable/testresults
+go test -v ./... 2>&1 | go-junit-report > shippable/testresults/report.xml
 
