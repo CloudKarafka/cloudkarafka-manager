@@ -126,7 +126,7 @@ func Start() {
 	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
 	http.Handle("/assets/", http.FileServer(http.Dir("static/")))
 
-	http.Handle("/", handlers.RecoveryHandler()(r))
+	http.Handle("/", r) //handlers.RecoveryHandler()(r))
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%s", config.Port),
 		ReadTimeout:  60 * time.Second,

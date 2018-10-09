@@ -1,6 +1,8 @@
 package zookeeper
 
 import (
+	"fmt"
+
 	"github.com/samuel/go-zookeeper/zk"
 
 	"encoding/json"
@@ -68,6 +70,9 @@ func all(path string, fn permissionFunc) ([]string, error) {
 }
 
 func get(path string, v interface{}) error {
+	if exists, _, _ := conn.Exists(path); !exists {
+		return fmt.Errorf("Zookeeper: Path \"%s\" doesn't exists", path)
+	}
 	data, _, err := conn.Get(path)
 	if err != nil {
 		return err
