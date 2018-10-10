@@ -201,7 +201,7 @@
        tr.appendChild(msgTd);
        tbody.appendChild(tr);
      }
-     var feedbackEvents = new EventSource("/api/browse/" + name);
+     var feedbackEvents = new EventSource("/api/browse/" + name, {withCredentials: true});
      window.addEventListener("beforeunload", function(e) {
        feedbackEvents.close();
      });
