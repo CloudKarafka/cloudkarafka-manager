@@ -13,7 +13,7 @@ var (
 
 func PrintConfig() {
 	fmt.Printf("Build info\n Version:\t%s\n Git commit:\t%s\n", Version, GitCommit)
-	fmt.Printf("Runtime\n HTTP Port:\t%s\n Kafka host:\t%s\n Auth typen:\t%s\n Retention:\t%d\n",
+	fmt.Printf("Runtime\n HTTP Port:\t%s\n Kafka host:\t%s\n Auth type:\t%s\n Retention:\t%d\n",
 		Port, KafkaURL, AuthType, Retention)
 
 }
