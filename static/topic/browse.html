@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title> - CloudKarafka MGMT</title>
+    <link rel="apple-touch-icon" href="/img/logo.png">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <meta property="og:title" content="The best management interface for Apache Kafka" />
+    <meta name="author" content="84codes Team" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:site_name" content="CloudKarafka MGMT" />
+    <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+    <script src="/js/handlebars.min.js"></script>
+    <script src="/js/d3.v3.min.js"></script>
+    <script src="/js/rickshaw.min.js"></script>
+    <script src="/js/notific8.min.js"></script>
+    <script src="/js/kafka-auth.js"></script>
+    <script src="/js/kafka-helpers.js"></script>
+    <script src="/js/kafka-charts.js"></script>
+    <script type="text/javascript"> setup() </script>
+
+    <style>
+     html,body {
+       height: 100%;
+     }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+        <div class="container-fluid">
+          <div>
+            <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+              <span class="hamburger-box">
+                <span class="hamburger-inner"></span>
+              </span>
+            </button>
+          </div>
+          <div class="text-right">
+            <p class="my-2 my-md-0 text-right">
+              <a onclick="signout()">
+                <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+            </p>
+          </div>
+        </div>
+      </nav>
+
+      <aside class="sidebar-wrapper">
+        <div class="sidebar-header text-center">
+          <a href="/" class="app-logo">
+            <img src="/assets/mgmt-logo.svg"/>
+            <h1 class="logo-text">CloudKarafka MGMT</h1>
+          </a>
+
+        </div>
+        <div class="sidebar-content">
+          <div class="sidebar-info">
+            <h2 id="cluster-name" class="host"></h2>
+            <p id="username"></p>
+          </div>
+          <nav class="sidebar-nav">
+            <ul>
+
+              <li class="">
+                <a href="/">
+                  <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+                  <span>Overview</span>
+                </a>
+              </li>
+
+              <li class="">
+                <a href="/topics">
+                  <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+                  <span>Topics</span>
+                </a>
+              </li>
+
+              <li class="">
+                <a href="/consumers">
+                  <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+                  <span>Consumers</span>
+                </a>
+              </li>
+
+              <li class="">
+                <a href="/brokers">
+                  <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+                  <span>Brokers</span>
+                </a>
+              </li>
+
+              <li class="">
+                <a href="/admin">
+                  <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+                  <span>Admin</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </aside>
+      <div class="sidebar-backdrop"></div>
+      <main class="main-container">
+        <div class="main-heading">
+          <div class="row">
+            <div class="col-4">
+              <h1>Topics</h1>
+            </div>
+          </div>
+        </div>
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-md-12">
+              <table class="table mt-2">
+                <thead>
+                  <tr>
+                    <th scope="col">Metadata</th>
+                    <th scope="col">Message</th>
+                  </tr>
+                </thead>
+                <tbody id="msgs-rows">
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <footer>
+          <p>
+            CloudKarafka MGMT is developed by
+            <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+              <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+            </a> and released under
+            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+          </p>
+        </footer>
+
+        <script type="text/javascript">
+         get('/api/topics/' + name + '/throughput.json', function(data) {
+
+         });
+        </script>
+      </main>
+
+    </div>
+
+    <script src="/js/jquery-3.3.1.min.js"></script>
+    <script src="/js/tether.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+    <script src="/js/jquery.sparkline.min.js"></script>
+    <script src="/js/d3.v3.min.js"></script>
+    <script src="/js/rickshaw.min.js"></script>
+    <script src="/js/eventsource.js"></script>
+    <script src="/js/kafka-mgmt.js"></script>
+
+    <script>
+     var name = getParameterByName('name');
+     var tbody = document.querySelector("#msgs-rows");
+     function renderMessage(msg) {
+       var tr = document.createElement("tr");
+       ['partition', 'offset', 'key', 'message'].forEach(k => {
+         var td = document.createElement("td");
+         td.textContent = msg[k] || "-";
+         tr.appendChild(td);
+       });
+       tbody.appendChild(tr);
+     }
+     function renderMessage2(msg) {
+       var renderSmall = function(td, v, t) {
+         if (v) {
+           var s1 = document.createElement("small");
+           s1.textContent = (t ? t + ": " : "") + v;
+           td.appendChild(s1);
+           td.appendChild(document.createElement("br"));
+         }
+       }
+       var tr = document.createElement("tr");
+       var td = document.createElement("td");
+       renderSmall(td, msg['key'], "Key");
+       renderSmall(td, msg['partition'], "Parttion");
+       renderSmall(td, msg['offset'], "Offset");
+       renderSmall(td, msg['timestamp'], "Timestamp");
+       if (msg['headers'] && msg['headers'].length > 0) {
+         td.appendChild(document.createElement("hr"))
+         msg['headers'].forEach(function(e) {
+           renderSmall(td, e)
+         });
+       }
+       tr.appendChild(td);
+       var msgTd = document.createElement("td");
+       msgTd.style.verticalAlign = "top";
+       var pre = document.createElement("pre");
+       pre.textContent = msg['message'];
+       msgTd.appendChild(pre);
+       tr.appendChild(msgTd);
+       tbody.appendChild(tr);
+     }
+     var feedbackEvents = new EventSource("/api/browse/" + name);
+     window.addEventListener("beforeunload", function(e) {
+       feedbackEvents.close();
+     });
+     feedbackEvents.onerror = function(e) {
+       console.error(arguments);
+     };
+     feedbackEvents.onmessage = function(e) {
+       var data = JSON.parse(e.data);
+       renderMessage2(data);
+     };
+    </script>
+  </body>
+</html>

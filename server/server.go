@@ -80,7 +80,7 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/users/{name}.json", protected(api.User))
 	a.HandleFunc("/users/{name}", protected(api.User))
 	a.HandleFunc("/notifications.json", protected(api.Notifications))
-	a.HandleFunc("/notifications.json", protected(api.Notifications))
+	a.HandleFunc("/browse/{topic}", protected(api.Browser))
 	a.HandleFunc("/version", func(w http.ResponseWriter, _r *http.Request) {
 		api.WriteJson(w, CurrentVersion)
 	})
@@ -111,6 +111,7 @@ func Start() {
 	serveFile(r, "/topics/add", "topics/add.html")
 	serveFile(r, "/topic/edit", "topic/edit.html")
 	serveFile(r, "/topic/details", "topic/details.html")
+	serveFile(r, "/topic/browse", "topic/browse.html")
 	serveFile(r, "/brokers", "brokers.html")
 	serveFile(r, "/broker/details", "broker/details.html")
 	serveFile(r, "/consumers", "consumers/index.html")
