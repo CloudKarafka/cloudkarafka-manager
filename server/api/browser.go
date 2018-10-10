@@ -46,7 +46,6 @@ func consume(config *kafka.ConfigMap, topic string) (*kafka.Consumer, error) {
 
 func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	vars := mux.Vars(r)
-	fmt.Println(vars)
 	if vars["topic"] == "" {
 		http.Error(rw, "Missing topic", http.StatusInternalServerError)
 		return
@@ -85,7 +84,6 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	fmt.Println(consumer)
 	d, _ = json.Marshal(map[string]interface{}{
 		"message": "Consuming",
 	})
@@ -95,7 +93,6 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	for {
 		select {
 		case <-notify:
-			fmt.Fprintf(os.Stderr, "[INFO] Client close connection")
 			consumer.Close()
 			return
 		case <-time.After(10 * time.Second):
