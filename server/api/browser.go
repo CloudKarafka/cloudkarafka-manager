@@ -70,6 +70,8 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	fmt.Fprintf(rw, "data: %s\n\n", d)
 	flusher.Flush()
 
+	fmt.Fprintf(os.Stderr, "[INFO] Topic browser: consuming from %s/%s\n",
+		config.KafkaURL, vars["topic"])
 	config := &kafka.ConfigMap{
 		"metadata.broker.list":       config.KafkaURL,
 		"group.id":                   "kafka-browser",
@@ -94,6 +96,7 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	for {
 		select {
 		case <-notify:
+			fmt.Fprintf(os.Stderr, "[INFO] Topic browser: client closed\n")
 			consumer.Close()
 			return
 		case <-time.After(10 * time.Second):
