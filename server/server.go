@@ -24,7 +24,11 @@ func protected(fn aclScopedHandler) http.HandlerFunc {
 			fn(w, r, p)
 			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else if zookeeper.SkipAuthenticationWithWrite() {
-			p := zookeeper.Permissions{Cluster: zookeeper.W, Username: "default"}
+			p := zookeeper.Permissions{
+				Cluster:  zookeeper.W,
+				Topics:   map[string]zookeeper.Permission{"*": zookeeper.RW},
+				Groups:   map[string]zookeeper.Permission{"*": zookeeper.RW},
+				Username: "default"}
 			fn(w, r, p)
 			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else if ok && zookeeper.ValidateScramLogin(user, pass) {
@@ -43,13 +47,6 @@ func protecedServeFile(r *mux.Router, path, file string) {
 		http.ServeFile(w, req, "static/"+file)
 	}))
 }
-
-type Version struct {
-	GitCommit string `json:"git_commit"`
-	Version   string `json:"version"`
-}
-
-var CurrentVersion Version
 
 func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
@@ -82,16 +79,20 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/notifications.json", protected(api.Notifications))
 	a.HandleFunc("/browse/{topic}", protected(api.Browser))
 	a.HandleFunc("/version", func(w http.ResponseWriter, _r *http.Request) {
-		api.WriteJson(w, CurrentVersion)
+		api.WriteJson(w, map[string]string{
+			"version":    config.Version,
+			"git_commit": config.GitCommit,
+		})
 	})
 	a.HandleFunc("/debug/memory-usage", protected(func(w http.ResponseWriter, _r *http.Request, _p zookeeper.Permissions) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 		api.WriteJson(w, map[string]string{
-			"Alloc":      fmt.Sprintf("%v MiB", m.Alloc/1024/1024),
-			"TotalAlloc": fmt.Sprintf("%v MiB", m.TotalAlloc/1024/1024),
-			"Sys":        fmt.Sprintf("%v MiB", m.Sys/1024/1024),
-			"NumGC":      fmt.Sprintf("%v", m.NumGC),
+			"Alloc":       fmt.Sprintf("%v MiB", m.Alloc/1024/1024),
+			"TotalAlloc":  fmt.Sprintf("%v MiB", m.TotalAlloc/1024/1024),
+			"Sys":         fmt.Sprintf("%v MiB", m.Sys/1024/1024),
+			"NumGC":       fmt.Sprintf("%v", m.NumGC),
+			"NumRoutines": fmt.Sprintf("%d", runtime.NumGoroutine()),
 		})
 	}))
 }

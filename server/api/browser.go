@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gorilla/mux"
@@ -70,7 +71,7 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	flusher.Flush()
 
 	config := &kafka.ConfigMap{
-		"metadata.broker.list":       "127.0.0.1:9092",
+		"metadata.broker.list":       config.KafkaURL,
 		"group.id":                   "kafka-browser",
 		"enable.auto.commit":         false,
 		"enable.auto.offset.store":   false,
