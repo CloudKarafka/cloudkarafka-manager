@@ -20,35 +20,27 @@ var (
 	retention = flag.Int("retention", 10*60, "Retention (in seconds) for in-memory historic data")
 )
 
-// Auto populated field during build time
-var (
-	GitCommit string
-	Version   string
-)
-
 func main() {
 	flag.Parse()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	server.CurrentVersion = server.Version{
-		GitCommit, Version,
-	}
-	fmt.Printf("Build info\n Version:\t%s\n Git commit:\t%s\n", Version, GitCommit)
-	fmt.Printf("Runtime\n HTTP Port:\t%s\n Kafka host:\t%s\n Auth typen:\t%s\n Retention:\t%d\n", *port, *kh, *auth, *retention)
-	fmt.Println()
-	// fmt.Printf("[INFO] authentication-method=%s\n", *auth)
+	config.Retention = int64(*retention)
+	config.Port = *port
+	config.KafkaURL = *kh
+	config.AuthType = *auth
+	config.PrintConfig()
 
 	// Basic info
 	zookeeper.Start()
 	// Set authentication method for HTTP api
 	zookeeper.SetAuthentication(*auth)
+
 	// Runtime metrics, collect metrics every 30s
 	// Consumer offsets
-	config.Retention = int64(*retention)
 	go kafka.Start(*kh)
+
 	// HTTP server
-	config.Port = *port
 	go server.Start()
 	//Wait for term
 	<-signals

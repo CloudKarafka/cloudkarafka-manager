@@ -113,7 +113,7 @@
   <div class="main-heading">
     <div class="row">
       <div class="col-12">
-        <h1><a href="/topic/details">Topics</a> / Edit Topic</h1>
+        <h1>Topics / Edit Topic</h1>
       </div>
     </div>
   </div>
@@ -141,6 +141,10 @@
         <div class="form-group">
           <label for="exampleFormControlTextarea1">Configuration</label>
           <textarea class="form-control" name="config" id="exampleFormControlTextarea1" rows="10">{{#each config}}{{@key}}={{this}}&#10;{{/each}} </textarea>
+		  <p>
+			Topic configuration should be entered as <i>key</i>=<i>value</i>, with each pair on a new row.<br/>
+			For available configuration options see here: <a href="https://kafka.apache.org/documentation/#topicconfigs" target="_blank">https://kafka.apache.org/documentation/#topicconfigs</a>
+		  </p>
         </div>
         <div class="form-group">
           <button type="submit" class="btn btn-lg btn-primary">{{btn_txt}}</button>

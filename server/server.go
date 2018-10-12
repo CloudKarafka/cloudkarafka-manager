@@ -4,7 +4,6 @@ import (
 	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/server/api"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
-	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	_ "net/http/pprof"
@@ -25,7 +24,11 @@ func protected(fn aclScopedHandler) http.HandlerFunc {
 			fn(w, r, p)
 			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else if zookeeper.SkipAuthenticationWithWrite() {
-			p := zookeeper.Permissions{Cluster: zookeeper.W, Username: "default"}
+			p := zookeeper.Permissions{
+				Cluster:  zookeeper.W,
+				Topics:   map[string]zookeeper.Permission{"*": zookeeper.RW},
+				Groups:   map[string]zookeeper.Permission{"*": zookeeper.RW},
+				Username: "default"}
 			fn(w, r, p)
 			//fmt.Printf("[INFO] method=%s route=%s status=%s\n", r.Method, r.URL.Path, w.Header())
 		} else if ok && zookeeper.ValidateScramLogin(user, pass) {
@@ -44,13 +47,6 @@ func protecedServeFile(r *mux.Router, path, file string) {
 		http.ServeFile(w, req, "static/"+file)
 	}))
 }
-
-type Version struct {
-	GitCommit string `json:"git_commit"`
-	Version   string `json:"version"`
-}
-
-var CurrentVersion Version
 
 func apiRoutes(r *mux.Router) {
 	a := r.PathPrefix("/api").Subrouter()
@@ -75,17 +71,22 @@ func apiRoutes(r *mux.Router) {
 	a.HandleFunc("/users", protected(api.Users))
 	a.HandleFunc("/users/{name}", protected(api.User))
 	a.HandleFunc("/notifications", protected(api.Notifications))
+	a.HandleFunc("/browse/{topic}", protected(api.Browser))
 	a.HandleFunc("/version", func(w http.ResponseWriter, _r *http.Request) {
-		api.WriteJson(w, CurrentVersion)
+		api.WriteJson(w, map[string]string{
+			"version":    config.Version,
+			"git_commit": config.GitCommit,
+		})
 	})
 	a.HandleFunc("/debug/memory-usage", protected(func(w http.ResponseWriter, _r *http.Request, _p zookeeper.Permissions) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
 		api.WriteJson(w, map[string]string{
-			"Alloc":      fmt.Sprintf("%v MiB", m.Alloc/1024/1024),
-			"TotalAlloc": fmt.Sprintf("%v MiB", m.TotalAlloc/1024/1024),
-			"Sys":        fmt.Sprintf("%v MiB", m.Sys/1024/1024),
-			"NumGC":      fmt.Sprintf("%v", m.NumGC),
+			"Alloc":       fmt.Sprintf("%v MiB", m.Alloc/1024/1024),
+			"TotalAlloc":  fmt.Sprintf("%v MiB", m.TotalAlloc/1024/1024),
+			"Sys":         fmt.Sprintf("%v MiB", m.Sys/1024/1024),
+			"NumGC":       fmt.Sprintf("%v", m.NumGC),
+			"NumRoutines": fmt.Sprintf("%d", runtime.NumGoroutine()),
 		})
 	}))
 }
@@ -105,6 +106,7 @@ func Start() {
 	serveFile(r, "/topics/add", "topics/add.html")
 	serveFile(r, "/topic/edit", "topic/edit.html")
 	serveFile(r, "/topic/details", "topic/details.html")
+	serveFile(r, "/topic/browse", "topic/browse.html")
 	serveFile(r, "/brokers", "brokers.html")
 	serveFile(r, "/broker/details", "broker/details.html")
 	serveFile(r, "/consumers", "consumers/index.html")
@@ -119,7 +121,7 @@ func Start() {
 	http.Handle("/fonts/", http.FileServer(http.Dir("static/")))
 	http.Handle("/assets/", http.FileServer(http.Dir("static/")))
 
-	http.Handle("/", handlers.RecoveryHandler()(r))
+	http.Handle("/", r)
 	s := &http.Server{
 		Addr:         fmt.Sprintf(":%s", config.Port),
 		ReadTimeout:  60 * time.Second,
