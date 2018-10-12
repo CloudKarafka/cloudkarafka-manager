@@ -355,7 +355,7 @@
   <script type="text/javascript">
     var name = getParameterByName('name');
     element(".box-header a.edit").href = "/topic/edit?name="  + name;
-    var path = '/api/topics/' + name + '.json';
+    var path = '/api/topics/' + name;
     element(".main-heading h1").innerText = 'topics/' + name;
     element("#delete-topic").addEventListener("submit", function(evt) {
       evt.preventDefault();
@@ -373,9 +373,9 @@
       renderTmpl('#topic-config', '#tmpl-topic-config', topic);
       renderTmpl('#partition-rows', '#tmpl-partition-rows', topic);
     });
-    get('/api/topics/' + name + '/throughput.json', function(data) {
+    get('/api/topics/' + name + '/throughput', function(data) {
       element("#throughput .loading-metric").hidden = true;
-      drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
+      drawThroughputChart('#throughput', '#chart', '#axis0', data);
     });
   </script>
 </main>

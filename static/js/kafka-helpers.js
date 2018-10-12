@@ -109,7 +109,7 @@ function renderListTmpl(attachToId, tmplId, path, clb) {
     if (l > 0) {
       var result = [];
       elements.forEach(function(e) {
-        get(path.replace('.json', '/') + e + '.json', function(elem) {
+        get(path + '/' + e, function(elem) {
           result.push(elem)
           if (result.length == l) {
             result.sort(function(a, b) {

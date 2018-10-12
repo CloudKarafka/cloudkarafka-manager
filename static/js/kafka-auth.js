@@ -14,7 +14,7 @@ function testLoggedIn() {
     location.hash = "";
     redirect("/");
   }
-  get('/api/whoami.json', function() {
+  get('/api/whoami', function() {
     setUsername();
     setClusterName();
     if (location.pathname == "/login") {

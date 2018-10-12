@@ -39,14 +39,14 @@
     <div>
       <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
         <span class="hamburger-box">
-          <span class="hamburger-inner"></span>
+          <span class="hamburger-inner">&nbsp;</span>
         </span>
       </button>
     </div>
     <div class="text-right">
       <p class="my-2 my-md-0 text-right">
         <a onclick="signout()">
-          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+          <span class="icon"><img alt="sign out" src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
       </p>
     </div>
   </div>
@@ -55,7 +55,7 @@
       <aside class="sidebar-wrapper">
   <div class="sidebar-header text-center">
     <a href="/" class="app-logo">
-      <img src="/assets/mgmt-logo.svg"/>
+      <img alt="logo" src="/assets/mgmt-logo.svg"/>
       <h1 class="logo-text">CloudKarafka MGMT</h1>
     </a>
 
@@ -70,35 +70,35 @@
         
         <li class="">
             <a href="/">
-              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+              <span class="icon"><img alt="" src="/assets/icons/dashboard.svg" /></span>
               <span>Overview</span>
             </a>
         </li>
         
         <li class="">
             <a href="/topics">
-              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+              <span class="icon"><img alt="" src="/assets/icons/three-bars.svg" /></span>
               <span>Topics</span>
             </a>
         </li>
         
         <li class="">
             <a href="/consumers">
-              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+              <span class="icon"><img alt="" src="/assets/icons/pacman.svg" /></span>
               <span>Consumers</span>
             </a>
         </li>
         
         <li class="">
             <a href="/brokers">
-              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+              <span class="icon"><img alt="brokers" src="/assets/icons/pulse.svg" /></span>
               <span>Brokers</span>
             </a>
         </li>
         
         <li class="">
             <a href="/admin">
-              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+              <span class="icon"><img alt="admin" src="/assets/icons/tools.svg" /></span>
               <span>Admin</span>
             </a>
         </li>
@@ -130,8 +130,10 @@
         <table class="table" id="consumers">
           <thead>
             <tr>
-              <th scope="col">Name</th>
-              <th scope="col" class="text-center">Consumed Topics</th>
+              <th scope="col">Consumer name</th>
+              <th scope="col">Consumed topic</th>
+              <th scope="col">Lag</th>
+              <th scope="col">Coverage</th>
             </tr>
           </thead>
           <tbody id="consumer-rows">
@@ -149,27 +151,22 @@
         
           <script id='tmpl-consumers' type='text/x-handlebars-template'>
             {{#elements}}
-              <tr>
-                <td><a href="/consumer/details?name={{name}}">{{ name }}</a></td>
-                <td>
-                  <ul>
-                  {{#consumed_topics}}
-                    <dl>
-                      <dt>
-                        <a href="/topic/details?name={{name}}"> {{name}} </a>
-                      </dt>
-                      <dd>
-                        Coverage: {{coverage}}%
-                        <br/>
-                        Total lag: {{lag}}
-                      </dd>
-                    </dl>
-                  {{/consumed_topics}}
-                  </ul>
-                </td>
-              </tr>
+              {{#consumed_topics}}
+                <tr>
+                  <td>
+                      {{ ../name }}
+                  </td>
+                  <td>
+                    <a href="/consumer/details?consumer={{../name}}&topic={{name}}">
+                     {{name}}
+                    </a>
+                  </td>
+                  <td> {{lag}} </td>
+                  <td> {{coverage}}% </td>
+                </tr>
+              {{/consumed_topics}}
             {{else}}
-              <tr> <td colspan="2" class="text-center"> 
+              <tr> <td colspan="4" class="text-center"> 
               <strong>No consumers</strong>
               </td> </tr>
             {{/elements}}
@@ -190,7 +187,7 @@
 
   <script src="/js/vanilla-dataTables.min.js"></script>
   <script type="text/javascript">
-    renderListTmpl('#consumer-rows', '#tmpl-consumers', '/api/consumers.json', function() {
+    renderListTmpl('#consumer-rows', '#tmpl-consumers', '/api/consumers', function() {
       table = new DataTable("#consumers", {
         "perPageSelect": false,
         "searchable": false,

@@ -339,7 +339,7 @@
 </footer>
 
   <script type="text/javascript">
-    renderListTmpl('#user-rows', '#tmpl-users', '/api/users.json', function() {
+    renderListTmpl('#user-rows', '#tmpl-users', '/api/users', function() {
       document.querySelectorAll(".user-form").forEach(function(elem) {
         elem.addEventListener("submit", function(evt) {
           evt.preventDefault();
@@ -366,7 +366,7 @@
       }
       return lst;
     };
-    get('/api/acls.json', function(acls) {
+    get('/api/acls', function(acls) {
       renderTmpl('#cluster-acl-rows', '#tmpl-acl-row', list("cluster", acls.cluster));
       renderTmpl('#topic-acl-rows', '#tmpl-acl-row', list("topic", acls.topics));
       renderTmpl('#group-acl-rows', '#tmpl-acl-row', list("group", acls.groups));

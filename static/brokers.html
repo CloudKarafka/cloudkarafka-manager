@@ -181,7 +181,7 @@
 
   <script src="/js/vanilla-dataTables.min.js"></script>
   <script type="text/javascript">
-    renderListTmpl('#broker-rows', '#tmpl-brokers', '/api/brokers.json', function() {
+    renderListTmpl('#broker-rows', '#tmpl-brokers', '/api/brokers', function() {
       table = new DataTable("#brokers", {
         "perPageSelect": false,
         "searchable": false,
