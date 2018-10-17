@@ -2168,6 +2168,7 @@ tbody.collapse.show {
     margin-bottom: 0; }
     .input-group .form-control:focus, .input-group .form-control:active, .input-group .form-control:hover {
       z-index: 3; }
+	
 
 .input-group-addon,
 .input-group-btn,
@@ -6852,24 +6853,26 @@ span[id$='-sparkline'] {
 
 .input-output, .consumer-coverage, .total-lag {
   min-height: 300px;
-  position: relative; }
+  position: relative;
+  }
 
+.chart-y-axis {
+  height: 240px;
+  position: absolute;
+}
 #axis0 {
-  height: 240px;
+	width: 70px;
   left: 10px;
-  position: absolute;
-  width: 40px; }
-
+}
 #axis1 {
-  height: 240px;
-  right: 0;
-  position: absolute;
-  width: 40px; }
+	width: 50px;
+  right: 10px;
+}
 
 #chart {
-  left: 90px;
   position: absolute;
-  width: 80%; }
+  left: 80px;
+}
 
 #y_axis, #y_axis2 {
   height: 240px;

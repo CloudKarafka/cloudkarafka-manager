@@ -13,5 +13,10 @@
 * Start kafka `./bin/kafka-server-start config/server.properties`
 * Run Management interface with `go run app.go --authentication=none-with-write`
 
+## TODO
 
-
+* Remove zkShovel
+* POST/PUT actions
+* API
+* API docs
+* Sum chart metrics in overview for all brokers

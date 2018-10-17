@@ -2,20 +2,36 @@
 
 
 [[projects]]
-  digest = "1:a878821c51a2390c0c958d179e7e19ec42cf55a9cce6d4bdbc61d7421b209014"
+  digest = "1:ad9bac31f001ab730600bf9e80c4da7552cb9cb47c505f3fa0fe80de81682bbe"
   name = "github.com/confluentinc/confluent-kafka-go"
   packages = ["kafka"]
   pruneopts = "UT"
-  revision = "5e4d04e05fc319ce5996a867aafef29059f26862"
-  version = "v0.11.4"
+  revision = "460e8e43b282a1a68219df600ef63442b81faf5f"
+  version = "v0.11.6"
 
 [[projects]]
-  branch = "master"
   digest = "1:6f9339c912bbdda81302633ad7e99a28dfa5a639c864061f1929510a9a64aa74"
   name = "github.com/dustin/go-humanize"
   packages = ["."]
   pruneopts = "UT"
   revision = "9f541cc9db5d55bce703bd99987c9d5cb8eea45e"
+  version = "v1.0.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:05babc67cf585aa55fbc16b299d8bb1ccfa86b4027e36e040de6dfa63eafde8a"
+  name = "github.com/goji/param"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d7f49fd7d1ed53fd562e737a8b5bbcc7e3d925e2"
+
+[[projects]]
+  digest = "1:3a26588bc48b96825977c1b3df964f8fd842cd6860cc26370588d3563433cf11"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d460ce9f8df2e77fb1ba55ca87fafed96c607494"
+  version = "v1.0.0"
 
 [[projects]]
   digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"
@@ -42,13 +58,9 @@
   revision = "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
 
 [[projects]]
-  digest = "1:4429803a6a1d3912cec6587ba0a0cb2a554e94d5bdfbf4106626014588516a06"
+  digest = "1:764060b3ab40180f12f9dd0f79c4eb58ec36a1856ef75922155e0410cbc64ff4"
   name = "github.com/zenazn/goji"
   packages = [
-    ".",
-    "bind",
-    "graceful",
-    "graceful/listener",
     "web",
     "web/middleware",
     "web/mutil",
@@ -58,12 +70,41 @@
   version = "v1.0"
 
 [[projects]]
+  digest = "1:3762d59edaa6e5c71d5e594c020c8391f274ff283e9c30fb43c518ec59a3f9b3"
+  name = "go.etcd.io/bbolt"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "7ee3ded59d4835e10f3e7d0f7603c42aa5e83820"
+  version = "v1.3.1-etcd.8"
+
+[[projects]]
+  digest = "1:02bac7bfd3bf25d03cdcf343a7054e04c1149e11e62c443f602538adc529d714"
+  name = "goji.io"
+  packages = [
+    ".",
+    "internal",
+    "pat",
+    "pattern",
+  ]
+  pruneopts = "UT"
+  revision = "0d89ff54b2c18c9c4ba530e32496aef902d3c6cd"
+  version = "v2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:f92f6956e4059f6a3efc14924d2dd58ba90da25cc57fe07ae3779ef2f5e0c5f2"
   name = "golang.org/x/crypto"
   packages = ["pbkdf2"]
   pruneopts = "UT"
-  revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
+  revision = "45a5f77698d342a8c2ef8423abdf0ba6880b008a"
+
+[[projects]]
+  branch = "master"
+  digest = "1:f22e437d9328275884d0ae018ed0de4c280871c944a5ab332aa37fd71fb5801b"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "95b1ffbd15a57cc5abb3f04402b9e8ec0016a52c"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -71,11 +112,16 @@
   input-imports = [
     "github.com/confluentinc/confluent-kafka-go/kafka",
     "github.com/dustin/go-humanize",
+    "github.com/goji/param",
+    "github.com/google/uuid",
     "github.com/gorilla/mux",
     "github.com/samuel/go-zookeeper/zk",
-    "github.com/zenazn/goji",
     "github.com/zenazn/goji/web",
     "github.com/zenazn/goji/web/middleware",
+    "github.com/zenazn/goji/web/mutil",
+    "go.etcd.io/bbolt",
+    "goji.io",
+    "goji.io/pat",
     "golang.org/x/crypto/pbkdf2",
   ]
   solver-name = "gps-cdcl"

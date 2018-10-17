@@ -1,7 +1,7 @@
 package kafka
 
 import (
-	"github.com/84codes/cloudkarafka-mgmt/store"
+	"fmt"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 
@@ -34,6 +34,7 @@ func consumerOffsetsMessage(msg *kafka.Message) {
 			return //m, errors.New(fmt.Sprintf("Failed to decode %s:%v offset %v: partition\n", msg.Topic, msg.Partition, msg.Offset))
 		}
 	case 2:
+		fmt.Println(msg.Key)
 		//This is a message when a consumer starts/stop consuming from a topic
 		return //m, errors.New(fmt.Sprintf("Discarding group metadata message with key version 2\n"))
 	default:
@@ -61,7 +62,7 @@ func consumerOffsetsMessage(msg *kafka.Message) {
 		return
 	}
 	p := strconv.Itoa(int(partition))
-	store.Put("consumer", int(offset), int64(timestamp)/1000, group, topic, p)
+	fmt.Println("consumer", int(offset), int64(timestamp)/1000, group, topic, p)
 }
 
 func readString(buf *bytes.Buffer) (string, error) {

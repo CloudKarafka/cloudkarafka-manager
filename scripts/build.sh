@@ -4,7 +4,7 @@ set -eux
 
 export GOOS=linux
 export CGO_ENABLED=1
-export VERSION=0.1.0
+export VERSION=0.2.0
 
 apt-get update
 apt-get install -y build-essential

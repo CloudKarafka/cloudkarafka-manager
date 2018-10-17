@@ -2,38 +2,19 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 )
 
-var client = http.Client{}
-
-func internalError(w http.ResponseWriter, bytes interface{}) {
-	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Println(bytes)
-	str, ok := bytes.(string)
-	if ok {
-		fmt.Fprintf(w, str)
-		return
+func parseRequestBody(r *http.Request, target interface{}) error {
+	switch r.Header.Get("content-type") {
+	case "application/json":
+		decoder := json.NewDecoder(r.Body)
+		defer r.Body.Close()
+		if err := decoder.Decode(target); err != nil {
+			return errors.New("Could not parse request body")
+		}
+		return nil
 	}
-	WriteJson(w, bytes)
-}
-
-func WriteJson(w http.ResponseWriter, bytes interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bytes)
-}
-
-func fetchRemote(path string, r *http.Request, out interface{}) error {
-	req, err := http.NewRequest("get", path, nil)
-	u, p, _ := r.BasicAuth()
-	req.SetBasicAuth(u, p)
-	res, err := client.Do(req)
-	if err != nil {
-		return err
-	} else {
-		dec := json.NewDecoder(res.Body)
-		defer res.Body.Close()
-		return dec.Decode(&out)
-	}
+	return errors.New("This endpoint only supports content type application/json")
 }

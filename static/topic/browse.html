@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <html>
   <head>
-
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title> - CloudKarafka MGMT</title>
     <link rel="apple-touch-icon" href="/img/logo.png">
-
     <link rel="stylesheet" href="/css/style.css">
-
     <meta property="og:title" content="The best management interface for Apache Kafka" />
     <meta name="author" content="84codes Team" />
     <meta property="og:locale" content="en_US" />
@@ -17,15 +14,6 @@
     <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
     <meta property="og:site_name" content="CloudKarafka MGMT" />
     <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
-    <script src="/js/handlebars.min.js"></script>
-    <script src="/js/d3.v3.min.js"></script>
-    <script src="/js/rickshaw.min.js"></script>
-    <script src="/js/notific8.min.js"></script>
-    <script src="/js/kafka-auth.js"></script>
-    <script src="/js/kafka-helpers.js"></script>
-    <script src="/js/kafka-charts.js"></script>
-    <script type="text/javascript"> setup() </script>
-
     <style>
      html,body {
        height: 100%;
@@ -75,7 +63,7 @@
                 </a>
               </li>
 
-              <li class="">
+              <li class="active">
                 <a href="/topics">
                   <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
                   <span>Topics</span>
@@ -111,11 +99,38 @@
         <div class="main-heading">
           <div class="row">
             <div class="col-4">
-              <h1>Topics</h1>
+              <h1 id="pageHeader">
+                Topics / __cloudkarafka_metrics / browser
+              </h1>
             </div>
           </div>
         </div>
         <div class="container-fluid">
+          <form id="topicForm" action="/api/topics" method="post">
+            <div class="form-row">
+              <div class="col-md-4 mb-3">
+                <label>Key formatter</label>
+                <select class="form-control" name="keyFormatter" data-set-format>
+				  <option value="byte-array">Byte array</option>
+                  <option value="string">String</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+              <div class="col-md-4 mb-3">
+                <label>Value formatter</label>
+                <select class="form-control" name="valueFormatter" data-set-format>
+				  <option value="byte-array">Byte array</option>
+                  <option value="string">String</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <button type="button" id="browser-start" class="btn btn-lg btn-primary">Start consumer</button>
+			  <button type="button" id="browser-stop" class="btn btn-lg btn-default">Stop</button>
+            </div>
+
+          </form>
           <div class="row">
             <div class="col-md-12">
               <table class="table mt-2">
@@ -142,67 +157,13 @@
         </footer>
       </main>
     </div>
+    <script src="/js/handlebars.min.js"></script>
     <script src="/js/jquery-3.3.1.min.js"></script>
-    <script src="/js/tether.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/jquery.sparkline.min.js"></script>
-    <script src="/js/d3.v3.min.js"></script>
-    <script src="/js/rickshaw.min.js"></script>
     <script src="/js/eventsource.js"></script>
-    <script src="/js/kafka-mgmt.js"></script>
-    <script>
-     var name = getParameterByName('name');
-     var tbody = document.querySelector("#msgs-rows");
-     function renderMessage(msg) {
-       var tr = document.createElement("tr");
-       ['partition', 'offset', 'key', 'message'].forEach(k => {
-         var td = document.createElement("td");
-         td.textContent = msg[k] || "-";
-         tr.appendChild(td);
-       });
-       tbody.appendChild(tr);
-     }
-     function renderMessage2(msg) {
-       var renderSmall = function(td, v, t) {
-         if (v) {
-           var s1 = document.createElement("small");
-           s1.textContent = (t ? t + ": " : "") + v;
-           td.appendChild(s1);
-           td.appendChild(document.createElement("br"));
-         }
-       }
-       var tr = document.createElement("tr");
-       var td = document.createElement("td");
-       renderSmall(td, msg['key'], "Key");
-       renderSmall(td, msg['partition'], "Parttion");
-       renderSmall(td, msg['offset'], "Offset");
-       renderSmall(td, msg['timestamp'], "Timestamp");
-       if (msg['headers'] && msg['headers'].length > 0) {
-         td.appendChild(document.createElement("hr"))
-         msg['headers'].forEach(function(e) {
-           renderSmall(td, e)
-         });
-       }
-       tr.appendChild(td);
-       var msgTd = document.createElement("td");
-       msgTd.style.verticalAlign = "top";
-       var pre = document.createElement("pre");
-       pre.textContent = msg['message'];
-       msgTd.appendChild(pre);
-       tr.appendChild(msgTd);
-       tbody.appendChild(tr);
-     }
-     var feedbackEvents = new EventSource("/api/browse/" + name, {withCredentials: true});
-     window.addEventListener("beforeunload", function(e) {
-       feedbackEvents.close();
-     });
-     feedbackEvents.onerror = function(e) {
-       console.error(arguments);
-     };
-     feedbackEvents.onmessage = function(e) {
-       var data = JSON.parse(e.data);
-       renderMessage2(data);
-     };
-    </script>
+    <script src="/js/notific8.min.js"></script>
+    <script src="/js/kafka-auth.js"></script>
+    <script src="/js/kafka-helpers.js"></script>
+    <script src="/js/kafka-charts.js"></script>
+    <script src="/js/pages/topic_browse.js"></script>
   </body>
 </html>
