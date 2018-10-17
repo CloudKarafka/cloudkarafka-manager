@@ -7,3 +7,4 @@ static/api
 cloudkarafka-mgmt.linux
 cloudkarafka-mgmt.tar*
 cloudkarafka-mgmt
+*.db

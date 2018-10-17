@@ -1,12 +1,15 @@
 package kafka
 
 import (
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-
+	"encoding/binary"
+	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"time"
+
+	"github.com/84codes/cloudkarafka-mgmt/db"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 var (
@@ -27,7 +30,7 @@ func topicMetadata(consumer *kafka.Consumer, topic string) ([]kafka.TopicPartiti
 			toppar[i] = kafka.TopicPartition{
 				Topic:     &topic,
 				Partition: p.ID,
-				Offset:    kafka.Offset((time.Now().Unix() - config.Retention) * 1000),
+				Offset:    kafka.OffsetEnd, //kafka.Offset((time.Now().Unix() - config.Retention) * 1000),
 			}
 			i++
 		}
@@ -54,53 +57,84 @@ func consumeTopics(consumer *kafka.Consumer, topics []string) error {
 			time.Sleep(30 * time.Second)
 		}
 	}
-	offsets, err := consumer.OffsetsForTimes(toppar, -1)
-	if err != nil {
-		return err
-	}
-	err = consumer.Assign(offsets)
-	if err != nil {
-		return err
-	}
-	return nil
+	//offsets, err := consumer.OffsetsForTimes(toppar, -1)
+	//if err != nil {
+	//return err
+	//}
+	return consumer.Assign(toppar)
 }
 
-func Start(hostname string) {
+func Float64frombytes(bytes []byte) float64 {
+	bits := binary.LittleEndian.Uint64(bytes)
+	float := math.Float64frombits(bits)
+	return float
+}
+
+func Consume(hostname string, quit chan bool) {
 	h, _ := os.Hostname()
 	cfg := &kafka.ConfigMap{
-		"bootstrap.servers":          hostname,
-		"client.id":                  fmt.Sprintf("CloudKarafka-mgmt-%s", h),
-		"group.id":                   fmt.Sprintf("CloudKarafka-mgmt-%s", h),
-		"queued.max.messages.kbytes": 512,
-		"fetch.message.max.bytes":    5120,
-		"queued.min.messages":        10,
+		"bootstrap.servers":        hostname,
+		"go.events.channel.enable": true,
+		"client.id":                h,
+		"group.id":                 "CloudKarafka-mgmt",
+		//"fetch.wait.max.ms":        5000,
+		//"fetch.min.bytes":          1000,
+		//"queued.max.messages.kbytes": 512,
+		//"fetch.message.max.bytes":    5120,
+		//"queued.min.messages":        10,
 	}
-	topics := []string{"__cloudkarafka_metrics", "__consumer_offsets"}
+	topics := []string{"__cloudkarafka_metrics"}
 	var err error
 	consumer, err = kafka.NewConsumer(cfg)
 	if err != nil {
-		fmt.Println("[ERROR]", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] Could not create kafka consumer: %s\n", err)
 		return
 	}
 	if err := consumeTopics(consumer, topics); err != nil {
-		fmt.Println("[ERROR]", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] Kafka: assign partitions failed: %s\n", err)
 		return
 	}
+	events := consumer.Events()
+	defer func() {
+		fmt.Fprintf(os.Stderr, "[INFO] Closing kafka consumer\n")
+		consumer.Close()
+	}()
+	// Around 200 msg per batch is retrived and written to DB
+	// So this is a good start size of the slice, will allocate more if needed
+	tmp := make([]db.DBValue, 200)
+	i := 0
+	batchCounter := 0
 	for {
-		msg, err := consumer.ReadMessage(-1)
-		if err != nil {
-			fmt.Println(err)
-			continue
-		}
-		switch *msg.TopicPartition.Topic {
-		case "__consumer_offsets":
-			consumerOffsetsMessage(msg)
-		case "__cloudkarafka_metrics":
-			metricMessage(msg)
+		select {
+		case e := <-events:
+			switch ev := e.(type) {
+			case *kafka.Message:
+				var value MetricMessage
+				if err := json.Unmarshal(ev.Value, &value); err != nil {
+					fmt.Fprintf(os.Stderr, "[ERROR] Couldn't parse %s, error: %s\n", string(ev.Value), err)
+				} else {
+					value.Timestamp = ev.Timestamp
+					if i >= len(tmp) {
+						tmp = append(tmp, make([]db.DBValue, 10)...)
+					}
+					tmp[i] = value
+					i += 1
+				}
+			case kafka.OffsetsCommitted:
+				fmt.Fprintf(os.Stderr, "[INFO] Kafka: Got metrics batch #%d from collector\n", batchCounter)
+				// A small hack to remove stale consumer groups
+				// Offset is commited roughly every 30 seconds, to %120 is every hour
+				if batchCounter%120 == 0 {
+					db.DeleteBucket([]byte("groups"))
+				}
+				batchCounter += 1
+				db.Write(tmp[:i])
+				i = 0
+			case kafka.Error:
+				fmt.Fprintf(os.Stderr, "[ERROR] Kafka error: %s\n", ev)
+			}
+		case <-quit:
+			return
 		}
 	}
-}
-
-func Stop() {
-	consumer.Close()
 }

@@ -8,9 +8,8 @@ import (
 	"time"
 
 	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gorilla/mux"
+	"goji.io/pat"
 )
 
 type MessageData struct {
@@ -45,12 +44,18 @@ func consume(config *kafka.ConfigMap, topic string) (*kafka.Consumer, error) {
 	return consumer, nil
 }
 
-func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	if vars["topic"] == "" {
-		http.Error(rw, "Missing topic", http.StatusInternalServerError)
-		return
+func formatter(f string, b []byte) interface{} {
+	switch f {
+	case "byte-array":
+		return b
 	}
+	// string and json is by default a string
+	return string(b)
+}
+
+func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
+	name := pat.Param(r, "name")
+	q := r.URL.Query()
 	flusher, ok := rw.(http.Flusher)
 	if !ok {
 		http.Error(rw, "Streaming unsupported!", http.StatusBadRequest)
@@ -64,14 +69,7 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 	fmt.Fprint(rw, ":\n")
 	fmt.Fprint(rw, "retry: 15000\n\n")
 
-	d, _ := json.Marshal(map[string]interface{}{
-		"message": "Starting consumer",
-	})
-	fmt.Fprintf(rw, "data: %s\n\n", d)
-	flusher.Flush()
-
-	fmt.Fprintf(os.Stderr, "[INFO] Topic browser: consuming from %s/%s\n",
-		config.KafkaURL, vars["topic"])
+	fmt.Fprintf(os.Stderr, "[INFO] Topic browser: consuming from topic '%s'\n", name)
 	config := &kafka.ConfigMap{
 		"metadata.broker.list":       config.KafkaURL,
 		"group.id":                   "kafka-browser",
@@ -82,16 +80,11 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 		"fetch.message.max.bytes":    5120,
 		"queued.min.messages":        10,
 	}
-	consumer, err := consume(config, vars["topic"])
+	consumer, err := consume(config, name)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	d, _ = json.Marshal(map[string]interface{}{
-		"message": "Consuming",
-	})
-	fmt.Fprintf(rw, "data: %s\n\n", d)
-	flusher.Flush()
 	notify := rw.(http.CloseNotifier).CloseNotify()
 	for {
 		select {
@@ -106,8 +99,8 @@ func Browser(rw http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
 			switch e := ev.(type) {
 			case *kafka.Message:
 				msg := map[string]interface{}{
-					"message":   string(e.Value),
-					"key":       string(e.Key),
+					"message":   formatter(q.Get("vf"), e.Value),
+					"key":       formatter(q.Get("kf"), e.Key),
 					"partition": e.TopicPartition.Partition,
 					"offset":    e.TopicPartition.Offset.String(),
 					"timestamp": e.Timestamp,

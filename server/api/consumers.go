@@ -1,67 +1,70 @@
 package api
 
 import (
-	"github.com/84codes/cloudkarafka-mgmt/dm"
-	"github.com/84codes/cloudkarafka-mgmt/store"
-
-	"github.com/zenazn/goji/web"
-
+	"fmt"
 	"net/http"
+	"os"
+
+	"github.com/84codes/cloudkarafka-mgmt/db"
+	bolt "go.etcd.io/bbolt"
+	"goji.io/pat"
 )
 
-type consumerVM struct {
-	Name         string            `json:"name"`
-	Topics       []consumedTopicVM `json:"topics"`
-	PartitionLag []partitionLag    `json:"partition_lag"`
-}
-
-type consumedTopicVM struct {
-	Name     string `json:"name"`
-	Coverage int    `json:"coverage"`
-}
-
-type consumerMetric struct {
-	Topics map[string]partitionLag `json:"topics"`
-}
-
-type partitionLag struct {
-	Topic     string `json:"topic"`
-	Partition int    `json:"partition"`
-	Lag       int    `json:"lag"`
-}
-
-var (
-	consumerMux = web.New()
-)
-
-func init() {
-	Mux.Get("/consumers", func(c web.C, w http.ResponseWriter, r *http.Request) {
-		p := permissions(c)
-		allConsumers := store.Consumers()
-		var myConsumers []string
-		for _, c := range allConsumers {
-			if p.ConsumerRead(c) {
-				myConsumers = append(myConsumers, c)
-			}
+func Consumers(w http.ResponseWriter, r *http.Request) {
+	var res []map[string]interface{}
+	err := db.View(func(tx *bolt.Tx) error {
+		groupBucket := tx.Bucket([]byte("groups"))
+		if groupBucket != nil {
+			groupBucket.ForEach(func(k, v []byte) error {
+				topicBucket := groupBucket.Bucket(k)
+				topics := []string{}
+				topicBucket.ForEach(func(k, _ []byte) error {
+					topics = append(topics, string(k))
+					return nil
+				})
+				clients := make(map[string]bool)
+				lag := 0
+				db.Dig(topicBucket, 2, func(d map[string]interface{}) {
+					clients[d["clientid"].(string)] = true
+					lag += int(d["log_end_offset"].(float64) - d["current_offset"].(float64))
+				})
+				topic := map[string]interface{}{
+					"name":    string(k),
+					"clients": len(clients),
+					"lag":     lag,
+					"topics":  topics,
+				}
+				res = append(res, topic)
+				return nil
+			})
 		}
-		WriteJson(w, myConsumers)
+		//res = db.Recur(b, 3)
+		writeAsJson(w, res)
+		return nil
 	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.Consumers: %s\n", err)
+		http.Error(w, "Database error, please contact support", http.StatusInternalServerError)
+		return
+	}
+}
 
-	Mux.Get("/consumers/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
-		p := permissions(c)
-		if !p.ConsumerRead(c.URLParams["name"]) {
-			http.NotFound(w, r)
-			return
+func Consumer(w http.ResponseWriter, r *http.Request) {
+	name := pat.Param(r, "name")
+	var res map[string]interface{}
+	err := db.View(func(tx *bolt.Tx) error {
+		path := fmt.Sprintf("groups/%s", name)
+		b := db.BucketByPath(tx, path)
+		if b == nil {
+			return nil
 		}
-		WriteJson(w, dm.ConsumerMetrics(c.URLParams["name"]))
+		res = db.Recur(b, 2)
+		writeAsJson(w, res)
+		return nil
 	})
-
-	Mux.Get("/consumers/:name/:topic/lag", func(c web.C, w http.ResponseWriter, r *http.Request) {
-		p := permissions(c)
-		if !p.ConsumerRead(c.URLParams["name"]) && p.TopicRead(c.URLParams["topic"]) {
-			http.NotFound(w, r)
-			return
-		}
-		WriteJson(w, dm.ConsumerTotalLagSeries(c.URLParams["name"], c.URLParams["topic"]))
-	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.Consumer: %s\n", err)
+		http.Error(w, "Database error, please contact support", http.StatusInternalServerError)
+		return
+	}
 }

@@ -1,165 +1,220 @@
-function redirectToLogin() {
-  redirect('/login')
-}
-
-function redirect(path) {
-  if (window.location.pathname != path) {
-    window.location = path;
-  }
-}
-
-function getParameterByName(name, url) {
-  if (!url) url = window.location.href;
-  name = name.replace(/[\[\]]/g, "\\$&");
-  var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
-    results = regex.exec(url);
-  if (!results) return null;
-  if (!results[2]) return '';
-  return decodeURIComponent(results[2].replace(/\+/g, " "));
-}
-
-function periodicGet(path, callback) {
-  get(path, callback);
-  setTimeout(function() { periodicGet(path, callback) }, 5000);
-}
-
-function get(path, callback) {
-  req('GET', path, callback);
-};
-
-function del(path, callback) {
-  req('DELETE', path, callback);
-};
-
-function post(path, callback) {
-  req('POST', path, callback);
-};
-
-function putForm(path, formId, callback) {
-  var formElement = element(formId)
-  req('PUT', path, callback, new FormData(formElement));
-};
-
-function postForm(path, formId, callback) {
-  var formElement = element(formId)
-  req('POST', path, callback, new FormData(formElement));
-};
-
-function req(method, path, callback, data) {
-  var request = new XMLHttpRequest();
-  request.open(method, path, true)
-  var auth = auth_header();
-  if (!auth) {
-    redirectToLogin();
-  }
-  request.setRequestHeader('authorization', auth);
-  request.onload = onLoad(request, callback);
-  if (data !== undefined) {
-    request.send(data);
-  } else {
-    request.send();
-  }
-};
-
-function notify(msg, config) {
-  var color = 'cobalt';
-  if (config.level === 'warn') {
-    color = 'honey';
-  } else if (config.level === 'error') {
-    color = 'ruby';
-  }
-  notific8(msg, {theme: 'chicchat', color: color});
-}
-
-function onLoad(request, callback) {
-  return function() {
-    if (request.status == 401) {
-      redirectToLogin();
-    } else if (request.status >= 200 && request.status < 400) {
-      // Success!
-      var data;
-      if (request.responseText.length > 0) {
-        data = JSON.parse(request.responseText);
-      }
-      callback(data)
-    } else if (request.status != 404) {
-      notify(request.responseText, { level: "error" });
+;(function (g) {
+  function redirect (path) {
+    if (window.location.pathname !== path) {
+      window.location = path
     }
   }
-}
 
-function element(id) {
-  return document.querySelector(id);
-};
+  function getParameterByName (name, url) {
+    if (!url) url = window.location.href
+    name = name.replace(/[\[\]]/g, '\\$&')
+    var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)')
+    var results = regex.exec(url)
+    if (!results) return null
+    if (!results[2]) return ''
+    return decodeURIComponent(results[2].replace(/\+/g, ' '))
+  }
 
-function elementHtml(id) {
-  return element(id).innerHTML;
-};
+  function handleResponseErrors (response) {
+    if (response.ok) {
+      return response
+    }
+    response.text().then(r => {
+      switch (response.status) {
+      case 400:
+        notify(r, { level: 'warn' })
+        break
+      case 500:
+        notify(r, { level: 'error' })
+        break
+      }
+      throw new Error(response.responseText)
+    })
+  }
 
-function renderTmpl(attachToId, tmplId, elements) {
-  var $attachTo = element(attachToId);
-  var tmpl = Handlebars.compile(elementHtml(tmplId));
-  $attachTo.innerHTML = tmpl(elements);
-};
+  function periodicGet (path, callback, timeout) {
+    timeout = timeout || 30000
+    get(path, callback)
+    setTimeout(function () {
+      periodicGet(path, callback)
+    }, timeout)
+  }
 
-function renderListTmpl(attachToId, tmplId, path, clb) {
-  //var noTopicsTmpl = Handlebars.compile(elementHtml('#tmpl-no-topics'));
-  get(path, function(elements) {
-    var l = elements ? elements.length : 0;
-    if (l > 0) {
-      var result = [];
-      elements.forEach(function(e) {
-        get(path + '/' + e, function(elem) {
-          result.push(elem)
-          if (result.length == l) {
-            result.sort(function(a, b) {
-              return a.name > b.name
-            })
-            renderTmpl(attachToId, tmplId, {elements: result})
-            if (clb !== undefined) {
-              clb();
-            }
-          }
-        })
+  function get (path, callback) {
+    return g.fetch(path, {
+      headers: {
+        Accept: 'application/json',
+        'X-Request-ID': requestId()
+      }
+    }).then(handleResponseErrors)
+      .then(r => r.json())
+      .then(r => {
+        // Legacy callback support
+        if (callback) {
+          callback(null, r)
+        }
+        return r
       })
-    } else{
-      renderTmpl(attachToId, tmplId, {elements: []})
+  }
+
+  function del (path, callback) {
+    return g.fetch(path, {
+      method: 'DELETE',
+      headers: {
+        'X-Request-ID': requestId(),
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+  }
+
+  function post (path, data, callback) {
+    return g.fetch(path, {
+      method: 'POST',
+      headers: {
+        'X-Request-ID': requestId(),
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+  }
+
+  function put (path, data, callback) {
+    return g.fetch(path, {
+      method: 'PUT',
+      headers: {
+        'X-Request-ID': requestId(),
+        Accept: 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    })
+  }
+
+  function requestId () {
+    var r = g.localStorage.getItem('RequestID')
+    if (!r) {
+      r = Math.floor((1 + Math.random()) * 0x10000).toString(16)
+      g.localStorage.setItem('RequestID', r)
+    }
+    return r
+  }
+
+  function notify (msg, config) {
+    var color = 'cobalt'
+    if (config.level === 'warn') {
+      color = 'honey'
+    } else if (config.level === 'error') {
+      color = 'ruby'
+    }
+    g.notific8(msg, { theme: 'chicchat', color: color })
+  }
+
+  function element (id) {
+    return document.querySelector(id)
+  }
+
+  function elementHtml (id) {
+    return element(id).innerHTML
+  }
+
+  function renderTmpl (attachToId, tmplId, elements) {
+    var $attachTo = element(attachToId)
+    var tmpl = g.Handlebars.compile(elementHtml(tmplId))
+    $attachTo.innerHTML = tmpl(elements)
+  }
+
+  function renderListTmpl (attachToId, tmplId, path, clb) {
+    get(path).then(elements => {
+      elements = elements || []
+      renderTmpl(attachToId, tmplId, { elements: elements })
+      clb(elements)
+    }).catch(() => {
+      renderTmpl(attachToId, tmplId, { elements: [] })
+    })
+  }
+
+  function humanFileSize (bytes) {
+    var thresh = 1024
+    if (Math.abs(bytes) < thresh) {
+      return { value: bytes, unit: 'B' }
+    }
+    var units = ['kB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+    var u = -1
+    do {
+      bytes /= thresh
+      ++u
+    } while (Math.abs(bytes) >= thresh && u < units.length - 1)
+    return { value: bytes.toFixed(1), unit: units[u] }
+  }
+
+  g.Handlebars.registerHelper('humanFileSize', function (bytes, def) {
+    if (bytes === null || bytes === undefined) {
+      return def
+    }
+    var res = humanFileSize(bytes)
+    return new g.Handlebars.SafeString(
+      res.value + '<small>' + res.unit + '</small>'
+    )
+  })
+  var onlyDigitsRe = /^\d+$/
+  g.Handlebars.registerHelper('humanize', function (value) {
+    if (onlyDigitsRe.test(value)) {
+      value = new Number(value)
+      value = value.toLocaleString()
+    } else if (typeof value === 'number') {
+      value = value.toLocaleString()
+    }
+    return value
+  })
+
+  g.Handlebars.registerHelper('toLocaleString', function (elem, def) {
+    if (elem === null || elem === undefined) {
+      return def
+    }
+    return elem.toLocaleString()
+  })
+  g.Handlebars.registerHelper('consumerLag', function (current, logEnd) {
+    if (!current || !logEnd) {
+      return '-'
+    }
+    return (logEnd - current).toLocaleString()
+  })
+  g.Handlebars.registerHelper('list', function (list) {
+    if (Array.isArray(list)) {
+      return list.join(',')
+    }
+    return list
+  })
+
+  document.addEventListener('DOMContentLoaded', function (event) {
+    var c = document.querySelector('.app-container')
+    var t = document.querySelector('kafka-toggle-menu')
+    var b = document.querySelector('sidebar-backdrop')
+    if (t) {
+      t.onclick = function (e) {
+        e.preventDefault()
+        c.classList.toggle('sidebar-open')
+      }
+    }
+    if (b) {
+      b.onclick = function (e) {
+        e.preventDefault()
+        c.classList.remove('sidebar-open')
+      }
     }
   })
-}
-
-function humanFileSize(bytes) {
-  var thresh = 1024;
-  if(Math.abs(bytes) < thresh) {
-    return { value: bytes, unit: 'B' };
+  g.kafkaHelper = {
+    get,
+    del,
+    post,
+    put,
+    redirect,
+    periodicGet,
+    renderTmpl,
+    renderListTmpl,
+    humanFileSize,
+    getParameterByName
   }
-  var units = ['kB','MB','GB','TB','PB','EB','ZB','YB'];
-  var u = -1;
-  do {
-    bytes /= thresh;
-    ++u;
-  } while(Math.abs(bytes) >= thresh && u < units.length - 1);
-  return { value: bytes.toFixed(1), unit: units[u] };
-}
-
-Handlebars.registerHelper('humanFileSize', function(bytes) {
-  var res = humanFileSize(bytes);
-  return new Handlebars.SafeString(
-    res.value + "<small>" + res.unit + "</small>"
-  );
-})
-var onlyDigitsRe = /^\d+$/;
-Handlebars.registerHelper("humanize", function(value) {
-  if (onlyDigitsRe.test(value)) {
-    value = new Number(value);
-    value = value.toLocaleString();
-  } else if (typeof value === "number") {
-    value = value.toLocaleString();
-  }
-  return value;
-});
-
-//Handlebars.registerHelper('humanFileSize', humanFileSize)
-Handlebars.registerHelper('toLocaleString', function(elem) {
-  return elem.toLocaleString();
-})
+})(window)

@@ -1,79 +1,106 @@
-function drawThroughputChart(containerId, id, yaxis, data) {
-  if (data.in.length === 0 || data.out.length === 0) {
-    renderTmpl(containerId, '#tmpl-no-throughput');
-    return;
+;(function (g) {
+  var colors = [
+    '#46b477',
+    'steelblue',
+    'lightblue',
+    'red'
+  ]
+  function drawThroughputChart (containerId, id, yaxis, data) {
+    //var palette = new g.Rickshaw.Color.Palette({ scheme: 'cool' })
+    var mm = {
+      bytes: { min: Number.MAX_VALUE, max: Number.MIN_VALUE },
+      messages: { min: Number.MAX_VALUE, max: Number.MIN_VALUE }
+    }
+    data.forEach(function (serie) {
+      serie.data = serie.data || []
+      serie.data.forEach(function (d) {
+        mm[serie.type].max = Math.max(mm[serie.type].max, d.y)
+        mm[serie.type].min = Math.min(mm[serie.type].min, d.y)
+      })
+    })
+    var scales = {
+      bytes: g.d3.scale
+        .linear()
+        .domain([mm.bytes.min, mm.bytes.max])
+        .nice(),
+      messages: g.d3.scale
+        .linear()
+        .domain([mm.messages.min, mm.messages.max])
+        .nice()
+    }
+
+    var series = data.map(function (serie, i) {
+      serie.color = colors[i % colors.length]
+      serie.scale = scales[serie.type]
+      return serie
+    })
+    drawChart(id, series, scales)
   }
-  var series = [
-      {
-        color: 'steelblue',
-        data: data.in,
-        name: 'Input',
-      }, {
-        color: 'lightblue',
-        data: data.out,
-        name: 'Output',
+
+  function drawChart (id, series, scale) {
+    var graph = new g.Rickshaw.Graph({
+      element: document.querySelector(id),
+      renderer: 'line',
+      //interpolation: 'step-after',
+      series: series
+    })
+    var yAxis = new g.Rickshaw.Graph.Axis.Y.Scaled({
+      graph: graph,
+      element: '#axis0',
+      orientation: 'left',
+      scale: scale.bytes,
+      tickFormat: x => {
+        const fs = g.kafkaHelper.humanFileSize(x)
+        return fs.value + ' ' + fs.unit + '/s'
       }
-    ]
-  var tickFormat = function(x) {
-    var fs = humanFileSize(x)
-    return fs.value + " " + fs.unit + "/s";
-  }
-  drawChart(containerId, id, series, yaxis, tickFormat);
-}
+    })
+    var yAxis2 = new g.Rickshaw.Graph.Axis.Y.Scaled({
+      graph: graph,
+      grid: false,
+      element: '#axis1',
+      scale: scale.messages,
+      orientation: 'right',
+      tickFormat: g.Rickshaw.Fixtures.Number.formatKMBT
+    })
 
-function drawLagChart(containerId, id, yaxis, data) {
-  var tickFormat = function(x) {
-    return x;
-  }
-  var series = [{
-    color: 'steelblue',
-    data: data,
-    name: 'Lag',
-  }]
-  drawChart(containerId, id, series, yaxis, tickFormat);
-}
-
-function drawChart(containerId, id, series, yaxis, tickFormat) {
-  var graph = new Rickshaw.Graph({
-    element: element(id),
-    renderer: 'line',
-    series: series,
-  })
-
-  var yAxis = new Rickshaw.Graph.Axis.Y({
-    graph: graph,
-    width: 80,
-    orientation: 'left',
-    tickFormat: tickFormat,
-    element: yaxis
-  });
-
-  var xAxis = new Rickshaw.Graph.Axis.X({
+    var xAxis = new g.Rickshaw.Graph.Axis.X({
       graph: graph,
       pixelsPerTick: 100,
-      tickFormat: function(x){
-        return new Date(x * 1000).toLocaleTimeString();
+      tickFormat: function (x) {
+        return new Date(x * 1000).toLocaleTimeString()
       }
-  })
+    })
 
-  new Rickshaw.Graph.HoverDetail({
-    graph: graph,
-    yFormatter: function(x) {
-      var fs = humanFileSize(x)
-      return fs.value + " " + fs.unit + "/s";
+    var hd = new g.Rickshaw.Graph.HoverDetail({
+      graph: graph,
+      formatter: (serie, x, y) => {
+        switch (serie.type) {
+        case 'bytes':
+          const fs = g.kafkaHelper.humanFileSize(y)
+          return serie.name + ': ' + fs.value + ' ' + fs.unit + '/s'
+        case 'messages':
+          return serie.name + ':' + y.toLocaleString() + ' msgs'
+        default:
+          return y.toLocaleString()
+        }
+      }
+    })
+
+    var resize = function () {
+      var chart = document.querySelector(id).parentElement
+      var axisWidth = Array.from(
+        chart.querySelectorAll('.chart-y-axis')
+      ).reduce((sum, e) => sum + e.clientWidth, 0)
+      graph.configure({
+        width: chart.clientWidth - axisWidth - 20,
+        height: chart.clientHeight - 32
+      })
+      graph.render()
     }
-  });
-
-  var resize = function() {
-    var chart = element(containerId);
-    graph.configure({
-      width: chart.clientWidth - 96 ,
-      height: chart.clientHeight - 32
-    });
-    graph.render();
-    yAxis.render();
-    xAxis.render();
+    window.addEventListener('resize', resize)
+    resize()
   }
-  window.addEventListener('resize', resize);
-  resize();
-};
+  g.kafkaChart = {
+    drawThroughputChart
+  }
+})(window)
