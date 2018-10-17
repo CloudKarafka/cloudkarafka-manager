@@ -125,11 +125,11 @@
             <h2>Total Input/Output</h2>
           </div>
           <div class="box-body input-output" id="throughput">
-  <div class="loading-metric chart"></div>
-  <div id="axis0"></div>
-  <div id="axis1"></div>
-  <div id="chart"></div>
-</div>
+            <div class="loading-metric chart"></div>
+            <div id="axis0"></div>
+            <div id="axis1"></div>
+            <div id="chart"></div>
+          </div>
 
 
   <script id='tmpl-no-throughput' type='text/x-handlebars-template'>
@@ -328,19 +328,19 @@
     </script>
   
   <script type="text/javascript">
-    get('/api/notifications.json', function(notifications) {
+    get('/api/notifications', function(notifications) {
       renderTmpl('#notifications', '#tmpl-notifications', notifications);
     });
-    get('/api/brokers.json', function(brokers) {
+    get('/api/brokers', function(brokers) {
       renderTmpl('#broker-count', '#tmpl-metric', { unit: "", value: brokers.length});
     })
-    get('/api/topics.json', function(topics) {
+    get('/api/topics', function(topics) {
       renderTmpl('#topic-count', '#tmpl-metric', { unit: "", value: topics.length});
       var size = 0;
       var messageCount = 0;
       var i = 0;
       topics.forEach(function(t) {
-        get('/api/topics/' + t + '.json', function(topic) {
+        get('/api/topics/' + t, function(topic) {
           i += 1
           messageCount += topic.message_count;
           size += topic.size;
@@ -353,23 +353,23 @@
         })
       })
     })
-    get('/api/consumers.json', function(consumers) {
+    get('/api/consumers', function(consumers) {
       var count = 0
       if (consumers) {
         count = consumers.length;
       }
       renderTmpl('#consumer-count', '#tmpl-metric', { unit: "", value: count});
     })
-    get('/api/users.json', function(users) {
+    get('/api/users', function(users) {
       var count = 0
       if (users) {
         count = users.length;
       }
       renderTmpl('#user-count', '#tmpl-metric', { unit: "", value: count});
     })
-    get('/api/brokers/throughput.json', function(data) {
+    get('/api/brokers/throughput', function(data) {
       element("#throughput .loading-metric").hidden = true;
-      drawChart('#throughput', '#chart', '#axis0', '#axis1', data);
+      drawThroughputChart('#throughput', '#chart', '#axis0', data);
     })
   </script>
 </main>
@@ -457,9 +457,5 @@ for (_k = 0, _len1 = data.length; _k < _len1; _k++) {
 }
 
 </script>
-
-
-
-
   </body>
 </html>

@@ -72,7 +72,7 @@ func ConsumerMetrics(name string) ConsumerMetric {
 				fmt.Println("Partition number", partition)
 				continue
 			}
-			lag := p.LogEndOffset - ts.Latest()
+			lag := ts.Latest()
 			tLag += lag
 			cm.ConsumedPartitions = append(cm.ConsumedPartitions, consumedPartition{
 				Topic:     topicName,
@@ -90,4 +90,16 @@ func ConsumerMetrics(name string) ConsumerMetric {
 	sort.Sort(cm.ConsumedTopics)
 	sort.Sort(cm.ConsumedPartitions)
 	return cm
+}
+
+func ConsumerTotalLagSeries(name, topic string) Series {
+	c := store.Consumer(name)
+	cps := c[topic]
+	totalLag := make(store.Timeseries)
+	for _, series := range cps {
+		for ts, val := range series {
+			totalLag.Add(val, ts)
+		}
+	}
+	return throughputTimeseries(totalLag)
 }

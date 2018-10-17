@@ -46,8 +46,19 @@ func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 	vars := mux.Vars(r)
 	var data interface{}
 	topicName := vars["name"]
-	if p.TopicRead(topicName) {
+	if p.GroupRead(topicName) {
 		data = dm.ConsumerMetrics(topicName)
+	}
+	WriteJson(w, data)
+}
+
+func TotalLagSeries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
+	vars := mux.Vars(r)
+	var data interface{}
+	consumer := vars["name"]
+	topic := vars["topic"]
+	if p.GroupRead(consumer) && p.TopicRead(topic) {
+		data = dm.ConsumerTotalLagSeries(consumer, topic)
 	}
 	WriteJson(w, data)
 }

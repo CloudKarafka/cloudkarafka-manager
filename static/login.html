@@ -42,7 +42,7 @@
   <div class="box">
     <div class="box-header text-center">
         <div class="app-logo">
-          <img src="/assets/mgmt-logo.svg"/>
+          <img alt="Logo" src="/assets/mgmt-logo.svg"/>
           <h1 class="logo-text">Kafka MGMT</h1>
         </div>
     </div>
@@ -86,7 +86,7 @@
       var request = new XMLHttpRequest();
       var user = element('#kafka-username').value;
       var pass = element('#kafka-password').value;
-      request.open('GET', '/api/whoami.json', true, user, pass);
+      request.open('GET', '/api/whoami', true, user, pass);
       request.onload = function() {
         if (request.status >= 200 && request.status < 400) {
           // Success!
