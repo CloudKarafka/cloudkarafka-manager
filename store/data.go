@@ -1,8 +1,6 @@
 package store
 
 import (
-	"github.com/84codes/cloudkarafka-mgmt/config"
-
 	"sort"
 	"time"
 )
@@ -25,13 +23,16 @@ func (me Timeseries) Add(val int, ts int64) Timeseries {
 		me[ts] = (v + val) / 2
 		return me
 	}
-	oldest := me.oldestKey()
-	//Oldest is older than 5 minutes, delete the entry
-	if oldest < time.Now().Unix()-config.Retention {
-		delete(me, oldest)
-	}
 	me[ts] = val
 	return me
+}
+
+func (me Timeseries) RemoveEntriesOlderThan(lim int64) {
+	for k, _ := range me {
+		if k < lim {
+			delete(me, k)
+		}
+	}
 }
 
 func (me Timeseries) sortedKeys() []int {
@@ -45,14 +46,6 @@ func (me Timeseries) sortedKeys() []int {
 	}
 	sort.Ints(keys)
 	return keys
-}
-
-func (me Timeseries) oldestKey() int64 {
-	keys := me.sortedKeys()
-	if len(keys) == 0 {
-		return 0
-	}
-	return int64(keys[0])
 }
 
 func (me Timeseries) Latest() int {
