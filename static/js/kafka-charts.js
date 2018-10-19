@@ -1,13 +1,9 @@
-function drawChart(containerId, id, yaxis, xaxis, data) {
+function drawThroughputChart(containerId, id, yaxis, data) {
   if (data.in.length === 0 || data.out.length === 0) {
-    renderTmpl('#throughput', '#tmpl-no-throughput');
+    renderTmpl(containerId, '#tmpl-no-throughput');
     return;
   }
-
-  var graph = new Rickshaw.Graph({
-    element: element(id),
-    renderer: 'line',
-    series: [
+  var series = [
       {
         color: 'steelblue',
         data: data.in,
@@ -18,16 +14,37 @@ function drawChart(containerId, id, yaxis, xaxis, data) {
         name: 'Output',
       }
     ]
+  var tickFormat = function(x) {
+    var fs = humanFileSize(x)
+    return fs.value + " " + fs.unit + "/s";
+  }
+  drawChart(containerId, id, series, yaxis, tickFormat);
+}
+
+function drawLagChart(containerId, id, yaxis, data) {
+  var tickFormat = function(x) {
+    return x;
+  }
+  var series = [{
+    color: 'steelblue',
+    data: data,
+    name: 'Lag',
+  }]
+  drawChart(containerId, id, series, yaxis, tickFormat);
+}
+
+function drawChart(containerId, id, series, yaxis, tickFormat) {
+  var graph = new Rickshaw.Graph({
+    element: element(id),
+    renderer: 'line',
+    series: series,
   })
 
   var yAxis = new Rickshaw.Graph.Axis.Y({
     graph: graph,
     width: 80,
     orientation: 'left',
-    tickFormat: function(x){
-      var fs = humanFileSize(x)
-      return fs.value + " " + fs.unit + "/s";
-    },
+    tickFormat: tickFormat,
     element: yaxis
   });
 
@@ -38,6 +55,7 @@ function drawChart(containerId, id, yaxis, xaxis, data) {
         return new Date(x * 1000).toLocaleTimeString();
       }
   })
+
   new Rickshaw.Graph.HoverDetail({
     graph: graph,
     yFormatter: function(x) {

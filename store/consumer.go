@@ -23,7 +23,13 @@ func (me *consumerStore) Put(value int, ts int64, group, topic, partition string
 		g[topic] = make(consumedPartitions)
 	}
 	ct := g[topic]
-	ct[partition] = ct[partition].Add(value, ts)
+	t := Topic(topic)
+	p := t.Partitions[partition]
+	lag := p.EndOffset - value
+	if lag < 0 {
+		lag = 0
+	}
+	ct[partition] = ct[partition].Add(lag, ts)
 	g[topic] = ct
 	me.store[group] = g
 	return nil

@@ -61,7 +61,7 @@ func consumerOffsetsMessage(msg *kafka.Message) {
 		return
 	}
 	p := strconv.Itoa(int(partition))
-	store.Put("consumer", int(offset), int64(timestamp), group, topic, p)
+	store.Put("consumer", int(offset), int64(timestamp)/1000, group, topic, p)
 }
 
 func readString(buf *bytes.Buffer) (string, error) {

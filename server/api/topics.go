@@ -116,7 +116,7 @@ func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		http.NotFound(w, r)
 		return
 	}
-	cfg, err := zookeeper.Config(vars["topic"])
+	cfg, err := zookeeper.TopicConfig(vars["topic"])
 	if err != nil {
 		internalError(w, err.Error())
 	} else {
