@@ -3,6 +3,8 @@ package store
 import (
 	"sort"
 	"time"
+
+	"github.com/84codes/cloudkarafka-mgmt/config"
 )
 
 type Timeseries map[int64]int
@@ -23,6 +25,7 @@ func (me Timeseries) Add(val int, ts int64) Timeseries {
 		me[ts] = (v + val) / 2
 		return me
 	}
+	me.RemoveEntriesOlderThan(time.Now().Unix() - config.Retention)
 	me[ts] = val
 	return me
 }

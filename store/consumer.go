@@ -2,9 +2,6 @@ package store
 
 import (
 	"sync"
-	"time"
-
-	"github.com/84codes/cloudkarafka-mgmt/config"
 )
 
 type consumedPartitions map[string]Timeseries
@@ -33,7 +30,6 @@ func (me *consumerStore) Put(value int, ts int64, group, topic, partition string
 		lag = 0
 	}
 	ct[partition] = ct[partition].Add(lag, ts)
-	ct[partition].RemoveEntriesOlderThan(time.Now().Unix() - config.Retention)
 	g[topic] = ct
 	me.store[group] = g
 	return nil
