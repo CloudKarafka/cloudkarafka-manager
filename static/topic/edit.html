@@ -166,7 +166,7 @@
 
   <script type="text/javascript"> 
     var name = getParameterByName('name');
-    get("/api/topics/" + name +".json", function(t) {
+    get("/api/topics/" + name, function(t) {
       var topic = Object.assign({}, t, {btn_txt: "Save", disabled: true});
       renderTmpl("#edit", "#tmpl-edit-topic", topic);
       element("#topicForm").addEventListener('submit', function(ev) {
