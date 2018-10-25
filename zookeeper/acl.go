@@ -58,7 +58,7 @@ func GroupsAcls(_p Permissions) ([]string, error) {
 }
 
 func Groups(p Permissions) ([]string, error) {
-	return all(gPath, p.GroupRead)
+	return all(gPath, p.ConsumerRead)
 }
 
 func aclFor(path string) ([]acl, error) {

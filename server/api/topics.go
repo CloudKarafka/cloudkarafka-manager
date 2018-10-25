@@ -4,7 +4,7 @@ import (
 	"github.com/84codes/cloudkarafka-mgmt/dm"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 
-	"github.com/gorilla/mux"
+	"github.com/zenazn/goji/web"
 
 	"encoding/json"
 	"errors"
@@ -19,11 +19,25 @@ var (
 	partitionsRequired        = errors.New("ERROR: must suply partitions and it must be numeric")
 )
 
-func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	switch r.Method {
-	case "GET":
-		topics(w, p)
-	case "POST":
+func init() {
+	Mux.Get("/topics", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		allTopics, err := zookeeper.Topics(p)
+		var myTopics []string
+		for _, t := range allTopics {
+			if p.TopicRead(t) {
+				myTopics = append(myTopics, t)
+			}
+		}
+		if err != nil {
+			internalError(w, err.Error())
+		} else {
+			WriteJson(w, myTopics)
+		}
+	})
+
+	Mux.Post("/topics", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
 		if !p.ClusterWrite() {
 			w.WriteHeader(http.StatusForbidden)
 			fmt.Fprintf(w, "Insufficient privileges, requires cluster write.")
@@ -33,96 +47,96 @@ func Topics(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		if err != nil {
 			internalError(w, err.Error())
 		} else {
-			fmt.Printf("[INFO] action=create-topic user=%s topic=%s\n",
-				p.Username, t.Name)
-			createTopic(w, t)
+			err := zookeeper.CreateTopic(t.Name, t.PartitionCount, t.ReplicationFactor, t.Config)
+			if err != nil {
+				internalError(w, err.Error())
+				return
+			}
+			fmt.Printf("[INFO] action=create-topic user=%s topic=%s\n", p.Username, t.Name)
+			getTopic(w, t.Name)
 		}
-	default:
-		http.NotFound(w, r)
-	}
-}
+	})
 
-func Topic(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	switch r.Method {
-	case "GET":
-		if p.TopicRead(vars["topic"]) {
-			getTopic(w, vars["topic"])
-			break
+	Mux.Get("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.TopicRead(c.URLParams["name"]) {
 		}
-		fallthrough
-	case "PUT":
+		getTopic(w, c.URLParams["name"])
+	})
+
+	Mux.Put("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
 		if p.ClusterWrite() {
-			t, err := decodeTopic(r)
+			Mux.NotFound(w)
+			return
+		}
+		t, err := decodeTopic(r)
+		if err != nil {
+			internalError(w, err.Error())
+			return
+		}
+		err = zookeeper.UpdateTopic(t.Name, t.PartitionCount, t.ReplicationFactor, t.Config)
+		if err != nil {
+			fmt.Println(err)
+			internalError(w, err.Error())
+			return
+		}
+		fmt.Printf("[INFO] action=update-topic user=%s topic=%s\n", p.Username, t.Name)
+		getTopic(w, t.Name)
+	})
+
+	Mux.Delete("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.ClusterWrite() {
+			Mux.NotFound(w)
+			return
+		}
+		err := zookeeper.DeleteTopic(c.URLParams["name"])
+		if err != nil {
+			internalError(w, err.Error())
+			return
+		}
+		fmt.Printf("[INFO] action=delete-topic user=%s topic=%s\n", p.Username, c.URLParams["name"])
+		w.WriteHeader(http.StatusNoContent)
+	})
+
+	Mux.Post("/topics/:name/spread", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		internalError(w, "Not yet implemented.")
+		return
+		/*	err := zookeeper.SpreadPartitionEvenly(c.URLParams["name"])
 			if err != nil {
 				internalError(w, err.Error())
 			} else {
-				fmt.Printf("[INFO] action=update-topic user=%s topic=%s\n",
-					p.Username, t.Name)
-				updateTopic(w, vars["topic"], t)
-			}
-			break
-		}
-		fallthrough
-	case "DELETE":
-		if p.ClusterWrite() {
-			fmt.Printf("[INFO] action=delete-topic user=%s topic=%s\n",
-				p.Username, vars["topic"])
-			deleteTopic(w, vars["topic"])
-			break
-		}
-		fallthrough
-	default:
-		http.NotFound(w, r)
-	}
-}
+				fmt.Fprintf(w, string("Partition reassignment in progress"))
+			}*/
+	})
 
-func SpreadPartitions(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	switch r.Method {
-	case "POST":
-		internalError(w, "Not yet implemented.")
-		return
-	/*	err := zookeeper.SpreadPartitionEvenly(vars["topic"])
+	Mux.Get("/topics/:name/throughput", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		topic := c.URLParams["name"]
+		if !p.TopicRead(topic) {
+			Mux.NotFound(w)
+			return
+		}
+		in := dm.TopicBytesIn(topic)
+		out := dm.TopicBytesOut(topic)
+		WriteJson(w, map[string]dm.Series{"in": in, "out": out})
+	})
+
+	Mux.Get("/topics/:name/config", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.TopicRead(c.URLParams["name"]) {
+			Mux.NotFound(w)
+			return
+		}
+		cfg, err := zookeeper.TopicConfig(c.URLParams["name"])
 		if err != nil {
 			internalError(w, err.Error())
 		} else {
-			fmt.Fprintf(w, string("Partition reassignment in progress"))
-		}*/
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-func TopicThroughput(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	switch r.Method {
-	case "GET":
-		topic := vars["topic"]
-		if p.TopicRead(topic) {
-			in := dm.TopicBytesIn(topic)
-			out := dm.TopicBytesOut(topic)
-			WriteJson(w, map[string]dm.Series{"in": in, "out": out})
-			break
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, string(cfg))
 		}
-		fallthrough
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-func Config(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	if !p.TopicRead(vars["topic"]) {
-		http.NotFound(w, r)
-		return
-	}
-	cfg, err := zookeeper.TopicConfig(vars["topic"])
-	if err != nil {
-		internalError(w, err.Error())
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, string(cfg))
-	}
+	})
 }
 
 func decodeTopic(r *http.Request) (dm.T, error) {
@@ -221,52 +235,8 @@ func validateTopicConfig(cfg map[string]interface{}) []string {
 func getTopic(w http.ResponseWriter, name string) {
 	t, err := dm.Topic(name)
 	if err != nil {
-		http.NotFound(w, nil)
+		Mux.NotFound(w)
 		return
 	}
 	WriteJson(w, t)
-}
-
-func deleteTopic(w http.ResponseWriter, topic string) {
-	err := zookeeper.DeleteTopic(topic)
-	if err != nil {
-		internalError(w, err.Error())
-	} else {
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-func topics(w http.ResponseWriter, p zookeeper.Permissions) {
-	allTopics, err := zookeeper.Topics(p)
-	var myTopics []string
-	for _, t := range allTopics {
-		if p.TopicRead(t) {
-			myTopics = append(myTopics, t)
-		}
-	}
-	if err != nil {
-		internalError(w, err.Error())
-	} else {
-		WriteJson(w, myTopics)
-	}
-}
-
-func createTopic(w http.ResponseWriter, t dm.T) {
-	err := zookeeper.CreateTopic(t.Name, t.PartitionCount, t.ReplicationFactor, t.Config)
-	if err != nil {
-		internalError(w, err.Error())
-		return
-	}
-	fmt.Println(t.Name)
-	getTopic(w, t.Name)
-}
-
-func updateTopic(w http.ResponseWriter, name string, t dm.T) {
-	err := zookeeper.UpdateTopic(name, t.PartitionCount, t.ReplicationFactor, t.Config)
-	if err != nil {
-		fmt.Println(err)
-		internalError(w, err.Error())
-		return
-	}
-	getTopic(w, name)
 }
