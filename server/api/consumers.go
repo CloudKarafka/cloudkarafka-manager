@@ -2,10 +2,9 @@ package api
 
 import (
 	"github.com/84codes/cloudkarafka-mgmt/dm"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
-
 	"github.com/84codes/cloudkarafka-mgmt/store"
-	"github.com/gorilla/mux"
+
+	"github.com/zenazn/goji/web"
 
 	"net/http"
 )
@@ -31,34 +30,38 @@ type partitionLag struct {
 	Lag       int    `json:"lag"`
 }
 
-func Consumers(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	allConsumers := store.Consumers()
-	var myConsumers []string
-	for _, c := range allConsumers {
-		if p.GroupRead(c) {
-			myConsumers = append(myConsumers, c)
+var (
+	consumerMux = web.New()
+)
+
+func init() {
+	Mux.Get("/consumers", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		allConsumers := store.Consumers()
+		var myConsumers []string
+		for _, c := range allConsumers {
+			if p.ConsumerRead(c) {
+				myConsumers = append(myConsumers, c)
+			}
 		}
-	}
-	WriteJson(w, myConsumers)
-}
+		WriteJson(w, myConsumers)
+	})
 
-func Consumer(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	var data interface{}
-	topicName := vars["name"]
-	if p.GroupRead(topicName) {
-		data = dm.ConsumerMetrics(topicName)
-	}
-	WriteJson(w, data)
-}
+	Mux.Get("/consumers/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.ConsumerRead(c.URLParams["name"]) {
+			http.NotFound(w, r)
+			return
+		}
+		WriteJson(w, dm.ConsumerMetrics(c.URLParams["name"]))
+	})
 
-func TotalLagSeries(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	vars := mux.Vars(r)
-	var data interface{}
-	consumer := vars["name"]
-	topic := vars["topic"]
-	if p.GroupRead(consumer) && p.TopicRead(topic) {
-		data = dm.ConsumerTotalLagSeries(consumer, topic)
-	}
-	WriteJson(w, data)
+	Mux.Get("/consumers/:name/:topic/lag", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.ConsumerRead(c.URLParams["name"]) && p.TopicRead(c.URLParams["topic"]) {
+			http.NotFound(w, r)
+			return
+		}
+		WriteJson(w, dm.ConsumerTotalLagSeries(c.URLParams["name"], c.URLParams["topic"]))
+	})
 }

@@ -80,11 +80,11 @@ func (me Permissions) TopicWrite(t string) bool {
 	return me.Topics[t] >= W || me.Topics["*"] >= W
 }
 
-func (me Permissions) GroupRead(g string) bool {
+func (me Permissions) ConsumerRead(g string) bool {
 	return me.Groups[g] >= R || me.Groups["*"] >= R
 }
 
-func (me Permissions) GroupWrite(g string) bool {
+func (me Permissions) ConsumerWrite(g string) bool {
 	return me.Groups[g] >= W || me.Groups["*"] >= W
 }
 

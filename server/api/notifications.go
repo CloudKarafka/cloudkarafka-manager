@@ -2,20 +2,19 @@ package api
 
 import (
 	"github.com/84codes/cloudkarafka-mgmt/dm"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+
+	"github.com/zenazn/goji/web"
 
 	"net/http"
 )
 
-func Notifications(w http.ResponseWriter, r *http.Request, s zookeeper.Permissions) {
-	switch r.Method {
-	case "GET":
-		var data interface{}
-		if s.ClusterRead() {
-			data = dm.Notifications()
+func init() {
+	Mux.Get("/notifications", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.ClusterRead() {
+			http.NotFound(w, r)
+			return
 		}
-		WriteJson(w, data)
-	default:
-		http.NotFound(w, r)
-	}
+		WriteJson(w, dm.Notifications())
+	})
 }

@@ -50,4 +50,5 @@ func init() {
 	Mux.Use(middleware.SubRouter)
 	Mux.Use(middleware.EnvInit)
 	Mux.Use(Secure)
+	Mux.Handle("/brokers/*", brokersMux)
 }
