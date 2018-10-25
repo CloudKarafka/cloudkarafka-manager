@@ -26,14 +26,6 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:664d37ea261f0fc73dd17f4a1f5f46d01fbb0b0d75f6375af064824424109b7d"
-  name = "github.com/gorilla/handlers"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "7e0847f9db758cdebd26c149d0ae9d5d0b9c98ce"
-  version = "v1.4.0"
-
-[[projects]]
   digest = "1:e73f5b0152105f18bc131fba127d9949305c8693f8a762588a82a48f61756f5f"
   name = "github.com/gorilla/mux"
   packages = ["."]
@@ -50,6 +42,22 @@
   revision = "c4fab1ac1bec58281ad0667dc3f0907a9476ac47"
 
 [[projects]]
+  digest = "1:4429803a6a1d3912cec6587ba0a0cb2a554e94d5bdfbf4106626014588516a06"
+  name = "github.com/zenazn/goji"
+  packages = [
+    ".",
+    "bind",
+    "graceful",
+    "graceful/listener",
+    "web",
+    "web/middleware",
+    "web/mutil",
+  ]
+  pruneopts = "UT"
+  revision = "64eb34159fe53473206c2b3e70fe396a639452f2"
+  version = "v1.0"
+
+[[projects]]
   branch = "master"
   digest = "1:f92f6956e4059f6a3efc14924d2dd58ba90da25cc57fe07ae3779ef2f5e0c5f2"
   name = "golang.org/x/crypto"
@@ -63,9 +71,11 @@
   input-imports = [
     "github.com/confluentinc/confluent-kafka-go/kafka",
     "github.com/dustin/go-humanize",
-    "github.com/gorilla/handlers",
     "github.com/gorilla/mux",
     "github.com/samuel/go-zookeeper/zk",
+    "github.com/zenazn/goji",
+    "github.com/zenazn/goji/web",
+    "github.com/zenazn/goji/web/middleware",
     "golang.org/x/crypto/pbkdf2",
   ]
   solver-name = "gps-cdcl"
