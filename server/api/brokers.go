@@ -39,7 +39,7 @@ func init() {
 		return http.HandlerFunc(wrap)
 	})
 
-	brokersMux.Get("/brokers", func(c web.C, w http.ResponseWriter, r *http.Request) {
+	brokersMux.Get("/", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		brokers, err := zookeeper.Brokers()
 		if err != nil {
 			internalError(w, err)
@@ -48,13 +48,13 @@ func init() {
 		WriteJson(w, brokers)
 	})
 
-	brokersMux.Get("/brokers/throughput", func(c web.C, w http.ResponseWriter, r *http.Request) {
+	brokersMux.Get("/throughput", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		in := dm.AllBrokerBytesInPerSec()
 		out := dm.AllBrokerBytesOutPerSec()
 		WriteJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
 	})
 
-	brokersMux.Get("/brokers/:id", func(c web.C, w http.ResponseWriter, r *http.Request) {
+	brokersMux.Get("/:id", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		broker, err := zookeeper.Broker(c.URLParams["id"])
 		if err != nil {
 			internalError(w, err)
@@ -80,7 +80,7 @@ func init() {
 		WriteJson(w, bvm)
 	})
 
-	brokersMux.Get("/brokers/:id/jvm", func(c web.C, w http.ResponseWriter, r *http.Request) {
+	brokersMux.Get("/:id/jvm", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
 		if !p.ClusterRead() {
 			http.NotFound(w, r)
@@ -90,12 +90,12 @@ func init() {
 		WriteJson(w, m)
 	})
 
-	brokersMux.Get("/brokers/:id/health", func(c web.C, w http.ResponseWriter, r *http.Request) {
+	brokersMux.Get("/:id/health", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		m := dm.BrokerHealthMetrics(c.URLParams["id"])
 		WriteJson(w, m)
 	})
 
-	brokersMux.Get("/brokers/:id/throughput", func(c web.C, w http.ResponseWriter, r *http.Request) {
+	brokersMux.Get("/:id/throughput", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		in := dm.BrokerBytesIn(c.URLParams["id"])
 		out := dm.BrokerBytesOut(c.URLParams["id"])
 		WriteJson(w, map[string][]dm.DataPoint{"in": in, "out": out})
