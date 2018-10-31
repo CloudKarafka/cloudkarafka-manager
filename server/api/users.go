@@ -3,10 +3,9 @@ package api
 import (
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 
-	"github.com/gorilla/mux"
+	"github.com/zenazn/goji/web"
 
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -14,19 +13,28 @@ type user struct {
 	Name, Password string
 }
 
-func Whoami(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	WriteJson(w, p)
-}
+func init() {
+	Mux.Get("/whoami", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		WriteJson(w, p)
+	})
 
-func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	if !p.ClusterRead() {
-		http.NotFound(w, r)
-		return
-	}
-	switch r.Method {
-	case "GET":
-		users(w, p)
-	case "POST":
+	Mux.Get("/users", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.ClusterRead() {
+			http.NotFound(w, r)
+			return
+		}
+		users, err := zookeeper.Users(p)
+		if err != nil {
+			internalError(w, err.Error())
+			return
+		}
+		WriteJson(w, users)
+	})
+
+	Mux.Post("/users", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
 		if !p.ClusterWrite() {
 			http.NotFound(w, r)
 			return
@@ -34,35 +42,34 @@ func Users(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
 		u, err := decodeUser(r)
 		if err != nil {
 			internalError(w, err.Error())
-		} else {
-			createUser(w, u)
+			return
 		}
-	}
-}
+		createUser(w, u)
+		err = zookeeper.CreateUser(u.Name, u.Password)
+		if err != nil {
+			internalError(w, err.Error())
+		}
+	})
 
-func User(w http.ResponseWriter, r *http.Request, p zookeeper.Permissions) {
-	if !p.ClusterWrite() {
-		http.NotFound(w, r)
-		return
-	}
-	vars := mux.Vars(r)
-	switch r.Method {
-	case "GET":
-		if !p.ClusterRead() && vars["name"] != p.Username {
+	Mux.Get("/users/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
+		if !p.ClusterRead() && c.URLParams["name"] != p.Username {
 			http.NotFound(w, r)
 			return
 		}
-		user := zookeeper.PermissionsFor(vars["name"])
+		user := zookeeper.PermissionsFor(c.URLParams["name"])
 		WriteJson(w, user)
-	case "DELETE":
-		fmt.Println(p.ClusterWrite())
+	})
+
+	Mux.Delete("/users/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
+		p := permissions(c)
 		if !p.ClusterWrite() {
 			http.NotFound(w, r)
 			return
 		}
-		zookeeper.DeleteUser(vars["name"])
+		zookeeper.DeleteUser(c.URLParams["name"])
 		w.WriteHeader(http.StatusNoContent)
-	}
+	})
 }
 
 func decodeUser(r *http.Request) (user, error) {
@@ -81,19 +88,5 @@ func decodeUser(r *http.Request) (user, error) {
 	return u, err
 }
 
-func users(w http.ResponseWriter, p zookeeper.Permissions) {
-	users, err := zookeeper.Users(p)
-	if err != nil {
-		internalError(w, err.Error())
-	} else {
-		WriteJson(w, users)
-	}
-}
-
 func createUser(w http.ResponseWriter, u user) {
-	err := zookeeper.CreateUser(u.Name, u.Password)
-	if err != nil {
-		internalError(w, err.Error())
-		return
-	}
 }

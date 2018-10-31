@@ -82,7 +82,7 @@ function onLoad(request, callback) {
         data = JSON.parse(request.responseText);
       }
       callback(data)
-    } else {
+    } else if (request.status != 404) {
       notify(request.responseText, { level: "error" });
     }
   }
