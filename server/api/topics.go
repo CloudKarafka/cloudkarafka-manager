@@ -60,13 +60,15 @@ func init() {
 	Mux.Get("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
 		if !p.TopicRead(c.URLParams["name"]) {
+			Mux.NotFound(w)
+			return
 		}
 		getTopic(w, c.URLParams["name"])
 	})
 
 	Mux.Put("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
-		if p.ClusterWrite() {
+		if !p.ClusterWrite() {
 			Mux.NotFound(w)
 			return
 		}
@@ -133,8 +135,7 @@ func init() {
 		if err != nil {
 			internalError(w, err.Error())
 		} else {
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, string(cfg))
+			WriteJson(w, cfg)
 		}
 	})
 }
