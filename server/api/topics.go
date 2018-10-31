@@ -60,7 +60,7 @@ func init() {
 	Mux.Get("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
 		if !p.TopicRead(c.URLParams["name"]) {
-			Mux.NotFound(w)
+			http.NotFound(w, r)
 			return
 		}
 		getTopic(w, c.URLParams["name"])
@@ -69,7 +69,7 @@ func init() {
 	Mux.Put("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
 		if !p.ClusterWrite() {
-			Mux.NotFound(w)
+			http.NotFound(w, r)
 			return
 		}
 		t, err := decodeTopic(r)
@@ -90,7 +90,7 @@ func init() {
 	Mux.Delete("/topics/:name", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
 		if !p.ClusterWrite() {
-			Mux.NotFound(w)
+			http.NotFound(w, r)
 			return
 		}
 		err := zookeeper.DeleteTopic(c.URLParams["name"])
@@ -117,7 +117,7 @@ func init() {
 		p := permissions(c)
 		topic := c.URLParams["name"]
 		if !p.TopicRead(topic) {
-			Mux.NotFound(w)
+			http.NotFound(w, r)
 			return
 		}
 		in := dm.TopicBytesIn(topic)
@@ -128,7 +128,7 @@ func init() {
 	Mux.Get("/topics/:name/config", func(c web.C, w http.ResponseWriter, r *http.Request) {
 		p := permissions(c)
 		if !p.TopicRead(c.URLParams["name"]) {
-			Mux.NotFound(w)
+			http.NotFound(w, r)
 			return
 		}
 		cfg, err := zookeeper.TopicConfig(c.URLParams["name"])
@@ -236,7 +236,7 @@ func validateTopicConfig(cfg map[string]interface{}) []string {
 func getTopic(w http.ResponseWriter, name string) {
 	t, err := dm.Topic(name)
 	if err != nil {
-		Mux.NotFound(w)
+		internalError(w, err)
 		return
 	}
 	WriteJson(w, t)
