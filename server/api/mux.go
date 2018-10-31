@@ -50,5 +50,14 @@ func init() {
 	Mux.Use(middleware.SubRouter)
 	Mux.Use(middleware.EnvInit)
 	Mux.Use(Secure)
+	Mux.Use(func(c *web.C, h http.Handler) http.Handler {
+		wrap := func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/brokers" {
+				r.URL.Path = "/brokers/"
+			}
+			h.ServeHTTP(w, r)
+		}
+		return http.HandlerFunc(wrap)
+	})
 	Mux.Handle("/brokers/*", brokersMux)
 }

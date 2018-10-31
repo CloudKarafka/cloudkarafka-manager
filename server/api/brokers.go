@@ -27,6 +27,7 @@ var (
 
 func init() {
 	brokersMux.Use(middleware.SubRouter)
+
 	brokersMux.Use(func(c *web.C, h http.Handler) http.Handler {
 		wrap := func(w http.ResponseWriter, r *http.Request) {
 			p := permissions(*c)
