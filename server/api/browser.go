@@ -54,6 +54,7 @@ func formatter(f string, b []byte) interface{} {
 }
 
 func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
+	rid := r.Context().Value("requestId").(string)
 	name := pat.Param(r, "name")
 	q := r.URL.Query()
 	flusher, ok := rw.(http.Flusher)
@@ -69,7 +70,7 @@ func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(rw, ":\n")
 	fmt.Fprint(rw, "retry: 15000\n\n")
 
-	fmt.Fprintf(os.Stderr, "[INFO] Topic browser: consuming from topic '%s'\n", name)
+	fmt.Fprintf(os.Stderr, "[INFO] %s Topic browser: '%s'\n", rid, name)
 	config := &kafka.ConfigMap{
 		"metadata.broker.list":       config.KafkaURL,
 		"group.id":                   "kafka-browser",
@@ -89,7 +90,7 @@ func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-notify:
-			fmt.Fprintf(os.Stderr, "[INFO] Topic browser: client closed\n")
+			fmt.Fprintf(os.Stderr, "[INFO] %s Topic browser: client closed\n", rid)
 			consumer.Close()
 			return
 		case <-time.After(10 * time.Second):

@@ -9,9 +9,21 @@ import (
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 )
 
+func credentials(r *http.Request) (string, string) {
+	if user, pass, ok := r.BasicAuth(); ok {
+		return user, pass
+	}
+	q := r.URL.Query()
+	r.Header.Set("Authorization", "Basic "+q["_a"][0])
+	if user, pass, ok := r.BasicAuth(); ok {
+		return user, pass
+	}
+	return "", ""
+}
+
 func Secure(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		user, pass, ok := r.BasicAuth()
+		user, pass := credentials(r) // r.BasicAuth()
 		var p zookeeper.Permissions
 		if zookeeper.SkipAuthentication() {
 			p = zookeeper.Permissions{Cluster: zookeeper.R, Username: "default"}
@@ -22,7 +34,7 @@ func Secure(h http.Handler) http.Handler {
 				Groups:   map[string]zookeeper.Permission{"*": zookeeper.RW},
 				Username: "default",
 			}
-		} else if ok && zookeeper.ValidateScramLogin(user, pass) {
+		} else if user != "" && pass != "" && zookeeper.ValidateScramLogin(user, pass) {
 			p = zookeeper.PermissionsFor(user)
 		} else {
 			fmt.Fprintf(os.Stderr, "[INFO] Failed login for user %s\n", user)

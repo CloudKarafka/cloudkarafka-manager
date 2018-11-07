@@ -35,7 +35,7 @@
 
   function authHeader () {
     if (getCookieValue('auth')) {
-      return 'Basic ' + decodeURIComponent(getCookieValue('auth'))
+      return decodeURIComponent(getCookieValue('auth'))
     } else {
       return null
     }
