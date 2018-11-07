@@ -61,7 +61,7 @@ func topicMetricSum(tx *bolt.Tx, id string) map[string]interface{} {
 		"bytes_rejected": 0,
 	}
 	for k, _ := range res {
-		if b := db.BucketByPath(tx, fmt.Sprintf("brokers/%s/%s", id, k)); b != nil {
+		if b := db.BucketByPath(tx, fmt.Sprintf("topics/%s/%s", id, k)); b != nil {
 			res[k] = db.Last(b)
 		}
 	}
