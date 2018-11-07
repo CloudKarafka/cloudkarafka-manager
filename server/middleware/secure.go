@@ -2,14 +2,15 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 )
 
 func Secure(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
-
 		user, pass, ok := r.BasicAuth()
 		var p zookeeper.Permissions
 		if zookeeper.SkipAuthentication() {
@@ -24,15 +25,12 @@ func Secure(h http.Handler) http.Handler {
 		} else if ok && zookeeper.ValidateScramLogin(user, pass) {
 			p = zookeeper.PermissionsFor(user)
 		} else {
-			requestAuth(w)
+			fmt.Fprintf(os.Stderr, "[INFO] Failed login for user %s\n", user)
+			http.Error(w, "Not authorized", http.StatusUnauthorized)
+			return
 		}
 		ctx := context.WithValue(r.Context(), "permissions", p)
 		h.ServeHTTP(w, r.WithContext(ctx))
 	}
 	return http.HandlerFunc(fn)
-}
-
-func requestAuth(w http.ResponseWriter) {
-	w.Header().Set("WWW-Authenticate", "Basic realm=\"Restricted\"")
-	w.WriteHeader(http.StatusUnauthorized)
 }
