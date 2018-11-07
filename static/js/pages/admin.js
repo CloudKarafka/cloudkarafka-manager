@@ -5,11 +5,11 @@
     '#tmpl-users',
     '/api/users',
     function () {
-      document.querySelectorAll('.user-form').forEach(function (elem) {
-        elem.addEventListener('submit', function (evt) {
+      document.querySelectorAll('[data-delete-user]').forEach(function (elem) {
+        elem.addEventListener('click', function (evt) {
           evt.preventDefault()
-          g.kafkaHelper.del(this.action, function () {
-            location.reload()
+          g.kafkaHelper.del(`/api/users/${evt.currentTarget.dataset.deleteUser}`, function () {
+            g.location.reload()
           })
         })
       })
@@ -32,7 +32,7 @@
     }
     return lst
   }
-  g.kafkaHelper.get('/api/acls', function (err, acls) {
+  g.kafkaHelper.get('/api/acls').then(acls => {
     g.kafkaHelper.renderTmpl(
       '#cluster-acl-rows',
       '#tmpl-acl-row',
@@ -58,7 +58,7 @@
         g.kafkaHelper.del(
           '/api/acls/' + resource + '/' + name + '/' + principal,
           function () {
-            location.reload()
+            g.location.reload()
           }
         )
       })

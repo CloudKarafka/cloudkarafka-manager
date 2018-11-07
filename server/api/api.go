@@ -68,8 +68,7 @@ func Router() *goji.Mux {
 
 	mux.Handle(pat.Get("/users"), m.ClusterRead(http.HandlerFunc(Users)))
 	mux.Handle(pat.Post("/users"), m.ClusterWrite(http.HandlerFunc(CreateUser)))
-	mux.Handle(pat.Get("/user/:name"), m.ClusterRead(http.HandlerFunc(User)))
-	mux.Handle(pat.Delete("/users"), m.ClusterWrite(http.HandlerFunc(DeleteUser)))
+	mux.Handle(pat.Delete("/users/:name"), m.ClusterWrite(http.HandlerFunc(DeleteUser)))
 
 	mux.Handle(pat.Get("/acls"), m.ClusterRead(http.HandlerFunc(Acl)))
 	mux.Handle(pat.Post("/acls"), m.ClusterWrite(http.HandlerFunc(CreateAcl)))
