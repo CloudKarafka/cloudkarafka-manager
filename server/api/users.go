@@ -18,10 +18,14 @@ func Users(w http.ResponseWriter, r *http.Request) {
 	users, err := zookeeper.Users(p)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.Users: %s", err)
-		http.Error(w, "Could not save user in ZooKeeper", http.StatusInternalServerError)
+		http.Error(w, "Could not retrive save user in ZooKeeper", http.StatusInternalServerError)
 		return
 	}
-	writeAsJson(w, users)
+	res := make([]zookeeper.Permissions, len(users))
+	for i, user := range users {
+		res[i] = zookeeper.PermissionsFor(user)
+	}
+	writeAsJson(w, res)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {

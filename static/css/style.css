@@ -136,6 +136,10 @@ body {
   color: #6b7076;
   background-color: #fff; }
 
+html,body {
+  height: 100%;
+}
+
 [tabindex="-1"]:focus {
   outline: none !important; }
 

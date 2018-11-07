@@ -1,205 +1,167 @@
 <!DOCTYPE html>
 <html>
   <head>
-    
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Add New Acl - CloudKarafka MGMT</title>
-  <link rel="apple-touch-icon" href="/img/logo.png">
-
-  <link rel="stylesheet" href="/css/style.css">
-
-  <meta property="og:title" content="The best management interface for Apache Kafka" />
-  <meta name="author" content="84codes Team" />
-  <meta property="og:locale" content="en_US" />
-  <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
-  <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
-  <meta property="og:site_name" content="CloudKarafka MGMT" />
-  <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
-  <script src="/js/handlebars.min.js"></script>
-  <script src="/js/d3.v3.min.js"></script>
-  <script src="/js/rickshaw.min.js"></script>
-  <script src="/js/notific8.min.js"></script>
-  <script src="/js/kafka-auth.js"></script>
-  <script src="/js/kafka-helpers.js"></script>
-  <script src="/js/kafka-charts.js"></script>
-  <script type="text/javascript"> setup() </script>
-
-    <style>
-      html,body {
-        height: 100%;
-      }
-    </style>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Add New Acl - CloudKarafka MGMT</title>
+    <link rel="apple-touch-icon" href="/img/logo.png">
+    <link rel="stylesheet" href="/css/style.css">
+    <meta property="og:title" content="The best management interface for Apache Kafka" />
+    <meta name="author" content="84codes Team" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:site_name" content="CloudKarafka MGMT" />
+    <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
   </head>
   <body>
-     <div class="app-container">
+    <div class="app-container">
       <nav class="navbar navbar-expand-lg navbar-dark bg-header">
-  <div class="container-fluid">
-    <div>
-      <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
-        <span class="hamburger-box">
-          <span class="hamburger-inner"></span>
-        </span>
-      </button>
-    </div>
-    <div class="text-right">
-      <p class="my-2 my-md-0 text-right">
-        <a onclick="signout()">
-          <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
-      </p>
-    </div>
-  </div>
-</nav>
-
-      <aside class="sidebar-wrapper">
-  <div class="sidebar-header text-center">
-    <a href="/" class="app-logo">
-      <img src="/assets/mgmt-logo.svg"/>
-      <h1 class="logo-text">CloudKarafka MGMT</h1>
-    </a>
-
-  </div>
-  <div class="sidebar-content">
-    <div class="sidebar-info">
-      <h2 id="cluster-name" class="host"></h2>
-      <p id="username"></p>
-    </div>
-    <nav class="sidebar-nav">
-      <ul>
-        
-        <li class="">
-            <a href="/">
-              <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
-              <span>Overview</span>
-            </a>
-        </li>
-        
-        <li class="">
-            <a href="/topics">
-              <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
-              <span>Topics</span>
-            </a>
-        </li>
-        
-        <li class="">
-            <a href="/consumers">
-              <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
-              <span>Consumers</span>
-            </a>
-        </li>
-        
-        <li class="">
-            <a href="/brokers">
-              <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
-              <span>Brokers</span>
-            </a>
-        </li>
-        
-        <li class=" active">
-            <a href="/admin">
-              <span class="icon"><img src="/assets/icons/tools.svg" /></span>
-              <span>Admin</span>
-            </a>
-        </li>
-        
-      </ul>
-    </nav>
-  </div>
-</aside>
-
-        <div class="sidebar-backdrop"></div>
-<main class="main-container">
-  <div class="main-heading">
-    <div class="row">
-      <div class="col-12">
-        <h1><a href="/admin">Admin</a> / Add New Acl</h1>
-      </div>
-    </div>
-  </div>
-  <div class="container-fluid">
-    <form id="aclForm" method="post" action="/api/acls">
-      <div class="form-group col-md-6 mb-3">
-          <label for="validationCustom01">Resource</label>
-          <select name="resource" class="form-control">
-            <option value="Cluster">Cluster</option>
-            <option value="Topic">Topic</option>
-            <option value="Group">Group</option>
-          </select>
-      </div>
-      <div class="form-group col-md-6 mb-3">
-        <label for="validationCustom02">Principal</label>
-        <div class="input-group">
-          <div class="input-group-prepend">
-            <div class="input-group-text">User:</div>
+        <div class="container-fluid">
+          <div>
+            <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+              <span class="hamburger-box">
+                <span class="hamburger-inner"></span>
+              </span>
+            </button>
           </div>
-          <input type="text" name="principal" class="form-control" placeholder="E.g. username">
+          <div class="text-right">
+            <p class="my-2 my-md-0 text-right">
+              <a onclick="signout()">
+                <span class="icon"><img src="/assets/icons/sign-out.svg" /></span> <span class="link">Sign Out</span></a>
+            </p>
+          </div>
         </div>
-      </div>
-      <div class="form-group col-md-6 mb-3">
-        <label for="validationCustom02">Resource name</label>
-        <input type="text" name="name" class="form-control" placeholder="E.g. topic or group name">
-      </div>
-      <div class="form-group col-md-6 mb-3">
-        <label for="validationCustom02">Host</label>
-        <input type="text" name="host" class="form-control" value="*">
-        <p class="help">
-          From where can the users connect, wildcards are allowed.
-        </p>
-      </div>
-      <div class="form-group col-md-6 mb-3">
-          <label for="validationCustom02">Permission type</label>
-          <select name="type" class="form-control">
-            <option value="Allow">Allow</option>
-            <option value="Deny">Deny</option>
-          </select>
-      </div>
-      <div class="form-group col-md-6 mb-3">
-          <label for="validationCustom02">Permission</label>
-          <select name="permission" class="form-control">
-            <option value="Read">Read</option>
-            <option value="Write">Write</option>
-            <option value="All">Read and write</option>
-          </select>
-      </div>
-      <div class="form-group col-md-4 mb-3">
-        <button type="submit" class="btn btn-lg btn-primary">Add ACL</button>
-      </div>
-    </form>
-  </div>
-  <footer>
-  <p>
-		CloudKarafka MGMT is developed by
-		<a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
-			<img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
-		</a> and released under
-		<a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
-	</p>
-</footer>
+      </nav>
+      <aside class="sidebar-wrapper">
+        <div class="sidebar-header text-center">
+          <a href="/" class="app-logo">
+            <img src="/assets/mgmt-logo.svg"/>
+            <h1 class="logo-text">CloudKarafka MGMT</h1>
+          </a>
+        </div>
+        <div class="sidebar-content">
+          <div class="sidebar-info">
+            <h2 id="cluster-name" class="host"></h2>
+            <p id="username"></p>
+          </div>
+          <nav class="sidebar-nav">
+            <ul>
 
-  <script type="text/javascript"> 
-    element("#aclForm").addEventListener('submit', function(ev) {
-      ev.preventDefault();
-      postForm("/api/acls", "#aclForm", function() {
-        redirect("/admin");
-      });
-    })
-  </script>
-</main>
+              <li class="">
+                <a href="/">
+                  <span class="icon"><img src="/assets/icons/dashboard.svg" /></span>
+                  <span>Overview</span>
+                </a>
+              </li>
 
+              <li class="">
+                <a href="/topics">
+                  <span class="icon"><img src="/assets/icons/three-bars.svg" /></span>
+                  <span>Topics</span>
+                </a>
+              </li>
+
+              <li class="">
+                <a href="/consumers">
+                  <span class="icon"><img src="/assets/icons/pacman.svg" /></span>
+                  <span>Consumers</span>
+                </a>
+              </li>
+
+              <li class="">
+                <a href="/brokers">
+                  <span class="icon"><img src="/assets/icons/pulse.svg" /></span>
+                  <span>Brokers</span>
+                </a>
+              </li>
+
+              <li class=" active">
+                <a href="/admin">
+                  <span class="icon"><img src="/assets/icons/tools.svg" /></span>
+                  <span>Admin</span>
+                </a>
+              </li>
+
+            </ul>
+          </nav>
+        </div>
+      </aside>
+      <div class="sidebar-backdrop"></div>
+      <main class="main-container">
+        <div class="main-heading">
+          <div class="row">
+            <div class="col-12">
+              <h1><a href="/admin">Admin</a> / Add New Acl</h1>
+            </div>
+          </div>
+        </div>
+        <div class="container-fluid">
+          <form id="aclForm" method="post" action="/api/acls">
+            <div class="form-group col-md-6 mb-3">
+              <label for="validationCustom01">Resource</label>
+              <select name="resource" class="form-control">
+                <option value="Cluster">Cluster</option>
+                <option value="Topic">Topic</option>
+                <option value="Group">Group</option>
+              </select>
+            </div>
+            <div class="form-group col-md-6 mb-3">
+              <label for="validationCustom02">Principal</label>
+              <div class="input-group">
+                <div class="input-group-prepend">
+                  <div class="input-group-text">User:</div>
+                </div>
+                <input type="text" name="principal" class="form-control" placeholder="E.g. username">
+              </div>
+            </div>
+            <div class="form-group col-md-6 mb-3">
+              <label for="validationCustom02">Resource name</label>
+              <input type="text" name="name" class="form-control" placeholder="E.g. topic or group name">
+            </div>
+            <div class="form-group col-md-6 mb-3">
+              <label for="validationCustom02">Host</label>
+              <input type="text" name="host" class="form-control" value="*">
+              <p class="help">
+                From where can the users connect, wildcards are allowed.
+              </p>
+            </div>
+            <div class="form-group col-md-6 mb-3">
+              <label for="validationCustom02">Permission type</label>
+              <select name="type" class="form-control">
+                <option value="Allow">Allow</option>
+                <option value="Deny">Deny</option>
+              </select>
+            </div>
+            <div class="form-group col-md-6 mb-3">
+              <label for="validationCustom02">Permission</label>
+              <select name="permission" class="form-control">
+                <option value="Read">Read</option>
+                <option value="Write">Write</option>
+                <option value="All">Read and write</option>
+              </select>
+            </div>
+            <div class="form-group col-md-4 mb-3">
+              <button type="submit" class="btn btn-lg btn-primary">Add ACL</button>
+            </div>
+          </form>
+        </div>
+        <footer>
+          <p>
+            CloudKarafka MGMT is developed by
+            <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+              <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
+            </a> and released under
+            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+          </p>
+        </footer>
+      </main>
     </div>
-  
-<script src="/js/jquery-3.3.1.min.js"></script>
-<script src="/js/tether.min.js"></script>
-<script src="/js/bootstrap.min.js"></script>
-<script src="/js/jquery.sparkline.min.js"></script>
-<script src="/js/d3.v3.min.js"></script>
-<script src="/js/rickshaw.min.js"></script>
-<script src="/js/kafka-mgmt.js"></script>
-
-
-
-
-
+    <script src="/js/handlebars.min.js"></script>
+    <script src="/js/notific8.min.js"></script>
+    <script src="/js/kafka-auth.js"></script>
+    <script src="/js/kafka-helpers.js"></script>
+    <script src="/js/pages/acl_add.js"></script>
   </body>
 </html>

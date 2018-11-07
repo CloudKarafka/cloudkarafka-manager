@@ -14,11 +14,6 @@
     <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
     <meta property="og:site_name" content="CloudKarafka MGMT" />
     <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
-    <style>
-     html,body {
-       height: 100%;
-     }
-    </style>
   </head>
   <body>
     <div class="app-container">
@@ -178,9 +173,7 @@
                     </ul>
                   </td>
                   <td class="text-center">
-                    <form action="/api/users/{{username}}" class="user-form">
-                      <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></button>
-                    </form>
+                    <a href="#" data-delete-user="{{username}}" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><img src="/assets/icons/trashcan.svg" /></a>
                   </td>
                 </tr>
                 {{ else }}
