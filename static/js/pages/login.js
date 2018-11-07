@@ -1,20 +1,25 @@
 ;(function (g) {
-  // g.kafkaAuth.setup()
-
+  var hostname = g.location.host.split('.')[0]
+  document.querySelector('.host').textContent = hostname
   document.getElementById('login').addEventListener('submit', function (evt) {
     evt.preventDefault()
-    var request = new XMLHttpRequest()
     var user = document.getElementById('kafka-username').value
     var pass = document.getElementById('kafka-password').value
-    request.open('GET', '/web/whoami', true, user, pass)
-    request.onload = function () {
-      if (request.status >= 200 && request.status < 400) {
-        var data = JSON.parse(request.responseText)
-        g.kafkaAuth.store_cookie({ username: user, password: pass })
-        g.kafkaAuth.set_auth(user + ':' + pass)
-        g.kafkaHelper.redirect('/')
+    return g.fetch('/api/whoami', {
+      headers: {
+        Accept: 'application/json',
+        'X-Request-ID': g.kafkaHelper.requestId(),
+        'Authorization': 'Basic ' + g.btoa(user + ':' + pass)
       }
-    }
-    request.send()
+    }).then(r => {
+      if (r.status === 200) {
+        g.kafkaAuth.setAuth(user, pass)
+        g.kafkaHelper.redirect('/')
+      } else if (r.status === 401) {
+        g.notific8('Invalid credentials', { theme: 'chicchat', color: 'honey' })
+      } else {
+        r.text().then(t => g.notific8(t, { theme: 'chicchat', color: 'ruby' }))
+      }
+    })
   })
 })(window)

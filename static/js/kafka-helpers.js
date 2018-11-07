@@ -21,12 +21,15 @@
     }
     response.text().then(r => {
       switch (response.status) {
-      case 400:
-        notify(r, { level: 'warn' })
-        break
-      case 500:
-        notify(r, { level: 'error' })
-        break
+        case 400:
+          notify(r, { level: 'warn' })
+          break
+        case 401:
+          redirect('/login')
+          break
+        case 500:
+          notify(r, { level: 'error' })
+          break
       }
       throw new Error(response.responseText)
     })
@@ -34,17 +37,20 @@
 
   function periodicGet (path, callback, timeout) {
     timeout = timeout || 30000
-    get(path, callback)
-    setTimeout(function () {
-      periodicGet(path, callback)
-    }, timeout)
+    get(path).then(r => {
+      callback(null, r)
+      setTimeout(() => {
+        periodicGet(path, callback, timeout)
+      }, timeout)
+    })
   }
 
   function get (path, callback) {
     return g.fetch(path, {
       headers: {
         Accept: 'application/json',
-        'X-Request-ID': requestId()
+        'X-Request-ID': requestId(),
+        'Authorization': g.kafkaAuth.authHeader()
       }
     }).then(handleResponseErrors)
       .then(r => r.json())
@@ -61,9 +67,8 @@
     return g.fetch(path, {
       method: 'DELETE',
       headers: {
-        'X-Request-ID': requestId(),
-        Accept: 'application/json',
-        'Content-Type': 'application/json'
+        'Authorization': g.kafkaAuth.authHeader(),
+        'X-Request-ID': requestId()
       }
     })
   }
@@ -72,8 +77,8 @@
     return g.fetch(path, {
       method: 'POST',
       headers: {
+        'Authorization': g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId(),
-        Accept: 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -84,8 +89,8 @@
     return g.fetch(path, {
       method: 'PUT',
       headers: {
+        'Authorization': g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId(),
-        Accept: 'application/json',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -210,6 +215,7 @@
     del,
     post,
     put,
+    requestId,
     redirect,
     periodicGet,
     renderTmpl,

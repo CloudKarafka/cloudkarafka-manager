@@ -103,7 +103,7 @@ func Consume(hostname string, quit chan bool) {
 	// So this is a good start size of the slice, will allocate more if needed
 	tmp := make([]db.DBValue, 200)
 	i := 0
-	batchCounter := 0
+	batchCounter := 1
 	for {
 		select {
 		case e := <-events:
