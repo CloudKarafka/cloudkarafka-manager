@@ -50,7 +50,7 @@
       headers: {
         Accept: 'application/json',
         'X-Request-ID': requestId(),
-        'Authorization': g.kafkaAuth.authHeader()
+        'Authorization': 'Basic ' + g.kafkaAuth.authHeader()
       }
     }).then(handleResponseErrors)
       .then(r => r.json())
@@ -67,7 +67,7 @@
     return g.fetch(path, {
       method: 'DELETE',
       headers: {
-        'Authorization': g.kafkaAuth.authHeader(),
+        'Authorization': 'Basic ' + g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId()
       }
     })
@@ -77,7 +77,7 @@
     return g.fetch(path, {
       method: 'POST',
       headers: {
-        'Authorization': g.kafkaAuth.authHeader(),
+        'Authorization': 'Basic ' + g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId(),
         'Content-Type': 'application/json'
       },
@@ -89,7 +89,7 @@
     return g.fetch(path, {
       method: 'PUT',
       headers: {
-        'Authorization': g.kafkaAuth.authHeader(),
+        'Authorization': 'Basic ' + g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId(),
         'Content-Type': 'application/json'
       },
