@@ -4,7 +4,7 @@ set -eux
 
 export GOOS=linux
 export CGO_ENABLED=1
-export VERSION=0.2.0
+export VERSION=0.3.0
 
 apt-get update
 apt-get install -y build-essential
@@ -18,7 +18,5 @@ mkdir -p /root/bin
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 dep ensure -update
 go build -ldflags "-X github.com/84codes/cloudkarafka-mgmt/config.GitCommit=$COMMIT -X github.com/84codes/cloudkarafka-mgmt/config.Version=$VERSION" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
-go get -u github.com/jstemmer/go-junit-report
-mkdir -p shippable/testresults
-go test -v ./... 2>&1 | go-junit-report > shippable/testresults/report.xml
+go test -v ./...
 
