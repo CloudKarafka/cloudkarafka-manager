@@ -37,7 +37,7 @@ func DeleteBucket(bucketName []byte) {
 		return tx.DeleteBucket(bucketName)
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] db.DeleteBucket: %s %s\n", bucketName, err)
+		fmt.Fprintf(os.Stderr, "[INFO] db.DeleteBucket: %s %s\n", bucketName, err)
 	}
 }
 

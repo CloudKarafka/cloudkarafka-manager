@@ -1,0 +1,19 @@
+language: go
+go:
+- 1.10.3
+env:
+  - VERSION=0.3.0 CGO_ENABLED=1 GOOS=linux
+install: bash ./scripts/install.sh
+script:
+  - go test -v ./...
+  - go build -ldflags "-X github.com/84codes/cloudkarafka-mgmt/config.GitCommit=$TRAVIS_COMMIT -X github.com/84codes/cloudkarafka-mgmt/config.Version=$VERSION" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
+after_success: bash ./scripts/package.sh
+addons:
+  artifacts:
+    paths:
+    - cloudkarafka-mgmt.tar.gz
+    target_paths:
+    - "/cloudkarafka-mgmt/$TRAVIS_BRANCH"
+notifications:
+  slack:
+    secure: ktQ1ONer4EBdsZ8Xs3DYAUFWcy/Odxd1+lob8c/aHQMpcqL2XGg28cXiLJGyaUbmOAWGr6BeySRyBBoTyj3fozCB9uy82uwW8Pt4arl7WdQOqvLPvcJLPWe1YOHqGT1j4KAVZKGfY78h66VjKZw7L7ybbntgCPKxgmHz9jtCr4m6yD2Hdrc+1y8xcJRelNPgHSuXul1fCiEbjyw6hpRHg0t6AGbYYREJSygBsyDeXKict/p9CKxS0zBw8NILAOuCwm1G2bIVKm9VnE6GQMNsc2tjYJxy9CdeDwun3zsUNH8NEGLM4Rs1mYqzbC+N9UuuV6zWUOKy8eUYZlGyHqB2Nx3y5FrPMajkJuJO/N4lmX5RhL8o6hTFvv4p7e39+FXS8NCoyRkFjAPBQq0EVscolTNU83FP+bbXQ6/rK5b26Tx3SWLNhhx4mCiH10TXI+jwh/VS1T34MKuG5HVxpOGynLvH5BvZKyFyOalZuiekgHa8CwqrTFhRDb3LpZhcTZ8h0aAbp9IeS0uWJifpo6xLW1ieQUUeQ88Z3+SFhE4gYgpkzRWhFNkvZVRyD/hnZWRG5+fuDD1ImX6ewVkMP8LI/hBr+0L6w5aFCr8m7cc7pmRZEdeJDtqt4Kr+tGq4e50LwndX2B4/t/NV4lq/qY0Jqkx54t0411L7Cmx5fcz3sjs=
