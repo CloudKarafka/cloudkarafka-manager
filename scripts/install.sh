@@ -10,6 +10,5 @@ pushd librdkafka-0.11.5
 make -j
 sudo make install
 popd
-mkdir -p /root/bin
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 dep ensure -update
