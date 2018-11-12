@@ -87,11 +87,11 @@ func Consume(hostname string, quit chan bool) {
 	var err error
 	consumer, err = kafka.NewConsumer(cfg)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Could not create kafka consumer: %s\n", err)
+		fmt.Fprintf(os.Stderr, "[WARN] Could not create kafka consumer: %s\n", err)
 		return
 	}
 	if err := consumeTopics(consumer, topics); err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Kafka: assign partitions failed: %s\n", err)
+		fmt.Fprintf(os.Stderr, "[WARN] Kafka: assign partitions failed: %s\n", err)
 		return
 	}
 	events := consumer.Events()
@@ -111,7 +111,7 @@ func Consume(hostname string, quit chan bool) {
 			case *kafka.Message:
 				var value MetricMessage
 				if err := json.Unmarshal(ev.Value, &value); err != nil {
-					fmt.Fprintf(os.Stderr, "[ERROR] Couldn't parse %s, error: %s\n", string(ev.Value), err)
+					fmt.Fprintf(os.Stderr, "[WARN] Couldn't parse %s, error: %s\n", string(ev.Value), err)
 				} else {
 					value.Timestamp = ev.Timestamp
 					if i >= len(tmp) {
@@ -121,9 +121,7 @@ func Consume(hostname string, quit chan bool) {
 					i += 1
 				}
 			case kafka.OffsetsCommitted:
-				fmt.Fprintf(os.Stderr, "[INFO] Kafka: Got metrics batch #%d from collector\n", batchCounter)
 				// A small hack to remove stale consumer groups
-				// Offset is commited roughly every 30 seconds, to %120 is every hour
 				if batchCounter%120 == 0 {
 					db.DeleteBucket([]byte("groups"))
 				}
@@ -131,7 +129,7 @@ func Consume(hostname string, quit chan bool) {
 				db.Write(tmp[:i])
 				i = 0
 			case kafka.Error:
-				fmt.Fprintf(os.Stderr, "[ERROR] Kafka error: %s\n", ev)
+				fmt.Fprintf(os.Stderr, "[WARN] Kafka: [%s] %s\n", ev.Code(), ev)
 			}
 		case <-quit:
 			return
