@@ -17,7 +17,7 @@ func Users(w http.ResponseWriter, r *http.Request) {
 	p := r.Context().Value("permissions").(zookeeper.Permissions)
 	users, err := zookeeper.Users(p)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] api.Users: %s", err)
+		fmt.Fprintf(os.Stderr, "[INFO] api.Users: %s", err)
 		http.Error(w, "Could not retrive save user in ZooKeeper", http.StatusInternalServerError)
 		return
 	}

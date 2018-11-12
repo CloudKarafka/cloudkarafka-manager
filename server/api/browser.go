@@ -23,12 +23,12 @@ type MessageData struct {
 func consume(config *kafka.ConfigMap, topic string) (*kafka.Consumer, error) {
 	consumer, err := kafka.NewConsumer(config)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] %s", err)
+		fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", err)
 		return nil, fmt.Errorf("Could not connect to Kafka: %s", err)
 	}
 	metadata, err := consumer.GetMetadata(&topic, false, 1000)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] %s", err)
+		fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", err)
 		return nil, fmt.Errorf("Could not get cluster metadata: %s", err)
 	}
 	parts := metadata.Topics[topic].Partitions
@@ -38,7 +38,7 @@ func consume(config *kafka.ConfigMap, topic string) (*kafka.Consumer, error) {
 	}
 	err = consumer.Assign(toppar)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] %s", err)
+		fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", err)
 		return nil, fmt.Errorf("Could not assign topic partitions to consumer: %s", err)
 	}
 	return consumer, nil
@@ -119,7 +119,7 @@ func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
 				switch e.Code() {
 				case kafka.ErrNotImplemented:
 				default:
-					fmt.Fprintf(os.Stderr, "[ERROR] Kafka error: %s", e)
+					fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", e)
 					fmt.Fprint(rw, "event: err\n")
 					json, _ := json.Marshal(map[string]interface{}{
 						"message": e.Error(),

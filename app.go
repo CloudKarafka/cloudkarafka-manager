@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"time"
@@ -35,7 +36,7 @@ func main() {
 
 	err := db.Connect()
 	if err != nil {
-		fmt.Printf("[ERROR] Could not connect to DB: %s\n", err)
+		log.Fatalf("[ERROR] Could not connect to DB: %s\n", err)
 	}
 	ticker := time.NewTicker(time.Hour)
 	defer ticker.Stop()
@@ -61,12 +62,11 @@ func main() {
 	go server.Start()
 	//Wait for term
 	<-signals
+	fmt.Println("[INFO] Closing down...")
 	quit <- true
 	time.AfterFunc(2*time.Second, func() {
-		fmt.Println("[ERROR] could not exit in reasonable time")
-		os.Exit(1)
+		log.Fatal("[ERROR] could not exit in reasonable time")
 	})
-	fmt.Println("[INFO] Stopping mgmt")
 	zookeeper.Stop()
 	db.Close()
 	fmt.Println("[INFO] Stopped successfully")

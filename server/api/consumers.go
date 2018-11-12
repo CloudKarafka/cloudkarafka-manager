@@ -43,7 +43,7 @@ func Consumers(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] api.Consumers: %s\n", err)
+		fmt.Fprintf(os.Stderr, "[WARN] api.Consumers: %s\n", err)
 		http.Error(w, "Database error, please contact support", http.StatusInternalServerError)
 		return
 	}
@@ -63,7 +63,7 @@ func Consumer(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] api.Consumer: %s\n", err)
+		fmt.Fprintf(os.Stderr, "[WARN] api.Consumer: %s\n", err)
 		http.Error(w, "Database error, please contact support", http.StatusInternalServerError)
 		return
 	}

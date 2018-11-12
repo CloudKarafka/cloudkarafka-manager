@@ -16,7 +16,7 @@ func topicOverview(p zookeeper.Permissions, tx *bolt.Tx, res map[string]int64) m
 	res["topic_count"] = 0
 	topics, err := zookeeper.Topics(p)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] api.topicOverview: %s", err)
+		fmt.Fprintf(os.Stderr, "[INFO] api.topicOverview: %s", err)
 		return res
 	}
 	for _, topic := range topics {

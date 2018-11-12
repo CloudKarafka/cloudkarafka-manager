@@ -17,7 +17,7 @@ import (
 func zkTopic(name string, partMetrics map[string]interface{}) map[string]interface{} {
 	t, err := zookeeper.Topic(name)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR], api.zkTopic: Cannot get topic from Zookeeper: %s", err)
+		fmt.Fprintf(os.Stderr, "[INFO], api.zkTopic: Cannot get topic from Zookeeper: %s", err)
 		return nil
 	}
 	partitionCount := len(t.Partitions)
