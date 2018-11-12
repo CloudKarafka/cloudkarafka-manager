@@ -90,7 +90,6 @@ func Values(b *bolt.Bucket) map[string]interface{} {
 func Dig(base *bolt.Bucket, depth int, cb func(map[string]interface{})) {
 	if depth == 0 {
 		cb(Values(base))
-		fmt.Println(Values(base))
 	}
 	c := base.Cursor()
 	for k, v := c.First(); k != nil; k, v = c.Next() {

@@ -14,9 +14,11 @@ func credentials(r *http.Request) (string, string) {
 		return user, pass
 	}
 	q := r.URL.Query()
-	r.Header.Set("Authorization", "Basic "+q["_a"][0])
-	if user, pass, ok := r.BasicAuth(); ok {
-		return user, pass
+	if v, ok := q["_a"]; ok {
+		r.Header.Set("Authorization", "Basic "+v[0])
+		if user, pass, ok := r.BasicAuth(); ok {
+			return user, pass
+		}
 	}
 	return "", ""
 }

@@ -30,7 +30,7 @@ func topicMetadata(consumer *kafka.Consumer, topic string) ([]kafka.TopicPartiti
 			toppar[i] = kafka.TopicPartition{
 				Topic:     &topic,
 				Partition: p.ID,
-				Offset:    kafka.OffsetEnd, //kafka.Offset((time.Now().Unix() - config.Retention) * 1000),
+				Offset:    kafka.OffsetEnd,
 			}
 			i++
 		}
@@ -57,10 +57,6 @@ func consumeTopics(consumer *kafka.Consumer, topics []string) error {
 			time.Sleep(30 * time.Second)
 		}
 	}
-	//offsets, err := consumer.OffsetsForTimes(toppar, -1)
-	//if err != nil {
-	//return err
-	//}
 	return consumer.Assign(toppar)
 }
 
