@@ -80,9 +80,9 @@ func brokerInfo(tx *bolt.Tx, id string) map[string]interface{} {
 		for k, v := range zkData {
 			res[k] = v
 		}
-	}
-	for k, v := range brokerMetrics(tx, id) {
-		res[k] = v
+		for k, v := range brokerMetrics(tx, id) {
+			res[k] = v
+		}
 	}
 	return res
 }
