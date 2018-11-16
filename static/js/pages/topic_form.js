@@ -23,7 +23,9 @@
       res[f.field] = f.format(this[f.field].value)
       return res
     }, {})
-    data.name = name
+    if (name) {
+      data.name = name
+    }
     var req = g.kafkaHelper[reqMethod]
     req(ev.currentTarget.action, data).then(() => {
       g.kafkaHelper.redirect('/topic/details.html?name=' + data.name)
