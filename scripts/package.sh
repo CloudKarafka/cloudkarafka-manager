@@ -5,7 +5,7 @@ md5name () {
     local base=${1##*/}
     local ext=${base##*.}
     local dir=${1%/*}
-    printf '%s' "${base%.$ext}" | gmd5sum |
+    printf '%s' "${base%.$ext}" | md5sum |
     awk -v dir="$dir" -v base="$base" '{ printf("%s_%s\n", $1, base) }'
 }
 
@@ -18,7 +18,7 @@ while IFS= read -r -d '' pathname; do
     hashed=$(md5name "$pathname")
     cp "$pathname" "${pathname%/*}/$hashed"
     find target/static -type f -name '*.html' | xargs \
-      sed -i '' -e "s/${pathname##*/}/$hashed/g"
-done < <(find target/static/js -type f -name '*.js' -print0)
+      sed -i -e "s/${pathname##*/}/$hashed/g"
+done < <(find target/static/ -regextype sed -regex '.*\.\(css\|js\)$' -type f -print0)
 
 tar -czf cloudkarafka-mgmt.tar.gz target
