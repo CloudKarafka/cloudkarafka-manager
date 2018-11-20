@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -87,6 +88,9 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+		sort.Slice(res, func(i, j int) bool {
+			return res[i]["name"].(string) < res[j]["name"].(string)
+		})
 		writeAsJson(w, res)
 		return nil
 	})
