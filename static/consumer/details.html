@@ -134,8 +134,8 @@
                 {{#each this}}
                 <tr>
                   <td> {{@../key}}-{{@key}} </td>
-                  <td> {{toLocaleString current_offset }} </td>
-                  <td> {{toLocaleString log_end_offset }} </td>
+                  <td> {{toLocaleString current_offset "" }} </td>
+                  <td> {{toLocaleString log_end_offset "" }} </td>
                   <td> {{consumerLag current_offset log_end_offset }}</td>
 									<td> {{ clientid }}</td>
                 </tr>
