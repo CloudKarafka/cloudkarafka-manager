@@ -26,7 +26,14 @@ func Consumers(w http.ResponseWriter, r *http.Request) {
 				lag := 0
 				db.Dig(topicBucket, 2, func(d map[string]interface{}) {
 					clients[d["clientid"].(string)] = true
-					lag += int(d["log_end_offset"].(float64) - d["current_offset"].(float64))
+					l, lOk := d["log_end_offset"].(float64)
+					g, gOk := d["current_offset"].(float64)
+					if !gOk {
+						g = 0
+					}
+					if lOk {
+						lag += int(l - g)
+					}
 				})
 				topic := map[string]interface{}{
 					"name":    string(k),
