@@ -121,7 +121,11 @@
 
               <script id='tmpl-brokers' type='text/x-handlebars-template'>
                 {{#elements}}
-                <tr>
+                {{#if online}}
+                  <tr>
+                {{ else }}
+                  <tr class="broker-down">
+                {{/if}}
                   <td>
 										<a href="/broker/details.html?id={{broker_id}}">
 										{{ broker_id }}
@@ -132,10 +136,16 @@
 									</td>
                   <td class="text-center">{{ version }}</td>
                   <td class="text-center">{{ endpoints }}</td>
-                  <td class="text-center">{{ uptime }}</td>
-                  <td class="text-center">{{ toLocaleString messages_in }}</td>
-                  <td class="text-center">{{ humanFileSize bytes_in }}</td>
-                  <td class="text-center">{{ humanFileSize bytes_out }}</td>
+                  <td class="text-center">
+                    {{#if online}}
+                      {{ uptime }}
+                    {{else}}
+                      Offline
+                    {{/if}}
+                  </td>
+                  <td class="text-center">{{ toLocaleString messages_in 0 }}</td>
+                  <td class="text-center">{{ humanFileSize bytes_in 0 }}</td>
+                  <td class="text-center">{{ humanFileSize bytes_out 0 }}</td>
                 </tr>
                 {{/elements}}
               </script>

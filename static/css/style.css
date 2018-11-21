@@ -7328,3 +7328,6 @@ main.login-container {
   main.login-container footer {
     border-top: 0;
     padding-bottom: 2rem; }
+  .broker-down {
+    opacity: 0.6;
+  }
