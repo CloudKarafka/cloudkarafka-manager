@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
-	"github.com/goji/param"
 	"goji.io/pat"
 )
 
@@ -44,8 +43,7 @@ func CreateAcl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var acl aclVM
-	r.ParseForm()
-	err := param.Parse(r.Form, &acl)
+	err := parseRequestBody(r, &acl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateAcl: %s", err)
 		http.Error(w, "Cannot parse request body", http.StatusBadRequest)
