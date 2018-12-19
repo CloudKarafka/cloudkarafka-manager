@@ -8,8 +8,6 @@ import (
 	"github.com/84codes/cloudkarafka-mgmt/server/api"
 	"github.com/84codes/cloudkarafka-mgmt/server/debug"
 
-	_ "net/http/pprof"
-
 	"fmt"
 	"net/http"
 

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"runtime"
 
+	"net/http/pprof"
+
 	"github.com/84codes/cloudkarafka-mgmt/config"
 	mw "github.com/84codes/cloudkarafka-mgmt/server/middleware"
 	goji "goji.io"
@@ -20,6 +22,12 @@ func writeAsJson(w http.ResponseWriter, bytes interface{}) {
 func Router() *goji.Mux {
 	mux := goji.SubMux()
 	mux.Use(mw.OnlyAdmin)
+	mux.Handle(pat.Get("/pprof"), http.HandlerFunc(pprof.Index))
+	mux.Handle(pat.Get("/pprof/:profile"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		profile := pat.Param(r, "profile")
+		handler := pprof.Handler(profile)
+		handler.ServeHTTP(w, r)
+	}))
 	mux.Handle(pat.Get("/memory-usage"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var m runtime.MemStats
 		runtime.ReadMemStats(&m)
