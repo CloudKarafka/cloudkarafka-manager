@@ -29,20 +29,19 @@ func Users(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
+	form := make(map[string]string)
+	err := parseRequestBody(r, &form)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateUser: %s", err)
 		http.Error(w, "Cannot parse request body", http.StatusBadRequest)
 		return
 	}
-	name := r.PostFormValue("name")
-	pwd := r.PostFormValue("password")
-	err = zookeeper.CreateUser(name, pwd)
+	err = zookeeper.CreateUser(form["name"], form["password"])
 	if err != nil {
 		w.Header().Add("Content-type", "text/plain")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
-	fmt.Printf("[INFO] action=create-user user=%s\n", name)
+	fmt.Printf("[INFO] action=create-user user=%s\n", form["name"])
 	w.WriteHeader(http.StatusCreated)
 }
 
