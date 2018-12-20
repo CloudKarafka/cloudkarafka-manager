@@ -1,14 +1,18 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 var (
-	KafkaURL  string
-	Port      string
-	Retention int64
-	AuthType  string
-	Version   string = "dev"
-	GitCommit string = "master"
+	KafkaURL          string
+	Port              string
+	Retention         int64
+	AuthType          string
+	Version           string = "dev"
+	GitCommit         string = "master"
+	JMXRequestTimeout time.Duration
 )
 
 func PrintConfig() {

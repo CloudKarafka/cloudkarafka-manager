@@ -114,7 +114,7 @@
                     <th scope="col">Group offset</th>
 										<th scope="col">Log end offset</th>
                     <th scope="col" class="text-center">Lag</th>
-										<th scope="col">Client Id</th>
+										<th scope="col">Client</th>
                   </tr>
                 </thead>
                 <tbody id=consumed-partitions>
@@ -130,16 +130,14 @@
                 </tbody>
               </table>
               <script id='tmpl-consumed-partitions' type='text/x-handlebars-template'>
-								{{#each this}}
-                {{#each this}}
+                {{#each members }}
                 <tr>
-                  <td> {{@../key}}-{{@key}} </td>
+                  <td> {{ topic }}-{{ partition }} </td>
                   <td> {{toLocaleString current_offset "" }} </td>
                   <td> {{toLocaleString log_end_offset "" }} </td>
                   <td> {{consumerLag current_offset log_end_offset }}</td>
-									<td> {{ clientid }}</td>
+									<td> {{ clientid }} @ {{ host }} <br /> {{ consumerid }}</td>
                 </tr>
-                {{/each}}
 								{{/each}}
               </script>
             </div>
@@ -151,7 +149,7 @@
             <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
               <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
             </a> and released under
-            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
           </p>
         </footer>
       </main>

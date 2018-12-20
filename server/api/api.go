@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/84codes/cloudkarafka-mgmt/db"
 	m "github.com/84codes/cloudkarafka-mgmt/server/middleware"
-	bolt "go.etcd.io/bbolt"
 	goji "goji.io"
 	"goji.io/pat"
 )
@@ -14,27 +12,6 @@ import (
 func writeAsJson(w http.ResponseWriter, bytes interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(bytes)
-}
-
-func All(w http.ResponseWriter, r *http.Request) {
-	var res = map[string]interface{}{
-		"groups":  nil,
-		"topics":  nil,
-		"brokers": nil,
-	}
-	err := db.View(func(tx *bolt.Tx) error {
-		for k, _ := range res {
-			b := db.BucketByPath(tx, k)
-			if b != nil {
-				res[k] = db.Recur(b, 100)
-			}
-		}
-		writeAsJson(w, res)
-		return nil
-	})
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
 }
 
 func WhoAmI(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +51,5 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Post("/acls"), m.ClusterWrite(http.HandlerFunc(CreateAcl)))
 	mux.Handle(pat.Delete("/acls/:resource/:name/:principal"), m.ClusterWrite(http.HandlerFunc(DeleteAcl)))
 
-	mux.Handle(pat.Get("/dump"), m.ClusterRead(http.HandlerFunc(All)))
 	return mux
 }

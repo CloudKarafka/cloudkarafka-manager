@@ -192,6 +192,21 @@
     }
     return list
   })
+    g.Handlebars.registerHelper('metric', function (value) {
+        if (!value) {
+            return ''
+        }
+        var v = value.reduce((acc, v) => acc + v.value, 0)
+        return v.toLocaleString()
+  })
+    g.Handlebars.registerHelper('connectionCount', function (conn, key) {
+        console.log(arguments)
+        if (!conn || !conn[key]) {
+            return 0
+        }
+        var v = conn[key].reduce((acc, v) => acc + v.value, 0)
+        return v.toLocaleString()
+  })
 
   document.addEventListener('DOMContentLoaded', function (event) {
     var c = document.querySelector('.app-container')

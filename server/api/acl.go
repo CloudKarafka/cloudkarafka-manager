@@ -49,7 +49,6 @@ func CreateAcl(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Cannot parse request body", http.StatusBadRequest)
 		return
 	}
-	fmt.Println(acl)
 	fmt.Printf("[INFO] action=create-acl user=%s acl=[resource=%s,name=%s,principal=%s]\n",
 		p.Username, acl.Resource, acl.Name, acl.Principal)
 	err = zookeeper.CreateAcl(acl.Principal,

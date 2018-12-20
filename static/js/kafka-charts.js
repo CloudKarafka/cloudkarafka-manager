@@ -41,7 +41,7 @@
     var graph = new g.Rickshaw.Graph({
       element: document.querySelector(id),
       renderer: 'line',
-      //interpolation: 'step-after',
+      interpolation: 'step-after',
       series: series
     })
     var yAxis = new g.Rickshaw.Graph.Axis.Y.Scaled({

@@ -56,7 +56,7 @@ func fetchTopicInfo(name string, withConfig bool) (T, error) {
 	return t, nil
 }
 func Topic(name string) (T, error) {
-	return fetchTopicInfo(name, true)
+	return fetchTopicInfo(name, false)
 }
 
 func CreateTopic(name string, partitionCount, replicationFactor int, cfg map[string]interface{}) error {

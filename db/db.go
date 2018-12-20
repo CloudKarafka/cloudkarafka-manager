@@ -45,6 +45,10 @@ type TT interface {
 	CreateBucketIfNotExists([]byte) (*bolt.Bucket, error)
 }
 
+func Update(fn func(tx *bolt.Tx) error) error {
+	return db.Update(fn)
+}
+
 func Write(msgs []DBValue) error {
 	return db.Update(func(tx *bolt.Tx) error {
 		for _, msg := range msgs {

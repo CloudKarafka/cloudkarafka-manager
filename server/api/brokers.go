@@ -4,149 +4,115 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
-	"strings"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/db"
+	m "github.com/84codes/cloudkarafka-mgmt/metrics"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
-	humanize "github.com/dustin/go-humanize"
-	bolt "go.etcd.io/bbolt"
 	"goji.io/pat"
 )
 
-var metrics = map[string]string{
-	"messages_in":    "Messages in",
-	"bytes_in":       "Bytes in",
-	"bytes_out":      "Bytes out",
-	"bytes_rejected": "Bytes rejected",
-}
-
-func brokerIds(tx *bolt.Tx) []string {
-	res := make([]string, 0)
-	b := db.BucketByPath(tx, "brokers")
-	if b == nil {
-		return res
-	}
-	c := b.Cursor()
-	for k, _ := c.First(); k != nil; k, _ = c.Next() {
-		res = append(res, string(k))
-	}
-	return res
-}
-
-func brokerMetrics(tx *bolt.Tx, id string) map[string]interface{} {
-	res := map[string]interface{}{
-		"messages_in":    0,
-		"bytes_in":       0,
-		"bytes_out":      0,
-		"bytes_rejected": 0,
-	}
-	for k, _ := range res {
-		if b := db.BucketByPath(tx, fmt.Sprintf("brokers/%s/%s", id, k)); b != nil {
-			res[k] = db.Last(b)
-		}
-	}
-	return res
-}
-
-func zkBroker(id string) (map[string]interface{}, error) {
-	b, err := zookeeper.Broker(id)
-	if err != nil {
-		return nil, err
-	}
-	ts, err := strconv.ParseInt(b.Timestamp, 10, 64)
-	data := map[string]interface{}{
-		"endpoints": strings.Join(b.Endpoints, ","),
-		"uptime":    strings.TrimSpace(humanize.RelTime(time.Now(), time.Unix(ts/1000, 0), "", "")),
-	}
-	return data, nil
-}
-
-func brokerInfo(tx *bolt.Tx, id string) map[string]interface{} {
-	path := "brokers/" + id
-	b := db.BucketByPath(tx, path)
-	if b == nil {
-		return nil
-	}
-	res := db.Values(b)
-	res["broker_id"] = id
-	zkData, err := zkBroker(id)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] No broker info in ZK for broker %s: %s", id, err)
-		res["online"] = false
-	} else {
-		res["online"] = true
-		for k, v := range zkData {
-			res[k] = v
-		}
-		for k, v := range brokerMetrics(tx, id) {
-			res[k] = v
-		}
-	}
-	return res
+var brokerMetrics = map[string]string{
+	"messages_MessagesInPerSec": "Messages in",
+	"bytes_BytesInPerSec":       "Bytes in",
+	"bytes_BytesOutPerSec":      "Bytes out",
+	"bytes_BytesRejectedPerSec": "Bytes rejected",
 }
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
-	db.View(func(tx *bolt.Tx) error {
-		res := make([]map[string]interface{}, 0)
-		ids := brokerIds(tx)
-		for _, id := range ids {
-			if b := brokerInfo(tx, id); b != nil {
-				res = append(res, b)
-			}
+	i := 0
+	res := make([]map[string]interface{}, len(m.BrokerUrls))
+	for brokerId, _ := range m.BrokerUrls {
+		broker, err := m.FetchBroker(brokerId)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] Brokers: could not get broker info from zk: %s", err)
+			continue
 		}
-		writeAsJson(w, res)
-		return nil
+		res[i] = map[string]interface{}{
+			"details": broker,
+		}
+		m, err := m.FetchBrokerMetrics(brokerId, false)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[INFO] Brokers: failed fetching broker(%d) metrics: %s\n", brokerId, err)
+		} else {
+			res[i]["metrics"] = m
+		}
+		i += 1
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i]["details"].(m.Broker).Id < res[j]["details"].(m.Broker).Id
 	})
+	writeAsJson(w, res)
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {
-	id := pat.Param(r, "id")
-	db.View(func(tx *bolt.Tx) error {
-		res := brokerInfo(tx, id)
-		if res == nil {
-			w.WriteHeader(http.StatusNotFound)
+	id, err := strconv.Atoi(pat.Param(r, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Broker id must a an integer"))
+		return
+	}
+	broker, err := m.FetchBroker(id)
+	if err != nil {
+		if err == zookeeper.PathDoesNotExistsErr {
+			http.NotFound(w, r)
+			return
 		}
-		writeAsJson(w, res)
-		return nil
-	})
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	res := map[string]interface{}{
+		"details": broker,
+	}
+	conn, err := m.FetchBrokerConnections(id)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching connections for %d: %s\n", id, err)
+	} else {
+		res["connections"] = conn
+	}
+
+	d, err := m.FetchBrokerMetrics(id, true)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching broker(%d) metrics: %s\n", id, err)
+	} else {
+		res["metrics"] = d
+	}
+
+	writeAsJson(w, res)
 }
 
 func BrokersThroughput(w http.ResponseWriter, r *http.Request) {
 	from := time.Now().Add(time.Minute * 30 * -1)
-	db.View(func(tx *bolt.Tx) error {
-		brokerIds := brokerIds(tx)
-		var res []*db.Serie
-		for k, name := range metrics {
-			key_split := strings.Split(k, "_")
-			s := &db.Serie{Name: name, Type: key_split[0]}
-			for _, id := range brokerIds {
-				path := fmt.Sprintf("brokers/%s/%s", id, k)
-				d := db.TimeSerie(tx, path, from)
-				s.Add(d)
-			}
-			res = append(res, s)
-		}
-		writeAsJson(w, res)
-		return nil
-	})
+	brokerIds := make([]int, len(m.BrokerUrls))
+	i := 0
+	for id, _ := range m.BrokerUrls {
+		brokerIds[i] = id
+		i += 1
+	}
+	res, err := m.BrokersThroughput(brokerMetrics, brokerIds, from)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	writeAsJson(w, res)
 }
 func BrokerThroughput(w http.ResponseWriter, r *http.Request) {
-	id := pat.Param(r, "id")
+	id, err := strconv.Atoi(pat.Param(r, "id"))
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Broker id must a an integer"))
+		return
+	}
 	from := time.Now().Add(time.Minute * 30 * -1)
-	db.View(func(tx *bolt.Tx) error {
-		var res []*db.Serie
-		for k, name := range metrics {
-			key_split := strings.Split(k, "_")
-			path := fmt.Sprintf("brokers/%s/%s", id, k)
-			res = append(res, &db.Serie{
-				Name: name,
-				Type: key_split[0],
-				Data: db.TimeSerie(tx, path, from),
-			})
-		}
-		writeAsJson(w, res)
-		return nil
-	})
+	res, err := m.BrokersThroughput(brokerMetrics, []int{id}, from)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	writeAsJson(w, res)
+
 }

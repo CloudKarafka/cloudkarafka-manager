@@ -2,7 +2,7 @@ language: go
 go:
 - 1.10.3
 env:
-  - VERSION=0.3.1 CGO_ENABLED=1 GOOS=linux
+  - VERSION=0.4.0 CGO_ENABLED=1 GOOS=linux
 install: bash ./scripts/install.sh
 script:
   - go test -v ./...

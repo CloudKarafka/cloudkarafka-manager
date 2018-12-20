@@ -135,11 +135,11 @@
                     <script id='tmpl-topic-overview' type='text/x-handlebars-template'>
                       <tr>
                         <td>Partitions</td>
-                        <td class="text-right"><strong>{{partition_count}}</strong></td>
+                        <td class="text-right"><strong>{{ details.partition_count }}</strong></td>
                       </tr>
                       <tr>
                         <td>Replication Factor</td>
-                        <td class="text-right"><strong>{{replication_factor}}</strong></td>
+                        <td class="text-right"><strong>{{ details.replication_factor}}</strong></td>
                       </tr>
                       <tr>
                         <td>Broker Spread</td>
@@ -182,23 +182,23 @@
                     <script id='tmpl-topic-metrics' type='text/x-handlebars-template'>
                       <tr>
                         <td>Size</td>
-                        <td class="text-right"><strong>{{humanFileSize size 0 }}</strong></td>
+                        <td class="text-right"><strong>{{humanFileSize details.size 0 }}</strong></td>
                       </tr>
                       <tr>
                         <td>Message Count</td>
-                        <td class="text-right"><strong>{{toLocaleString message_count 0 }}</strong></td>
+                        <td class="text-right"><strong>{{toLocaleString details.message_count 0 }}</strong></td>
                       </tr>
                       <tr>
                         <td>Messages in/s</td>
-                        <td class="text-right"><strong>{{toLocaleString messages_in 0 }}</strong></td>
+                        <td class="text-right"><strong>{{metric metrics.MessagesInPerSec  }}</strong></td>
                       </tr>
                       <tr>
                         <td>Bytes in/s</td>
-                        <td class="text-right"><strong>{{humanFileSize bytes_in 0 }}</strong></td>
+                        <td class="text-right"><strong>{{metric metrics.BytesInPerSec }}</strong></td>
                       </tr>
                       <tr>
                         <td>Bytes out/s</td>
-                        <td class="text-right"><strong>{{humanFileSize bytes_out 0 }}</strong></td>
+                        <td class="text-right"><strong>{{metric metrics.BytesOutPerSec }}</strong></td>
                       </tr>
                     </script>
 
@@ -293,15 +293,15 @@
               </table>
 
               <script id='tmpl-partition-rows' type='text/x-handlebars-template'>
-                {{#partitions}}
+                {{#each details.partitions}}
                 <tr>
-                  <td>{{ number }}</td>
+                  <td>{{ @key }}</td>
                   <td class="text-center">{{ leader }}</td>
                   <td class="text-center">{{ replicas }}</td>
                   <td class="text-center">{{ isr }}</td>
-                  <td class="text-center">{{ humanFileSize log_size 0 }}</td>
-                  <td class="text-center">{{ toLocaleString log_start 0 }}</td>
-                  <td class="text-center">{{ toLocaleString log_end 0 }}</td>
+                  <td class="text-center">{{ humanFileSize size 0 }}</td>
+                  <td class="text-center">{{ toLocaleString log_start_offset 0 }}</td>
+                  <td class="text-center">{{ toLocaleString log_end_offset 0 }}</td>
                 </tr>
                 {{ else }}
                 <tr>
@@ -309,7 +309,7 @@
                     <strong>No partitions</strong>
                   </td>
                 </tr>
-                {{/partitions}}
+                {{/each}}
               </script>
 
             </div>
@@ -328,7 +328,7 @@
             <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
               <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
             </a> and released under
-            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
           </p>
         </footer>
       </main>

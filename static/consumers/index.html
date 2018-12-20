@@ -135,7 +135,7 @@
               <script id='tmpl-consumers' type='text/x-handlebars-template'>
                 {{#each elements}}
                 <tr>
-                  <td> <a href="/consumer/details.html?group={{name}}"> {{ name }} </a> </td>
+                  <td> <a href="/consumer/details.html?group={{@key}}"> {{ @key }} </a> </td>
                   <td> {{list topics }} </td>
                   <td> {{ lag }} </td>
                   <td> {{ clients }}</td>
@@ -156,7 +156,7 @@
             <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
               <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
             </a> and released under
-            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
           </p>
         </footer>
       </main>

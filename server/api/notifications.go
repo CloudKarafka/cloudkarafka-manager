@@ -1,10 +1,12 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/84codes/cloudkarafka-mgmt/db"
+	"github.com/84codes/cloudkarafka-mgmt/config"
+	n "github.com/84codes/cloudkarafka-mgmt/notifications"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -63,53 +65,52 @@ func checkUneven(grouped map[string]float64, msg string) ([]notification, bool) 
 func checkUnevenPartitions(tx *bolt.Tx) ([]notification, bool) {
 	msg := "Your cluster has a uneven partition spread. Broker %s has %v%% of the total number (%v) of partitions. This will have negative impact on the throughput."
 	group := make(map[string]float64)
-	ids := brokerIds(tx)
-	for _, id := range ids {
-		b := brokerInfo(tx, id)
-		group[id] = b["partition_count"].(float64)
-	}
+	/*
+		ids := brokerIds(tx)
+		for _, id := range ids {
+			b := brokerInfo(tx, id)
+			group[id] = b["partition_count"].(float64)
+		}
+	*/
 	return checkUneven(group, msg)
 }
 
 func checkUnevenLeaders(tx *bolt.Tx) ([]notification, bool) {
-	msg := "Your cluster has an uneven leader spread. Broker %s is leader of %v%% of the total number (%v) of partitions. This will have negative impact on the throughput."
+	msg := "Your cluster has an uneven leader spread. Broker %s is leader of %v%% of the total number (%v) of partitions. This will have negative impact o>n the throughput."
 	group := make(map[string]float64)
-	ids := brokerIds(tx)
-	for _, id := range ids {
-		b := brokerInfo(tx, id)
-		group[id] = b["leader_count"].(float64)
-	}
+	/*
+		ids := brokerIds(tx)
+		for _, id := range ids {
+			b := brokerInfo(tx, id)
+			group[id] = b["leader_count"].(float64)
+		}
+	*/
 	return checkUneven(group, msg)
 }
 func checkURP(tx *bolt.Tx) ([]notification, bool) {
-	msg := "Broker %s has %.0f under replicated partitions"
+	//msg := "Broker %s has %.0f under replicated partitions"
 	var n []notification
 	any := false
-	ids := brokerIds(tx)
-	for _, id := range ids {
-		b := brokerInfo(tx, id)
-		v := b["under_replicated_partitions"].(float64)
-		if v > 0 {
-			n = append(n, notification{
-				Type:    "Under replicated partitions",
-				Level:   "danger",
-				Message: fmt.Sprintf(msg, id, v),
-			})
-			any = true
+	/*
+		ids := brokerIds(tx)
+		for _, id := range ids {
+			b := brokerInfo(tx, id)
+			v := b["under_replicated_partitions"].(float64)
+			if v > 0 {
+				n = append(n, notification{
+					Type:    "Under replicated partitions",
+					Level:   "danger",
+					Message: fmt.Sprintf(msg, id, v),
+				})
+				any = true
+			}
 		}
-	}
+	*/
 	return n, any
 }
 
 func Notifications(w http.ResponseWriter, r *http.Request) {
-	var notifications []notification
-	db.View(func(tx *bolt.Tx) error {
-		for _, fn := range fns {
-			if n, any := fn(tx); any {
-				notifications = append(notifications, n...)
-			}
-		}
-		writeAsJson(w, notifications)
-		return nil
-	})
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
+	writeAsJson(w, n.List(ctx))
 }

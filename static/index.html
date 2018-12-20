@@ -154,7 +154,7 @@
                   <div class="box-body">
                     <div class="clearfix">
                       <div class="float-left box-data">
-						<p class="metric">{{ value }}<small>{{ unit }}</small></p>
+						            <p class="metric">{{ value }}<small>{{ unit }}</small></p>
                       </div>
                     </div>
                   </div>
@@ -168,10 +168,13 @@
                 <span class="icon float-left {{ level }}">
                 </span>
                 <div class="message">
-                  <h2>{{ type }}</h2>
+                  <h2>{{ title }}</h2>
                   <p>
                     {{ message }}
                   </p>
+                  {{#if link}}
+                    <a href="{{link.url}}">{{link.text}}</a>
+                  {{/if}}
                 </div>
               </div>
               {{ else }}
@@ -192,7 +195,7 @@
             <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
               <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
             </a> and released under
-            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
           </p>
         </footer>
         <script id='tmpl-metric' type='text/x-handlebars-template'>

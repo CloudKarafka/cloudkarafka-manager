@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -9,141 +10,85 @@ import (
 	"strings"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/db"
+	m "github.com/84codes/cloudkarafka-mgmt/metrics"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 	bolt "go.etcd.io/bbolt"
 	"goji.io/pat"
 )
 
-func zkTopic(name string, partMetrics map[string]interface{}) map[string]interface{} {
-	t, err := zookeeper.Topic(name)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO], api.zkTopic: Cannot get topic from Zookeeper: %s", err)
-		return nil
-	}
-	partitionCount := len(t.Partitions)
-	partitions := make([]map[string]interface{}, partitionCount)
-	var msgCount float64 = 0
-	var topicSize float64 = 0
-	for num, replicas := range t.Partitions {
-		p, _ := zookeeper.Partition(t.Name, num)
-		n, _ := strconv.Atoi(num)
-		partitions[n] = map[string]interface{}{
-			"number":   num,
-			"leader":   p.Leader,
-			"replicas": replicas,
-			"isr":      p.Isr,
-		}
-		if partMetrics != nil {
-			if pm, ok := partMetrics[num].(map[string]interface{}); ok {
-				for k, v := range pm {
-					partitions[n][k] = v
-				}
-				topicSize += pm["log_size"].(float64)
-				msgCount += pm["log_end"].(float64) - pm["log_start"].(float64)
-			}
-		}
-	}
-	return map[string]interface{}{
-		"config":             t.Config,
-		"partition_count":    len(t.Partitions),
-		"replication_factor": len(t.Partitions["0"]),
-		"partitions":         partitions,
-		"message_count":      msgCount,
-		"size":               topicSize,
-	}
-}
-
-func topicMetricSum(tx *bolt.Tx, id string) map[string]interface{} {
-	res := map[string]interface{}{
-		"messages_in":    0,
-		"bytes_in":       0,
-		"bytes_out":      0,
-		"bytes_rejected": 0,
-	}
-	for k, _ := range res {
-		if b := db.BucketByPath(tx, fmt.Sprintf("topics/%s/%s", id, k)); b != nil {
-			res[k] = db.Last(b)
-		}
-	}
-	return res
-}
-
 func Topics(w http.ResponseWriter, r *http.Request) {
 	p := r.Context().Value("permissions").(zookeeper.Permissions)
-	err := db.View(func(tx *bolt.Tx) error {
-		topics, _ := zookeeper.Topics(p)
-		res := make([]map[string]interface{}, len(topics))
-		for i, topicName := range topics {
-			topic, _ := zookeeper.Topic(topicName)
-			res[i] = map[string]interface{}{
-				"name":               topicName,
-				"partition_count":    len(topic.Partitions),
-				"replication_factor": len(topic.Partitions["0"]),
-			}
-			b := db.BucketByPath(tx, "topics/"+topicName)
-			if b != nil {
-				for k, v := range db.Values(b) {
-					res[i][k] = v
-				}
-			}
-		}
-		sort.Slice(res, func(i, j int) bool {
-			return res[i]["name"].(string) < res[j]["name"].(string)
-		})
-		writeAsJson(w, res)
-		return nil
-	})
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
+	topics, err := m.FetchTopicList(ctx, p)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
+	sort.Slice(topics, func(i, j int) bool {
+		return topics[i].Name < topics[j].Name
+	})
+	writeAsJson(w, topics)
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
-	id := pat.Param(r, "name")
-	err := db.View(func(tx *bolt.Tx) error {
-		b := db.BucketByPath(tx, fmt.Sprintf("topics/%s/partitions", id))
-		var partitions map[string]interface{}
-		if b != nil {
-			partitions = db.Recur(b, 2)
-		}
-		topic := zkTopic(id, partitions)
-		if topic == nil {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprintf(w, "Topic %s not found", id)
-			return nil
-		}
-		for k, v := range topicMetricSum(tx, id) {
-			topic[k] = v
-		}
-		writeAsJson(w, topic)
-		return nil
-	})
+	topicName := pat.Param(r, "name")
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
+	topic, err := m.FetchTopic(ctx, topicName)
 	if err != nil {
+		if err == zookeeper.PathDoesNotExistsErr {
+			http.NotFound(w, r)
+			return
+		}
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
+		return
 	}
+	metrics, err := m.FetchTopicMetrics(ctx, topicName)
+	config, err := m.FetchTopicConfig(ctx, topicName)
+
+	res := map[string]interface{}{
+		"details": topic,
+		"config":  config,
+		"metrics": metrics,
+	}
+	writeAsJson(w, res)
 }
 
 func TopicThroughput(w http.ResponseWriter, r *http.Request) {
-	id := pat.Param(r, "name")
-	from := time.Now().Add(time.Minute * 30 * -1)
+	topicName := pat.Param(r, "name")
+	back := time.Duration(30)
+	if keys, ok := r.URL.Query()["from"]; ok {
+		from, err := strconv.Atoi(keys[0])
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte("Broker id must a an integer"))
+			return
+		}
+		back = time.Duration(from)
+	}
+	from := time.Now().Add(time.Minute * back * -1)
 	metrics := map[string]string{
-		"messages_in":    "Messages in",
-		"bytes_in":       "Bytes in",
-		"bytes_out":      "Bytes out",
-		"bytes_rejected": "Bytes rejected",
+		"messages_MessagesInPerSec": "Messages in",
+		"bytes_BytesInPerSec":       "Bytes in",
+		"bytes_BytesOutPerSec":      "Bytes out",
+		"bytes_BytesRejectedPerSec": "Bytes rejected",
 	}
 	db.View(func(tx *bolt.Tx) error {
 		var res []*db.Serie
 		for k, name := range metrics {
 			key_split := strings.Split(k, "_")
-			path := fmt.Sprintf("topics/%s/%s", id, k)
 			s := &db.Serie{
 				Name: name,
 				Type: key_split[0],
-				Data: db.TimeSerie(tx, path, from),
+				Data: make([]db.DataPoint, 0),
+			}
+			for brokerId, _ := range m.BrokerUrls {
+				path := fmt.Sprintf("topic_metrics/%s/%s/%d", topicName, key_split[1], brokerId)
+				s.Add(db.TimeSerie(tx, path, from))
 			}
 			if len(s.Data) > 0 {
 				res = append(res, s)

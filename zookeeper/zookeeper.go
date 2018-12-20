@@ -1,7 +1,7 @@
 package zookeeper
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/samuel/go-zookeeper/zk"
 
@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	conn                *zk.Conn
-	authenticaionMethod string
+	conn                 *zk.Conn
+	authenticaionMethod  string
+	PathDoesNotExistsErr = errors.New("Zookeeper: Path does not exists")
 )
 
 type AllFunc func(Permissions) ([]string, error)
@@ -69,9 +70,13 @@ func all(path string, fn permissionFunc) ([]string, error) {
 	return rows, nil
 }
 
+func Get(path string, v interface{}) error {
+	return get(path, v)
+}
+
 func get(path string, v interface{}) error {
 	if exists, _, _ := conn.Exists(path); !exists {
-		return fmt.Errorf("Zookeeper: Path \"%s\" doesn't exists", path)
+		return PathDoesNotExistsErr // fmt.Errorf("Zookeeper: Path \"%s\" doesn't exists", path)
 	}
 	data, _, err := conn.Get(path)
 	if err != nil {

@@ -17,12 +17,6 @@
       broker
     )
     g.kafkaHelper.renderTmpl('#broker-metrics', '#tmpl-broker-metrics', broker)
-    var conns = { plaintext: 0, sasl_scram: 0, ssl: 0, failed: 0 }
-    broker.connections = broker.connections || []
-    broker.connections.forEach(function (c) {
-      conns[c.interface.toLowerCase()] += c.connection_count
-      conns['failed'] += c.failed_authentication_total
-    })
     g.kafkaHelper.renderTmpl(
       '#broker-connections',
       '#tmpl-broker-connections',

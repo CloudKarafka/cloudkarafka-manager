@@ -121,31 +121,31 @@
 
               <script id='tmpl-brokers' type='text/x-handlebars-template'>
                 {{#elements}}
-                {{#if online}}
+                {{#if details.online}}
                   <tr>
                 {{ else }}
                   <tr class="broker-down">
                 {{/if}}
                   <td>
-										<a href="/broker/details.html?id={{broker_id}}">
-										{{ broker_id }}
+										<a href="/broker/details.html?id={{details.id}}">
+										{{ details.id }}
 										</a>
-										{{#if active_controller_count }}
+										{{#if details.controller }}
 										  <span title="This broker is the controller">★</span>
 										{{/if }}
 									</td>
-                  <td class="text-center">{{ version }}</td>
-                  <td class="text-center">{{ endpoints }}</td>
+                  <td class="text-center">{{ details.kafka_version }}</td>
+                  <td class="text-center">{{ details.endpoints }}</td>
                   <td class="text-center">
-                    {{#if online}}
-                      {{ uptime }}
+                    {{#if details.online}}
+                      {{ details.uptime }}
                     {{else}}
                       Offline
                     {{/if}}
                   </td>
-                  <td class="text-center">{{ toLocaleString messages_in 0 }}</td>
-                  <td class="text-center">{{ humanFileSize bytes_in 0 }}</td>
-                  <td class="text-center">{{ humanFileSize bytes_out 0 }}</td>
+                  <td class="text-center">{{ metric metrics.MessagesInPerSec }}</td>
+                  <td class="text-center">{{ metric metrics.BytesInPerSec }}</td>
+                  <td class="text-center">{{ metric metrics.BytesOutPerSec }}</td>
                 </tr>
                 {{/elements}}
               </script>
@@ -159,7 +159,7 @@
             <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
               <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
             </a> and released under
-            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
           </p>
         </footer>
       </main>

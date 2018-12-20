@@ -126,22 +126,29 @@
                     <script id='tmpl-broker-overview' type='text/x-handlebars-template'>
                       <tr>
                         <td>Broker id</td>
-                        <td class="text-right"><strong>{{broker_id}}</strong></td>
+                        <td class="text-right"><strong>{{ details.id}}</strong></td>
                       </tr>
                       <tr>
                         <td>Kafka version</td>
-                        <td class="text-right"><strong>{{version}}</strong></td>
+                        <td class="text-right"><strong>{{ details.kafka_version }}</strong></td>
                       </tr>
                       <tr>
                         <td>Leader count</td>
-                        <td class="text-right"><strong>{{leader_count}}</strong></td>
+                        <td class="text-right"><strong>{{ metric metrics.LeaderCount }}</strong></td>
                       </tr>
                       <tr>
                         <td>Partition count</td>
-                        <td class="text-right"><strong>{{partition_count}}</strong></td>
+                        <td class="text-right"><strong>{{ metric metrics.PartitionCount }}</strong></td>
+                      </tr>
+                      <tr>
+                        <td>Under replicated partitions</td>
+                        <td class="text-right"><strong>{{ metric metrics.UnderReplicatedPartitions }}</strong></td>
+                      </tr>
+                      <tr>
+                        <td>Offline partitions</td>
+                        <td class="text-right"><strong>{{ metric metrics.OfflinePartitionsCount }}</strong></td>
                       </tr>
                     </script>
-
                   </div>
                 </div>
               </div>
@@ -177,19 +184,23 @@
                     <script id='tmpl-broker-metrics' type='text/x-handlebars-template'>
                       <tr>
                         <td>Uptime</td>
-                        <td class="text-right"><strong>{{uptime}}</strong></td>
+                        <td class="text-right"><strong>{{ details.uptime}}</strong></td>
                       </tr>
                       <tr>
                         <td>Messages in/s</td>
-                        <td class="text-right"><strong>{{toLocaleString messages_in}}</strong></td>
+                        <td class="text-right"><strong>{{metric metrics.MessagesInPerSec }}</strong></td>
                       </tr>
                       <tr>
                         <td>Bytes in/s</td>
-                        <td class="text-right"><strong>{{humanFileSize bytes_in}}</strong></td>
+                        <td class="text-right"><strong>{{metric metrics.BytesInPerSec }}</strong></td>
                       </tr>
                       <tr>
                         <td>Bytes out/s</td>
-                        <td class="text-right"><strong>{{humanFileSize bytes_out}}</strong></td>
+                        <td class="text-right"><strong>{{metric metrics.BytesOutPerSec }}</strong></td>
+                      </tr>
+                      <tr>
+                        <td>Bytes rejected/s</td>
+                        <td class="text-right"><strong>{{metric metrics.BytesRejectedPerSec }}</strong></td>
                       </tr>
                     </script>
 
@@ -218,27 +229,22 @@
                           <td>SASL SCRAM</td>
                           <td class="text-right"><p class="loading-metric"></p></td>
                         </tr>
-                        <tr>
-                          <td>Failed login attempts</td>
-                          <td class="text-right"><p class="loading-metric"></p></td>
-                        </tr>
                       </tbody>
                     </table>
                     <script id='tmpl-broker-connections' type='text/x-handlebars-template'>
                       <tr>
                         <td>Plaintext</td>
-                        <td class="text-right"><strong>{{toLocaleString connections_count_PLAINTEXT 0}}</strong></td>
+                        <td class="text-right"><strong>{{connectionCount connections 'PLAINTEXT'}}</strong></td>
                       </tr>
                       <tr>
                         <td>SSL</td>
-                        <td class="text-right"><strong>{{toLocaleString connections_count_SSL 0 }}</strong></td>
+                        <td class="text-right"><strong>{{connectionCount connections 'SSL'}}</strong></td>
                       </tr>
                       <tr>
                         <td>SASL SCRAM</td>
-                        <td class="text-right"><strong>{{toLocaleString connections_count_SASL_SCRAM 0}}</strong></td>
+                        <td class="text-right"><strong>{{connectionCount connections 'SASL_SCRAM'}}</strong></td>
                       </tr>
                     </script>
-
                   </div>
                 </div>
               </div>
@@ -275,7 +281,7 @@
             <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
               <img src="/assets/logo-84codes.svg" alt="Developed by 84codes" />
             </a> and released under
-            <a href="https://opensource.org/licenses/MIT" class="footer-link" target="_blank">MIT License</a>.
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
           </p>
         </footer>
       </main>
