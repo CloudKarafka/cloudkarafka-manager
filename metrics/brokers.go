@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strconv"
@@ -26,7 +27,7 @@ type Broker struct {
 	KafkaVersion string   `json:"kafka_version"`
 }
 
-func FetchBrokerMetrics(brokerId int, detailed bool) (TopicMetrics, error) {
+func FetchBrokerMetrics(ctx context.Context, brokerId int, detailed bool) (TopicMetrics, error) {
 	queries := [][]string{
 		[]string{"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec", "OneMinuteRate"},
 		[]string{"kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec", "OneMinuteRate"},
@@ -48,7 +49,6 @@ func FetchBrokerMetrics(brokerId int, detailed bool) (TopicMetrics, error) {
 	for _, query := range queries {
 		go QueryBrokerAsync(brokerId, query[0], query[1], ch)
 	}
-	timeout := time.After(80 * time.Millisecond)
 	for i := 0; i < l; i++ {
 		select {
 		case ress := <-ch:
@@ -56,7 +56,7 @@ func FetchBrokerMetrics(brokerId int, detailed bool) (TopicMetrics, error) {
 				metrics[res.Name] = append(metrics[res.Name], TopicMetricValue{res.Broker, int(res.Value)})
 			}
 
-		case <-timeout:
+		case <-ctx.Done():
 			fmt.Fprintf(os.Stderr, "[INFO] Topic metrics request timed out\n")
 			return metrics, RequestTimedOutErr
 		}

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	m "github.com/84codes/cloudkarafka-mgmt/metrics"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 	"goji.io/pat"
@@ -23,6 +25,8 @@ var brokerMetrics = map[string]string{
 func Brokers(w http.ResponseWriter, r *http.Request) {
 	i := 0
 	res := make([]map[string]interface{}, len(m.BrokerUrls))
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
 	for brokerId, _ := range m.BrokerUrls {
 		broker, err := m.FetchBroker(brokerId)
 		if err != nil {
@@ -32,7 +36,7 @@ func Brokers(w http.ResponseWriter, r *http.Request) {
 		res[i] = map[string]interface{}{
 			"details": broker,
 		}
-		m, err := m.FetchBrokerMetrics(brokerId, false)
+		m, err := m.FetchBrokerMetrics(ctx, brokerId, false)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] Brokers: failed fetching broker(%d) metrics: %s\n", brokerId, err)
 		} else {
@@ -72,8 +76,9 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 	} else {
 		res["connections"] = conn
 	}
-
-	d, err := m.FetchBrokerMetrics(id, true)
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
+	d, err := m.FetchBrokerMetrics(ctx, id, true)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching broker(%d) metrics: %s\n", id, err)
 	} else {
