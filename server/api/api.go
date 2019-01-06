@@ -51,5 +51,7 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Post("/acls"), m.ClusterWrite(http.HandlerFunc(CreateAcl)))
 	mux.Handle(pat.Delete("/acls/:resource/:name/:principal"), m.ClusterWrite(http.HandlerFunc(DeleteAcl)))
 
+	mux.Handle(pat.Post("/metricsbatch"), m.ClusterRead(http.HandlerFunc(MetricsBatch)))
+
 	return mux
 }
