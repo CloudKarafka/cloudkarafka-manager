@@ -68,7 +68,7 @@ func FetchConsumerGroups(ctx context.Context) (ConsumerGroups, error) {
 		v   ConsumerGroups
 		r   *http.Response
 	)
-	url := fmt.Sprintf("%s/consumer-groups", BrokerUrls[0])
+	url := fmt.Sprintf("%s/consumer-groups", BrokerUrls.Rand())
 	start := time.Now()
 	r, err = http.Get(url)
 	if TimeRequests {

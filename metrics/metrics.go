@@ -5,16 +5,31 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"time"
 )
 
+type BrokerURLs map[int]string
+
 var (
 	TimeRequests       = false
-	BrokerUrls         map[int]string
+	BrokerUrls         BrokerURLs
 	RequestTimedOutErr = errors.New("Request timed out")
 )
+
+func (b BrokerURLs) Rand() string {
+	i := rand.Intn(len(b))
+	var k int
+	for k = range b {
+		if i == 0 {
+			break
+		}
+		i--
+	}
+	return b[k]
+}
 
 type Metric struct {
 	Broker           int     `json:"broker"`
@@ -28,6 +43,8 @@ type Metric struct {
 	Attribute        string  `json:"attribute"`
 }
 
+// Cache request for some seconds?
+// Register failed requests, if X fails within interval Y pause requests or stop logging
 func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 	var (
 		err error
