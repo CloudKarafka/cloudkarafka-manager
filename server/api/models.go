@@ -1,6 +1,9 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+	"regexp"
+)
 
 var validConfigKeys = []string{
 	"cleanup.policy",
@@ -41,6 +44,9 @@ func (topic TopicModel) Validate() []string {
 	res := make([]string, 0)
 	if len(topic.Name) <= 0 || len(topic.Name) > 255 {
 		res = append(res, "Topic name must be between 0 and 255 characters")
+	}
+	if match, _ := regexp.MatchString("\\A[A-Za-z0-9\\.\\-_]+\\z", topic.Name); !match {
+		res = append(res, "Topic name can only contain letters, numbers and dot, underline and strike (., _, -).")
 	}
 	if topic.ReplicationFactor <= 0 {
 		res = append(res, "Replication factor must be bigger than zero")
