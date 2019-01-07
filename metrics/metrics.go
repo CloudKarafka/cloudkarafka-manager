@@ -41,6 +41,7 @@ type Metric struct {
 	Listener         string  `json:"listener"`
 	NetworkProcessor string  `json:"networkProcessor"`
 	Attribute        string  `json:"attribute"`
+	Request          string  `json:"request"`
 }
 
 // Cache request for some seconds?
