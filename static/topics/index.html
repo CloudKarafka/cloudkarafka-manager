@@ -151,9 +151,14 @@
                   <td class="text-center">{{ partition_count }}</td>
                   <td class="text-center">{{ replication_factor }}</td>
                 </tr>
+                {{else}}
+                <tr>
+                  <td colspan="5" class="text-center">
+                    <strong>No Topics</strong>
+                  </td>
+                </tr>
                 {{/each}}
               </script>
-
             </div>
           </div>
         </div>
