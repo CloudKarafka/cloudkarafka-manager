@@ -60,7 +60,7 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 
 func TopicThroughput(w http.ResponseWriter, r *http.Request) {
 	topicName := pat.Param(r, "name")
-	back := time.Duration(6)
+	back := time.Duration(2)
 	if keys, ok := r.URL.Query()["from"]; ok {
 		from, err := strconv.Atoi(keys[0])
 		if err != nil {
