@@ -192,20 +192,27 @@
     }
     return list
   })
-    g.Handlebars.registerHelper('metric', function (value) {
-        if (!value) {
-            return ''
-        }
-        var v = value.reduce((acc, v) => acc + v.value, 0)
-        return v.toLocaleString()
+  g.Handlebars.registerHelper('metric', function (value) {
+    if (!value) {
+      return ''
+    }
+    var v = value.reduce((acc, v) => acc + v.value, 0)
+    return v.toLocaleString()
   })
-    g.Handlebars.registerHelper('connectionCount', function (conn, key) {
-        console.log(arguments)
-        if (!conn || !conn[key]) {
-            return 0
-        }
-        var v = conn[key].reduce((acc, v) => acc + v.value, 0)
-        return v.toLocaleString()
+  g.Handlebars.registerHelper('connectionCount', function (conn, key) {
+    if (!conn || !conn[key]) {
+      return 0
+    }
+    var v = conn[key].reduce((acc, v) => acc + v.value, 0)
+    return v.toLocaleString()
+  })
+  g.Handlebars.registerHelper('brokerController', function (metrics) {
+    if (!metrics || !metrics.ActiveControllerCount || metrics.ActiveControllerCount.length === 0) {
+      return ''
+    }
+    if (metrics.ActiveControllerCount[0].value === 1) {
+      return new g.Handlebars.SafeString("<span title='This broker is the controller'>★</span>")
+    }
   })
 
   document.addEventListener('DOMContentLoaded', function (event) {

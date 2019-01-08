@@ -130,9 +130,7 @@
 										<a href="/broker/details.html?id={{details.id}}">
 										{{ details.id }}
 										</a>
-										{{#if details.controller }}
-										  <span title="This broker is the controller">★</span>
-										{{/if }}
+										{{ brokerController metrics }}
 									</td>
                   <td class="text-center">{{ details.kafka_version }}</td>
                   <td class="text-center">{{ details.endpoints }}</td>
