@@ -62,7 +62,7 @@ func main() {
 	}
 	config.BrokerUrls = brokerUrls
 	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", brokerUrls)
-	if db.Connect() != nil {
+	if err := db.Connect(); err != nil {
 		log.Fatalf("[ERROR] Could not connect to DB: %s\n", err)
 		os.Exit(1)
 	}

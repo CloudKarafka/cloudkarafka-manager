@@ -45,6 +45,9 @@ func (b BrokerURLs) HttpUrl(k int) string {
 }
 
 func (b BrokerURLs) Rand() string {
+	if len(b) == 0 {
+		return ""
+	}
 	i := rand.Intn(len(b))
 	var k int
 	for k = range b {
