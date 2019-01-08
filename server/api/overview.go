@@ -28,7 +28,7 @@ func topicOverview(ctx context.Context, p zookeeper.Permissions, res map[string]
 	return res
 }
 func brokerOverview(res map[string]int) map[string]int {
-	res["broker_count"] = len(m.BrokerUrls)
+	res["broker_count"] = len(config.BrokerUrls)
 	if brokers, err := zookeeper.Brokers(); err == nil {
 		res["online_broker_count"] = len(brokers)
 	}

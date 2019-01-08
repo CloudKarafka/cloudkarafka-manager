@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 )
 
@@ -117,7 +118,7 @@ func partitionMetrics(ctx context.Context, topic Topic) Topic {
 				}
 			}
 		case <-ctx.Done():
-			fmt.Fprintf(os.Stderr, "[INFO] Partition metrics request timed out %s %d: %s\n", topic.Name, i, ctx.Err())
+			fmt.Fprintf(os.Stderr, "[INFO] Partition metrics request timed out %s: %s\n", topic.Name, ctx.Err())
 			return topic
 		}
 	}
@@ -183,9 +184,9 @@ func FetchTopicMetrics(ctx context.Context, topicName string) (TopicMetrics, err
 	metrics := make(TopicMetrics)
 	metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
 	query := "kafka.server:type=BrokerTopicMetrics,name=%s,topic=%s"
-	l := len(BrokerUrls) * len(metricNames)
+	l := len(config.BrokerUrls) * len(metricNames)
 	ch := make(chan []Metric)
-	for brokerId, _ := range BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		for _, metricName := range metricNames {
 			bean := fmt.Sprintf(query, metricName, topicName)
 			go QueryBrokerAsync(brokerId, bean, "OneMinuteRate", ch)

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/metrics"
 )
 
@@ -21,12 +22,12 @@ func MetricsBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	ch := make(chan []metrics.Metric)
 	for _, m := range wanted {
-		for brokerId, _ := range metrics.BrokerUrls {
+		for brokerId, _ := range config.BrokerUrls {
 			go metrics.QueryBrokerAsync(brokerId, m[0], m[1], ch)
 		}
 	}
 	all := make([]metrics.Metric, 0)
-	for i := 0; i < len(wanted)*len(metrics.BrokerUrls); i++ {
+	for i := 0; i < len(wanted)*len(config.BrokerUrls); i++ {
 		all = append(all, <-ch...)
 	}
 	close(ch)

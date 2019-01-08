@@ -17,15 +17,14 @@ import (
 
 var (
 	port            = flag.String("port", "8080", "Port to run HTTP server on")
-	kh              = flag.String("kafka", "127.0.0.1:9092", "Hostname and port that the Kafka client should connect to")
 	auth            = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
 	retention       = flag.Int("retention", 24, "Retention period (in hours) for historic data, set to 0 to disable history")
-	requestTimeout  = flag.Int("request-timeout", 200, "Timeout for requests to Brokers to fetch metrics")
+	requestTimeout  = flag.Int("request-timeout", 200, "Timeout in ms for requests to Brokers to fetch metrics")
 	printJMXQueries = flag.Bool("print-jmx-queries", false, "Print all JMX requests to the broker")
 )
 
-func getBrokerUrls() (map[int]string, error) {
-	res := make(map[int]string)
+func getBrokerUrls() (map[int]config.HostPort, error) {
+	res := make(map[int]config.HostPort)
 	brokers, err := zookeeper.Brokers()
 	if err != nil {
 		return res, err
@@ -35,7 +34,7 @@ func getBrokerUrls() (map[int]string, error) {
 		if err != nil {
 			return res, err
 		}
-		res[id] = fmt.Sprintf("http://%s:1%d", broker.Host, broker.Port)
+		res[id] = config.HostPort{broker.Host, broker.Port}
 	}
 	return res, nil
 }
@@ -48,7 +47,6 @@ func main() {
 
 	config.Retention = int64(*retention)
 	config.Port = *port
-	config.KafkaURL = *kh
 	config.AuthType = *auth
 	config.JMXRequestTimeout = time.Duration(*requestTimeout) * time.Millisecond
 	config.PrintConfig()
@@ -62,7 +60,7 @@ func main() {
 		log.Fatalf("[ERROR] Could not get broker urls from Zk: %s\n", err)
 		os.Exit(1)
 	}
-	metrics.BrokerUrls = brokerUrls
+	config.BrokerUrls = brokerUrls
 	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", brokerUrls)
 	if db.Connect() != nil {
 		log.Fatalf("[ERROR] Could not connect to DB: %s\n", err)

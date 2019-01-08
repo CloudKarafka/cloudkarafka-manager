@@ -5,31 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"os"
 	"time"
-)
 
-type BrokerURLs map[int]string
+	"github.com/84codes/cloudkarafka-mgmt/config"
+)
 
 var (
 	TimeRequests       = false
-	BrokerUrls         BrokerURLs
 	RequestTimedOutErr = errors.New("Request timed out")
 )
-
-func (b BrokerURLs) Rand() string {
-	i := rand.Intn(len(b))
-	var k int
-	for k = range b {
-		if i == 0 {
-			break
-		}
-		i--
-	}
-	return b[k]
-}
 
 type Metric struct {
 	Broker           int     `json:"broker"`
@@ -52,7 +38,11 @@ func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 		v   []Metric
 		r   *http.Response
 	)
-	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", BrokerUrls[brokerId], bean, attr)
+	host := config.BrokerUrls.HttpUrl(brokerId)
+	if host == "" {
+		return v, fmt.Errorf("No URL found to broker %d", brokerId)
+	}
+	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", config.BrokerUrls.HttpUrl(brokerId), bean, attr)
 	start := time.Now()
 	r, err = http.Get(url)
 	if TimeRequests {
@@ -78,7 +68,8 @@ func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 func QueryBrokerAsync(brokerId int, query, attribute string, ch chan<- []Metric) {
 	data, err := QueryBroker(brokerId, query, attribute, "")
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] Could not fetch bean %s from %d: %s\n", query, brokerId, err)
+		fmt.Fprintf(os.Stderr, "[WARN] Could not fetch bean %s from broker %d: %s\n", query, brokerId, err)
+		ch <- []Metric{}
 	} else {
 		ch <- data
 	}
@@ -101,11 +92,11 @@ func getSimpleValue(url string) (string, error) {
 }
 
 func KafkaVersion(brokerId int) (string, error) {
-	url := fmt.Sprintf("%s/kafka-version", BrokerUrls[brokerId])
+	url := fmt.Sprintf("%s/kafka-version", config.BrokerUrls.HttpUrl(brokerId))
 	return getSimpleValue(url)
 }
 
 func PluginVersion(brokerId int) (string, error) {
-	url := fmt.Sprintf("%s/plugin-version", BrokerUrls[brokerId])
+	url := fmt.Sprintf("%s/plugin-version", config.BrokerUrls.HttpUrl(brokerId))
 	return getSimpleValue(url)
 }

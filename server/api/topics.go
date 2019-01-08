@@ -86,7 +86,7 @@ func TopicThroughput(w http.ResponseWriter, r *http.Request) {
 				Type: key_split[0],
 				Data: make([]db.DataPoint, 0),
 			}
-			for brokerId, _ := range m.BrokerUrls {
+			for brokerId, _ := range config.BrokerUrls {
 				path := fmt.Sprintf("topic_metrics/%s/%s/%d", topicName, key_split[1], brokerId)
 				s.Add(db.TimeSerie(tx, path, from))
 			}

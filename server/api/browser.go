@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/84codes/cloudkarafka-mgmt/config"
@@ -72,14 +73,12 @@ func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(os.Stderr, "[INFO] %s Topic browser: '%s'\n", rid, name)
 	config := &kafka.ConfigMap{
-		"metadata.broker.list":       config.KafkaURL,
+		"metadata.broker.list":       strings.Join(config.BrokerUrls.List(), ","),
 		"group.id":                   "kafka-browser",
 		"enable.auto.commit":         false,
 		"enable.auto.offset.store":   false,
 		"go.events.channel.enable":   true,
 		"queued.max.messages.kbytes": 512,
-		"fetch.message.max.bytes":    5120,
-		"queued.min.messages":        10,
 	}
 	consumer, err := consume(config, name)
 	if err != nil {

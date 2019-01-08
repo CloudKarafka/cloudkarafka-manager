@@ -24,10 +24,10 @@ var brokerMetrics = map[string]string{
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
 	i := 0
-	res := make([]map[string]interface{}, len(m.BrokerUrls))
+	res := make([]map[string]interface{}, len(config.BrokerUrls))
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	for brokerId, _ := range m.BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		broker, err := m.FetchBroker(brokerId)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] Brokers: could not get broker info from zk: %s", err)
@@ -90,9 +90,9 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 
 func BrokersThroughput(w http.ResponseWriter, r *http.Request) {
 	from := time.Now().Add(time.Minute * 30 * -1)
-	brokerIds := make([]int, len(m.BrokerUrls))
+	brokerIds := make([]int, len(config.BrokerUrls))
 	i := 0
-	for id, _ := range m.BrokerUrls {
+	for id, _ := range config.BrokerUrls {
 		brokerIds[i] = id
 		i += 1
 	}

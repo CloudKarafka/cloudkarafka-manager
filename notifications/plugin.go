@@ -4,12 +4,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/metrics"
 )
 
 func CheckPluginVersion(ch chan []Notification) {
 	nots := make([]Notification, 0)
-	for brokerId, _ := range metrics.BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		res, err := metrics.PluginVersion(brokerId)
 		if err != nil || res == "" {
 			nots = append(nots, Notification{

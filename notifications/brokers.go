@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/metrics"
 )
 
@@ -31,7 +32,7 @@ func buildURPNotification(m metrics.Metric) Notification {
 
 func CheckURP(out chan []Notification) {
 	res := make([]Notification, 0)
-	for brokerId, _ := range metrics.BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		r, err := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions", "Value", "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckURP: %s\n", err)
@@ -48,11 +49,11 @@ func CheckBalancedLeaders(out chan []Notification) {
 	res := make([]Notification, 0)
 	stat := make(map[int]int)
 	total := 0
-	if len(metrics.BrokerUrls) == 1 {
+	if len(config.BrokerUrls) == 1 {
 		out <- res
 		return
 	}
-	for brokerId, _ := range metrics.BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		r, err := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=LeaderCount", "Value", "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckBalancedLeader: %s\n", err)
@@ -78,7 +79,7 @@ func CheckBalancedLeaders(out chan []Notification) {
 func CheckISRDelta(out chan []Notification) {
 	res := make([]Notification, 0)
 	stat := make(map[int]int)
-	for brokerId, _ := range metrics.BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		r1, err1 := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=IsrShrinksPerSec", "OneMinuteRate", "")
 		r2, err2 := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=IsrExpandsPerSec", "OneMinuteRate", "")
 		if err1 != nil {

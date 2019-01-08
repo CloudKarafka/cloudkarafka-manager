@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/84codes/cloudkarafka-mgmt/config"
 )
 
 type ConsumerGroupMember struct {
@@ -68,7 +70,7 @@ func FetchConsumerGroups(ctx context.Context) (ConsumerGroups, error) {
 		v   ConsumerGroups
 		r   *http.Response
 	)
-	url := fmt.Sprintf("%s/consumer-groups", BrokerUrls.Rand())
+	url := fmt.Sprintf("%s/consumer-groups", config.BrokerUrls.Rand())
 	start := time.Now()
 	r, err = http.Get(url)
 	if TimeRequests {

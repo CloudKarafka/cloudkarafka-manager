@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/db"
 	bolt "go.etcd.io/bbolt"
 )
@@ -45,9 +46,9 @@ func bucketByPath(tx *bolt.Tx, path string) (*bolt.Bucket, error) {
 }
 
 func FetchAndStoreMetrics(beans []string, pathFn func(Metric) string) {
-	l := len(BrokerUrls) * len(beans)
+	l := len(config.BrokerUrls) * len(beans)
 	ch := make(chan []Metric)
-	for brokerId, _ := range BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		for _, bean := range beans {
 			go QueryBrokerAsync(brokerId, bean, "OneMinuteRate", ch)
 		}

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/metrics"
 )
 
@@ -23,7 +24,7 @@ var promMetrics = []PromMetric{
 
 func check(wg *sync.WaitGroup, m PromMetric, out chan string) {
 	defer wg.Done()
-	for brokerId, _ := range metrics.BrokerUrls {
+	for brokerId, _ := range config.BrokerUrls {
 		r, err := metrics.QueryBroker(brokerId, m.bean, strings.Join(m.attrs, ","), "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] Prom.check: %s\n", err)
