@@ -89,7 +89,7 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 }
 
 func BrokersThroughput(w http.ResponseWriter, r *http.Request) {
-	from := time.Now().Add(time.Minute * 30 * -1)
+	from := time.Now().Add(time.Hour * 6 * -1)
 	brokerIds := make([]int, len(config.BrokerUrls))
 	i := 0
 	for id, _ := range config.BrokerUrls {
@@ -111,7 +111,7 @@ func BrokerThroughput(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Broker id must a an integer"))
 		return
 	}
-	from := time.Now().Add(time.Minute * 30 * -1)
+	from := time.Now().Add(time.Hour * 6 * -1)
 	res, err := m.BrokersThroughput(brokerMetrics, []int{id}, from)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

@@ -60,17 +60,17 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 
 func TopicThroughput(w http.ResponseWriter, r *http.Request) {
 	topicName := pat.Param(r, "name")
-	back := time.Duration(30)
+	back := time.Duration(6)
 	if keys, ok := r.URL.Query()["from"]; ok {
 		from, err := strconv.Atoi(keys[0])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Broker id must a an integer"))
+			w.Write([]byte("Param 'from' must a an integer"))
 			return
 		}
 		back = time.Duration(from)
 	}
-	from := time.Now().Add(time.Minute * back * -1)
+	from := time.Now().Add(time.Hour * back * -1)
 	metrics := map[string]string{
 		"messages_MessagesInPerSec": "Messages in",
 		"bytes_BytesInPerSec":       "Bytes in",
