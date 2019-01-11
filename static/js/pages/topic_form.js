@@ -40,8 +40,8 @@
       form.action = '/api/topics/' + name
       form.name.value = name
       form.name.disabled = true
-      form.replication_factor.value = t.replication_factor
-      form.partition_count.value = t.partition_count
+      form.replication_factor.value = t.details.replication_factor
+      form.partition_count.value = t.details.partition_count
       form.config.value = Object.keys(t.config).map(k => `${k}=${t.config[k]}`).join('\n')
     })
   } else {
