@@ -22,6 +22,7 @@ func Router() *goji.Mux {
 	mux := goji.SubMux()
 	mux.Use(m.RequestId)
 	mux.Use(m.Logger)
+	mux.Use(m.HostnameToResponse)
 	mux.Use(m.Secure)
 
 	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
