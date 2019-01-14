@@ -18,8 +18,8 @@ import (
 var (
 	port            = flag.String("port", "8080", "Port to run HTTP server on")
 	auth            = flag.String("authentication", "scram", "Valid values are (none|none-with-write|scram)")
-	retention       = flag.Int("retention", 24, "Retention period (in hours) for historic data, set to 0 to disable history")
-	requestTimeout  = flag.Int("request-timeout", 200, "Timeout in ms for requests to Brokers to fetch metrics")
+	retention       = flag.Int("retention", 12, "Retention period (in hours) for historic data, set to 0 to disable history")
+	requestTimeout  = flag.Int("request-timeout", 500, "Timeout in ms for requests to brokers to fetch metrics")
 	printJMXQueries = flag.Bool("print-jmx-queries", false, "Print all JMX requests to the broker")
 )
 
