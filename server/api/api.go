@@ -52,7 +52,9 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Post("/acls"), m.ClusterWrite(http.HandlerFunc(CreateAcl)))
 	mux.Handle(pat.Delete("/acls/:resource/:name/:principal"), m.ClusterWrite(http.HandlerFunc(DeleteAcl)))
 
-	mux.Handle(pat.Post("/metricsbatch"), m.ClusterRead(http.HandlerFunc(MetricsBatch)))
+	mux.Handle(pat.Post("/metricsbatch"), m.ClusterRead(http.HandlerFunc(KafkaMetrics))) // legacy route
+	mux.Handle(pat.Post("/metrics/kafka"), m.ClusterRead(http.HandlerFunc(KafkaMetrics)))
+	mux.Handle(pat.Get("/metrics/zookeeper"), m.ClusterRead(http.HandlerFunc(ZookeeperMetrics)))
 
 	return mux
 }

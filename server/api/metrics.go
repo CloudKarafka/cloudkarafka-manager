@@ -2,16 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/84codes/cloudkarafka-mgmt/config"
 	"github.com/84codes/cloudkarafka-mgmt/metrics"
+	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
 )
 
-func MetricsBatch(w http.ResponseWriter, r *http.Request) {
-	//wanted := [][]string{
-	//	[]string{"kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions", "Value"},
-	//}
+func KafkaMetrics(w http.ResponseWriter, r *http.Request) {
 	var wanted [][]string
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
@@ -32,4 +31,16 @@ func MetricsBatch(w http.ResponseWriter, r *http.Request) {
 	}
 	close(ch)
 	writeAsJson(w, all)
+}
+
+func ZookeeperMetrics(w http.ResponseWriter, r *http.Request) {
+	res := make(map[int]map[string]interface{})
+	for id, hp := range config.BrokerUrls {
+		uri := fmt.Sprintf("%s:2181", hp.Host)
+		res[id] = zookeeper.Stats(uri)
+		for k, v := range zookeeper.Metrics(uri) {
+			res[id][k] = v
+		}
+	}
+	writeAsJson(w, res)
 }
