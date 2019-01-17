@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"time"
 
 	"github.com/84codes/cloudkarafka-mgmt/config"
@@ -21,6 +22,7 @@ var (
 	retention       = flag.Int("retention", 12, "Retention period (in hours) for historic data, set to 0 to disable history")
 	requestTimeout  = flag.Int("request-timeout", 500, "Timeout in ms for requests to brokers to fetch metrics")
 	printJMXQueries = flag.Bool("print-jmx-queries", false, "Print all JMX requests to the broker")
+	zk              = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
 )
 
 func getBrokerUrls() (map[int]config.HostPort, error) {
@@ -51,7 +53,7 @@ func main() {
 	config.JMXRequestTimeout = time.Duration(*requestTimeout) * time.Millisecond
 	config.PrintConfig()
 
-	zookeeper.Start()
+	zookeeper.Connect(strings.Split(*zk, ","))
 	zookeeper.SetAuthentication(*auth)
 
 	metrics.TimeRequests = *printJMXQueries

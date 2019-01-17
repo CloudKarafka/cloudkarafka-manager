@@ -18,11 +18,6 @@ var (
 
 type AllFunc func(Permissions) ([]string, error)
 
-func Start() error {
-	err := connect("localhost:2181")
-	return err
-}
-
 func Stop() {
 	if conn != nil {
 		conn.Close()
@@ -39,7 +34,7 @@ func SkipAuthenticationWithWrite() bool {
 	return authenticaionMethod == "none-with-write"
 }
 
-func connect(url string) error {
+func Connect(urls []string) error {
 	var err error
 	if conn != nil {
 		conn.Close()
@@ -47,10 +42,10 @@ func connect(url string) error {
 	opts := zk.WithDialer(func(network, address string, timeout time.Duration) (net.Conn, error) {
 		return net.DialTimeout(network, address, timeout)
 	})
-	conn, _, err = zk.Connect([]string{url}, 30*time.Second, opts)
+	conn, _, err = zk.Connect(urls, 30*time.Second, opts)
 	if err != nil {
 		time.Sleep(1 * time.Second)
-		connect(url)
+		Connect(urls)
 		return err
 	}
 	return nil
