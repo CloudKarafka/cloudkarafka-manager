@@ -18,14 +18,6 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "master"
-  digest = "1:05babc67cf585aa55fbc16b299d8bb1ccfa86b4027e36e040de6dfa63eafde8a"
-  name = "github.com/goji/param"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "d7f49fd7d1ed53fd562e737a8b5bbcc7e3d925e2"
-
-[[projects]]
   digest = "1:236d7e1bdb50d8f68559af37dbcf9d142d56b431c9b2176d41e2a009b664cda8"
   name = "github.com/google/uuid"
   packages = ["."]
@@ -58,7 +50,7 @@
   version = "v1.3.1-etcd.8"
 
 [[projects]]
-  digest = "1:356ed667fc203854cc86c9d94a632e7d0c3a30ee0b6ebec484bf6a1b55eeed68"
+  digest = "1:6e898847e5e1a1e0068a915fc9d4476a6e3399ee3cdd1122f3dad90e49c9c3b8"
   name = "goji.io"
   packages = [
     ".",
@@ -67,8 +59,8 @@
     "pattern",
   ]
   pruneopts = "UT"
-  revision = "9a575ab427c3664b5d8db472a689b3303a0d73c9"
-  version = "v2.0.1"
+  revision = "490b001d03d16a116d7c44d95d216c69a1aae798"
+  version = "v2.0.2"
 
 [[projects]]
   branch = "master"
@@ -76,15 +68,15 @@
   name = "golang.org/x/crypto"
   packages = ["pbkdf2"]
   pruneopts = "UT"
-  revision = "505ab145d0a99da450461ae2c1a9f6cd10d1f447"
+  revision = "057139ce5d2bdbe6fe73c53679e24e9cf007f637"
 
 [[projects]]
   branch = "master"
-  digest = "1:48a949ee15f5f03524b792547822221b07f828dd26522b5e08688f25a10d14c1"
+  digest = "1:db12953ac7a80656b159265fe13146959beaada45938a532f484a3aeb289462e"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "074acd46bca67915925527c07849494d115e7c43"
+  revision = "b90733256f2e882e81d52f9126de08df5615afd9"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -92,7 +84,6 @@
   input-imports = [
     "github.com/confluentinc/confluent-kafka-go/kafka",
     "github.com/dustin/go-humanize",
-    "github.com/goji/param",
     "github.com/google/uuid",
     "github.com/samuel/go-zookeeper/zk",
     "github.com/zenazn/goji/web/mutil",
