@@ -69,15 +69,15 @@ func main() {
 		os.Exit(1)
 	}
 	hourly := time.NewTicker(time.Hour)
-	sec30 := time.NewTicker(30 * time.Second)
+	metricsTicker := time.NewTicker(60 * time.Second)
 	defer hourly.Stop()
-	defer sec30.Stop()
+	defer metricsTicker.Stop()
 	go func() {
 		for {
 			select {
 			case <-quit:
 				return
-			case <-sec30.C:
+			case <-metricsTicker.C:
 				if config.Retention > 0 {
 					metrics.FetchAndStoreMetrics(metrics.TopicBeans, func(v metrics.Metric) string {
 						return fmt.Sprintf("topic_metrics/%s/%s/%d", v.Topic, v.Name, v.Broker)

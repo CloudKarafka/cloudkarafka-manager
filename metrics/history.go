@@ -13,16 +13,12 @@ import (
 )
 
 var TopicBeans = []string{
-	"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec,topic=*",
 	"kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec,topic=*",
 	"kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec,topic=*",
-	"kafka.server:type=BrokerTopicMetrics,name=BytesRejectedPerSec,topic=*",
 }
 var BrokerBeans = []string{
-	"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec",
 	"kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec",
 	"kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec",
-	"kafka.server:type=BrokerTopicMetrics,name=BytesRejectedPerSec",
 }
 
 type TT interface {
