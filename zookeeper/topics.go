@@ -128,6 +128,14 @@ func TopicConfig(name string) ([]byte, error) {
 	return d, err
 }
 
+func TopicsMarkedForDeletion() []string {
+	data, err := all("/admin/delete_topics", func(v string) bool { return true })
+	if err != nil {
+		fmt.Println("Err", err)
+	}
+	return data
+}
+
 func createOrSetConfig(name string, cfg map[string]interface{}) error {
 	path := "/config/topics/" + name
 	var err error

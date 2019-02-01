@@ -42,6 +42,7 @@ type TopicMetrics map[string][]TopicMetricValue
 type Topic struct {
 	Name       string
 	Partitions []Partition
+	Deleted    bool
 }
 
 func (t Topic) Size() int {
@@ -62,6 +63,7 @@ func (t Topic) Messages() int {
 func (t Topic) MarshalJSON() ([]byte, error) {
 	res := map[string]interface{}{
 		"name":               t.Name,
+		"deleted":            t.Deleted,
 		"partitions":         t.Partitions,
 		"partition_count":    len(t.Partitions),
 		"replication_factor": 0,
@@ -169,6 +171,8 @@ func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, erro
 	if err != nil {
 		return nil, err
 	}
+	deletedTopics := zookeeper.TopicsMarkedForDeletion()
+
 	res := make([]Topic, len(topics))
 	for i, topicName := range topics {
 		topic, err := fetchTopic(ctx, topicName)
@@ -176,6 +180,12 @@ func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, erro
 			fmt.Fprintf(os.Stderr, "[WARN] TopicList: %s", err)
 			res[i] = EmptyTopic
 		} else {
+			for _, dt := range deletedTopics {
+				fmt.Println(dt, topic.Name)
+				if dt == topic.Name {
+					topic.Deleted = true
+				}
+			}
 			res[i] = topic
 		}
 	}

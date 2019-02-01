@@ -142,9 +142,14 @@
               </table>
               <script id='tmpl-topics' type='text/x-handlebars-template'>
                 {{#each elements}}
-                <tr>
+                {{#if topic.deleted}}
+                  <tr class="broker-down">
+                {{ else }}
+                  <tr>
+                {{/if}}
                   <td data-search="{{ topic.name }}">
-                    <a href="/topic/details.html?name={{topic.name}}">{{ topic.name }}</a>
+                    {{ topic.name }}
+                    {{#if topic.deleted}} (pending deletion) {{/if}}
                   </td>
                   <td class="text-center">{{metric metrics.BytesInPerSec 'bandwidth' }}</td>
                   <td class="text-center">{{metric metrics.BytesOutPerSec 'bandwidth'}}</td>
