@@ -15,6 +15,13 @@ type B struct {
 	Id        int      `json:"id"`
 }
 
+// Controller struct from Zookeeper Path "/controller"
+type C struct {
+	Timestamp string `json:"timestamp"`
+	BrokerId  int    `json:"brokerid"`
+	Version   int    `json:"version"`
+}
+
 func Brokers() ([]int, error) {
 	stringIds, err := all("/brokers/ids", func(string) bool { return true })
 	if err != nil {
@@ -34,4 +41,10 @@ func Broker(id int) (B, error) {
 	err := get(fmt.Sprintf("/brokers/ids/%d", id), &b)
 	b.Id = id
 	return b, err
+}
+
+func Controller() (C, error) {
+	var c C
+	err := get("/controller", &c)
+	return c, err
 }

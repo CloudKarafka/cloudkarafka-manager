@@ -230,20 +230,6 @@
     var v = conn[key].reduce((acc, v) => acc + v.value, 0)
     return v.toLocaleString()
   })
-  g.Handlebars.registerHelper('brokerController', function (metrics) {
-    if (
-      !metrics ||
-      !metrics.ActiveControllerCount ||
-      metrics.ActiveControllerCount.length === 0
-    ) {
-      return ''
-    }
-    if (metrics.ActiveControllerCount[0].value === 1) {
-      return new g.Handlebars.SafeString(
-        "<span title='This broker is the controller'>★</span>"
-      )
-    }
-  })
 
   document.addEventListener('DOMContentLoaded', function (event) {
     var c = document.querySelector('.app-container')

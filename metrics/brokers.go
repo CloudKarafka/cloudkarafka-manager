@@ -25,6 +25,7 @@ type Broker struct {
 	Port         int      `json:"port"`
 	Id           int      `json:"id"`
 	KafkaVersion string   `json:"kafka_version"`
+	Controller   bool     `json:"controller"`
 }
 
 func FetchBrokerMetrics(ctx context.Context, brokerId int, detailed bool) (TopicMetrics, error) {
@@ -32,7 +33,6 @@ func FetchBrokerMetrics(ctx context.Context, brokerId int, detailed bool) (Topic
 		[]string{"kafka.server:type=BrokerTopicMetrics,name=MessagesInPerSec", "OneMinuteRate"},
 		[]string{"kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec", "OneMinuteRate"},
 		[]string{"kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec", "OneMinuteRate"},
-		[]string{"kafka.controller:type=KafkaController,name=ActiveControllerCount", "Value"},
 	}
 	if detailed {
 		queries = append(queries, [][]string{
@@ -84,6 +84,11 @@ func FetchBroker(id int) (Broker, error) {
 	err := zookeeper.Get(path, &broker)
 	if err != nil {
 		return broker, err
+	}
+	if controller, err := zookeeper.Controller(); err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] FetchBroker Reading controller failed: %s\n", err)
+	} else {
+		broker.Controller = controller.BrokerId == id
 	}
 	broker.Id = id
 	broker.Online = true
