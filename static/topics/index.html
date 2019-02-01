@@ -122,8 +122,8 @@
                 <thead>
                   <tr>
                     <th scope="col">Name</th>
-                    <th scope="col" class="text-center">Messages</th>
-                    <th scope="col" class="text-center">Size</th>
+                    <th scope="col" class="text-center">Data in</th>
+                    <th scope="col" class="text-center">Data out</th>
                     <th scope="col" class="text-center">Partitions</th>
                     <th scope="col" class="text-center">Replication Factor</th>
                   </tr>
@@ -143,13 +143,13 @@
               <script id='tmpl-topics' type='text/x-handlebars-template'>
                 {{#each elements}}
                 <tr>
-                  <td data-search="{{ name }}">
-                    <a href="/topic/details.html?name={{name}}">{{ name }}</a>
+                  <td data-search="{{ topic.name }}">
+                    <a href="/topic/details.html?name={{topic.name}}">{{ topic.name }}</a>
                   </td>
-                  <td class="text-center">{{toLocaleString message_count 0  }}</td>
-                  <td class="text-center">{{humanFileSize size 0 }}</td>
-                  <td class="text-center">{{ partition_count }}</td>
-                  <td class="text-center">{{ replication_factor }}</td>
+                  <td class="text-center">{{metric metrics.BytesInPerSec 'bandwidth' }}</td>
+                  <td class="text-center">{{metric metrics.BytesOutPerSec 'bandwidth'}}</td>
+                  <td class="text-center">{{ topic.partition_count }}</td>
+                  <td class="text-center">{{ topic.replication_factor }}</td>
                 </tr>
                 {{else}}
                 <tr>
@@ -178,9 +178,9 @@
     <script src="/js/notific8.min.js"></script>
     <script src="/js/kafka-auth.js"></script>
     <script src="/js/kafka-helpers.js"></script>
-	<script src="/js/tether.min.js"></script>
+    <script src="/js/tether.min.js"></script>
     <script src="/js/bootstrap.min.js"></script>
-	<script src="/js/vanilla-dataTables.min.js"></script>
+    <script src="/js/vanilla-dataTables.min.js"></script>
     <script src="/js/pages/topics.js"></script>
   </body>
 </html>

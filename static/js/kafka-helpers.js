@@ -46,13 +46,15 @@
   }
 
   function get (path, callback) {
-    return g.fetch(path, {
-      headers: {
-        Accept: 'application/json',
-        'X-Request-ID': requestId(),
-        'Authorization': 'Basic ' + g.kafkaAuth.authHeader()
-      }
-    }).then(handleResponseErrors)
+    return g
+      .fetch(path, {
+        headers: {
+          Accept: 'application/json',
+          'X-Request-ID': requestId(),
+          Authorization: 'Basic ' + g.kafkaAuth.authHeader()
+        }
+      })
+      .then(handleResponseErrors)
       .then(r => r.json())
       .then(r => {
         // Legacy callback support
@@ -67,7 +69,7 @@
     return g.fetch(path, {
       method: 'DELETE',
       headers: {
-        'Authorization': 'Basic ' + g.kafkaAuth.authHeader(),
+        Authorization: 'Basic ' + g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId()
       }
     })
@@ -77,7 +79,7 @@
     return g.fetch(path, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + g.kafkaAuth.authHeader(),
+        Authorization: 'Basic ' + g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId(),
         'Content-Type': 'application/json'
       },
@@ -89,7 +91,7 @@
     return g.fetch(path, {
       method: 'PUT',
       headers: {
-        'Authorization': 'Basic ' + g.kafkaAuth.authHeader(),
+        Authorization: 'Basic ' + g.kafkaAuth.authHeader(),
         'X-Request-ID': requestId(),
         'Content-Type': 'application/json'
       },
@@ -131,13 +133,15 @@
   }
 
   function renderListTmpl (attachToId, tmplId, path, clb) {
-    get(path).then(elements => {
-      elements = elements || []
-      renderTmpl(attachToId, tmplId, { elements: elements })
-      clb(elements)
-    }).catch(() => {
-      renderTmpl(attachToId, tmplId, { elements: [] })
-    })
+    get(path)
+      .then(elements => {
+        elements = elements || []
+        renderTmpl(attachToId, tmplId, { elements: elements })
+        clb(elements)
+      })
+      .catch(() => {
+        renderTmpl(attachToId, tmplId, { elements: [] })
+      })
   }
 
   function humanFileSize (bytes) {
@@ -153,7 +157,23 @@
     } while (Math.abs(bytes) >= thresh && u < units.length - 1)
     return { value: bytes.toFixed(1), unit: units[u] }
   }
-
+  var formatters = {
+    filesize: function filesize (value) {
+      var res = humanFileSize(value)
+      return new g.Handlebars.SafeString(
+        res.value + '<small>' + res.unit + '</small>'
+      )
+    },
+    bandwidth: function bandwidth (value) {
+      var res = humanFileSize(value)
+      return new g.Handlebars.SafeString(
+        res.value + '<small>' + res.unit + '/s</small>'
+      )
+    },
+    toLocalString: function toLocalString (value) {
+      return value.toLocalString()
+    }
+  }
   g.Handlebars.registerHelper('humanFileSize', function (bytes, def) {
     if (bytes === null || bytes === undefined) {
       return def
@@ -192,11 +212,15 @@
     }
     return list
   })
-  g.Handlebars.registerHelper('metric', function (value) {
+  g.Handlebars.registerHelper('metric', function (value, f) {
     if (!value) {
       return ''
     }
+
     var v = value.reduce((acc, v) => acc + v.value, 0)
+    if (f && typeof f === 'string') {
+      return formatters[f](v)
+    }
     return v.toLocaleString()
   })
   g.Handlebars.registerHelper('connectionCount', function (conn, key) {
@@ -207,11 +231,17 @@
     return v.toLocaleString()
   })
   g.Handlebars.registerHelper('brokerController', function (metrics) {
-    if (!metrics || !metrics.ActiveControllerCount || metrics.ActiveControllerCount.length === 0) {
+    if (
+      !metrics ||
+      !metrics.ActiveControllerCount ||
+      metrics.ActiveControllerCount.length === 0
+    ) {
       return ''
     }
     if (metrics.ActiveControllerCount[0].value === 1) {
-      return new g.Handlebars.SafeString("<span title='This broker is the controller'>★</span>")
+      return new g.Handlebars.SafeString(
+        "<span title='This broker is the controller'>★</span>"
+      )
     }
   })
 

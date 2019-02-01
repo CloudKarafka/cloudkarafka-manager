@@ -69,8 +69,12 @@ func (t Topic) MarshalJSON() ([]byte, error) {
 	if len(t.Partitions) > 0 {
 		res["replication_factor"] = len(t.Partitions[0].Replicas)
 	}
-	res["size"] = t.Size()
-	res["message_count"] = t.Messages()
+	if v := t.Size(); v != 0 {
+		res["size"] = v
+	}
+	if v := t.Messages(); v != 0 {
+		res["message_count"] = v
+	}
 	return json.Marshal(res)
 }
 
@@ -125,7 +129,7 @@ func partitionMetrics(ctx context.Context, topic Topic) Topic {
 	return topic
 }
 
-func FetchTopic(ctx context.Context, topicName string) (Topic, error) {
+func fetchTopic(ctx context.Context, topicName string) (Topic, error) {
 	topic, err := zookeeper.Topic(topicName)
 	if err != nil {
 		if err == zookeeper.PathDoesNotExistsErr {
@@ -148,9 +152,16 @@ func FetchTopic(ctx context.Context, topicName string) (Topic, error) {
 				t.Partitions[i] = par
 			}
 		}
-		t = partitionMetrics(ctx, t)
 		return t, nil
 	}
+}
+
+func FetchTopic(ctx context.Context, topicName string) (Topic, error) {
+	topic, err := fetchTopic(ctx, topicName)
+	if err == nil {
+		topic = partitionMetrics(ctx, topic)
+	}
+	return topic, err
 }
 
 func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, error) {
@@ -160,7 +171,7 @@ func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, erro
 	}
 	res := make([]Topic, len(topics))
 	for i, topicName := range topics {
-		topic, err := FetchTopic(ctx, topicName)
+		topic, err := fetchTopic(ctx, topicName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] TopicList: %s", err)
 			res[i] = EmptyTopic
@@ -180,28 +191,30 @@ func FetchTopicConfig(ctx context.Context, topicName string) (TopicConfig, error
 	return topicConfig, err
 }
 
-func FetchTopicMetrics(ctx context.Context, topicName string) (TopicMetrics, error) {
-	metrics := make(TopicMetrics)
-	metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
+func FetchTopicMetrics(ctx context.Context, topicName string, metrics []string) (map[string]TopicMetrics, error) {
+	res := make(map[string]TopicMetrics)
 	query := "kafka.server:type=BrokerTopicMetrics,name=%s,topic=%s"
-	l := len(config.BrokerUrls) * len(metricNames)
+	l := len(config.BrokerUrls) * len(metrics)
 	ch := make(chan []Metric)
 	for brokerId, _ := range config.BrokerUrls {
-		for _, metricName := range metricNames {
+		for _, metricName := range metrics {
 			bean := fmt.Sprintf(query, metricName, topicName)
 			go QueryBrokerAsync(brokerId, bean, "OneMinuteRate", ch)
 		}
 	}
 	for i := 0; i < l; i++ {
 		select {
-		case ress := <-ch:
-			for _, res := range ress {
-				metrics[res.Name] = append(metrics[res.Name], TopicMetricValue{res.Broker, int(res.Value)})
+		case jmxMetric := <-ch:
+			for _, jmxMetric := range jmxMetric {
+				if _, ok := res[jmxMetric.Topic]; !ok {
+					res[jmxMetric.Topic] = make(TopicMetrics)
+				}
+				res[jmxMetric.Topic][jmxMetric.Name] = append(res[jmxMetric.Topic][jmxMetric.Name], TopicMetricValue{jmxMetric.Broker, int(jmxMetric.Value)})
 			}
 		case <-ctx.Done():
 			fmt.Fprintf(os.Stderr, "[INFO] Topic metrics request timed out: %s\n", ctx.Err())
-			return metrics, RequestTimedOutErr
+			return res, RequestTimedOutErr
 		}
 	}
-	return metrics, nil
+	return res, nil
 }

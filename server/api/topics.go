@@ -27,10 +27,20 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
+	metricNames := []string{"BytesOutPerSec", "BytesInPerSec"}
+	metrics, err := m.FetchTopicMetrics(ctx, "*", metricNames)
+	res := make([]map[string]interface{}, len(topics))
 	sort.Slice(topics, func(i, j int) bool {
 		return topics[i].Name < topics[j].Name
 	})
-	writeAsJson(w, topics)
+
+	for i, topic := range topics {
+		res[i] = map[string]interface{}{
+			"topic":   topic,
+			"metrics": metrics[topic.Name],
+		}
+	}
+	writeAsJson(w, res)
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
@@ -47,13 +57,14 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	metrics, err := m.FetchTopicMetrics(ctx, topicName)
+	metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
+	metrics, err := m.FetchTopicMetrics(ctx, topicName, metricNames)
 	config, err := m.FetchTopicConfig(ctx, topicName)
 
 	res := map[string]interface{}{
 		"details": topic,
 		"config":  config,
-		"metrics": metrics,
+		"metrics": metrics[topic.Name],
 	}
 	writeAsJson(w, res)
 }

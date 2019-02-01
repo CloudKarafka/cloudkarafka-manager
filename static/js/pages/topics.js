@@ -9,7 +9,7 @@
         perPageSelect: false,
         searchable: false,
         sortable: false,
-        perPage: 1000,
+        perPage: 100,
         columnDefs: [{ type: 'file-size', targets: 1 }]
       })
       document
