@@ -83,7 +83,11 @@ func FetchBroker(id int) (Broker, error) {
 	path := fmt.Sprintf("/brokers/ids/%d", id)
 	err := zookeeper.Get(path, &broker)
 	if err != nil {
-		return broker, err
+		offlineBroker := Broker{
+			Id:     id,
+			Online: false,
+		}
+		return offlineBroker, err
 	}
 	if controller, err := zookeeper.Controller(); err != nil {
 		fmt.Fprintf(os.Stderr, "[WARN] FetchBroker Reading controller failed: %s\n", err)

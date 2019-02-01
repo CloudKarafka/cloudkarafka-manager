@@ -23,26 +23,29 @@ var brokerMetrics = map[string]string{
 }
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
-	i := 0
-	res := make([]map[string]interface{}, len(config.BrokerUrls))
+	res := make([]map[string]interface{}, 0)
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
 	for brokerId, _ := range config.BrokerUrls {
 		broker, err := m.FetchBroker(brokerId)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "[WARN] Brokers: could not get broker info from zk: %s", err)
-			continue
-		}
-		res[i] = map[string]interface{}{
-			"details": broker,
-		}
-		m, err := m.FetchBrokerMetrics(ctx, brokerId, false)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[INFO] Brokers: failed fetching broker(%d) metrics: %s\n", brokerId, err)
+			fmt.Fprintf(os.Stderr, "[WARN] Brokers: could not get broker info from zk: %s\n", err)
+			res = append(res, map[string]interface{}{
+				"details": broker,
+			})
+
 		} else {
-			res[i]["metrics"] = m
+			b := map[string]interface{}{
+				"details": broker,
+			}
+			m, err := m.FetchBrokerMetrics(ctx, brokerId, false)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "[INFO] Brokers: failed fetching broker(%d) metrics: %s\n", brokerId, err)
+			} else {
+				b["metrics"] = m
+			}
+			res = append(res, b)
 		}
-		i += 1
 	}
 	sort.Slice(res, func(i, j int) bool {
 		return res[i]["details"].(m.Broker).Id < res[j]["details"].(m.Broker).Id
