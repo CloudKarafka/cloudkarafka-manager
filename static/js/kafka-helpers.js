@@ -36,13 +36,16 @@
   }
 
   function periodicGet (path, callback, timeout) {
-    timeout = timeout || 30000
-    get(path).then(r => {
-      callback(null, r)
-      setTimeout(() => {
-        periodicGet(path, callback, timeout)
-      }, timeout)
-    })
+    timeout = timeout || 10000
+    get(path)
+      .then(r => {
+        callback(null, r)
+        setTimeout(() => {
+          periodicGet(path, callback, timeout)
+        }, timeout)
+      })
+      .catch(e => callback(e))
+    return null
   }
 
   function get (path, callback) {
@@ -133,15 +136,16 @@
   }
 
   function renderListTmpl (attachToId, tmplId, path, clb) {
-    get(path)
-      .then(elements => {
-        elements = elements || []
-        renderTmpl(attachToId, tmplId, { elements: elements })
-        clb(elements)
-      })
-      .catch(() => {
+    periodicGet(path, (err, elements) => {
+      if (err) {
+        console.error(err)
         renderTmpl(attachToId, tmplId, { elements: [] })
-      })
+        return
+      }
+      elements = elements || []
+      renderTmpl(attachToId, tmplId, { elements: elements })
+      clb(elements)
+    })
   }
 
   function humanFileSize (bytes) {
