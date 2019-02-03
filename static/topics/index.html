@@ -148,8 +148,11 @@
                   <tr>
                 {{/if}}
                   <td data-search="{{ topic.name }}">
-                    {{ topic.name }}
-                    {{#if topic.deleted}} (pending deletion) {{/if}}
+                    {{#if topic.deleted}}
+                      {{ topic.name }} (pending deletion)
+                    {{ else }}
+                     <a href="/topic/details.html?name={{topic.name}}">{{ topic.name }}</a>
+                    {{/if}}
                   </td>
                   <td class="text-center">{{metric metrics.BytesInPerSec 'bandwidth' }}</td>
                   <td class="text-center">{{metric metrics.BytesOutPerSec 'bandwidth'}}</td>
