@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,6 +26,7 @@ var (
 	zk              = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
 )
 
+// TODO: Handle brokers going offline.....
 func getBrokerUrls() (map[int]config.HostPort, error) {
 	res := make(map[int]config.HostPort)
 	brokers, err := zookeeper.Brokers()
@@ -39,6 +41,41 @@ func getBrokerUrls() (map[int]config.HostPort, error) {
 		res[id] = config.HostPort{broker.Host, broker.Port}
 	}
 	return res, nil
+}
+
+func watchBrokers() {
+	data, _, events, _ := zookeeper.WatchChildren("/brokers/ids")
+	var (
+		current = len(config.BrokerUrls)
+		new     = len(data)
+		res     = make(map[int]config.HostPort)
+	)
+	var ids []int
+	if new > current {
+		for _, id := range data {
+			intId, _ := strconv.Atoi(id)
+			ids = append(ids, intId)
+		}
+	} else {
+		for id, _ := range config.BrokerUrls {
+			ids = append(ids, id)
+		}
+	}
+	fmt.Fprintf(os.Stderr, "[INFO] Number of brokers changed: previous=%d, now=%d\n", current, new)
+	for _, id := range ids {
+		broker, err := zookeeper.Broker(id)
+		if err != nil {
+			res[id] = config.HostPort{"", -1}
+		} else {
+			res[id] = config.HostPort{broker.Host, broker.Port}
+		}
+	}
+	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", res)
+	config.BrokerUrls = res
+	_, ok := <-events
+	if ok {
+		watchBrokers()
+	}
 }
 
 func main() {
@@ -57,13 +94,8 @@ func main() {
 	zookeeper.SetAuthentication(*auth)
 
 	metrics.TimeRequests = *printJMXQueries
-	brokerUrls, err := getBrokerUrls()
-	if err != nil {
-		log.Fatalf("[ERROR] Could not get broker urls from Zk: %s\n", err)
-		os.Exit(1)
-	}
-	config.BrokerUrls = brokerUrls
-	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", brokerUrls)
+	go watchBrokers()
+
 	if err := db.Connect(); err != nil {
 		log.Fatalf("[ERROR] Could not connect to DB: %s\n", err)
 		os.Exit(1)

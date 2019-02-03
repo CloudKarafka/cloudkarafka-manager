@@ -41,7 +41,7 @@ func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 	)
 	host := config.BrokerUrls.HttpUrl(brokerId)
 	if host == "" {
-		return v, fmt.Errorf("No URL found to broker %d", brokerId)
+		return v, nil //fmt.Errorf("No URL found to broker %d", brokerId)
 	}
 	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", config.BrokerUrls.HttpUrl(brokerId), bean, attr)
 	start := time.Now()

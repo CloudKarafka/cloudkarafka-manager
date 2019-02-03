@@ -233,8 +233,8 @@
 
   document.addEventListener('DOMContentLoaded', function (event) {
     var c = document.querySelector('.app-container')
-    var t = document.querySelector('kafka-toggle-menu')
-    var b = document.querySelector('sidebar-backdrop')
+    var t = document.querySelector('.kafka-toggle-menu')
+    var b = document.querySelector('.sidebar-backdrop')
     if (t) {
       t.onclick = function (e) {
         e.preventDefault()

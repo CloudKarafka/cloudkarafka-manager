@@ -50,6 +50,9 @@ func Connect(urls []string) error {
 	}
 	return nil
 }
+func WatchChildren(path string) ([]string, *zk.Stat, <-chan zk.Event, error) {
+	return conn.ChildrenW(path)
+}
 
 func all(path string, fn permissionFunc) ([]string, error) {
 	rows := make([]string, 0)
