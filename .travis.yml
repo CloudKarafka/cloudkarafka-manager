@@ -2,11 +2,13 @@ language: go
 go:
 - 1.10.3
 env:
-  - VERSION=0.4.0 CGO_ENABLED=1 GOOS=linux
+- VERSION=0.4.0 CGO_ENABLED=1 GOOS=linux
 install: bash ./scripts/install.sh
 script:
-  - go test -v ./...
-  - go build -ldflags "-X github.com/84codes/cloudkarafka-mgmt/config.GitCommit=$TRAVIS_COMMIT -X github.com/84codes/cloudkarafka-mgmt/config.Version=$VERSION" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
+- go test -v ./...
+- go build -ldflags "-X github.com/84codes/cloudkarafka-mgmt/config.GitCommit=$TRAVIS_COMMIT
+  -X github.com/84codes/cloudkarafka-mgmt/config.Version=$VERSION" -tags static -a
+  -installsuffix cgo -o cloudkarafka-mgmt.linux
 after_success: bash ./scripts/package.sh
 addons:
   artifacts:
@@ -14,6 +16,14 @@ addons:
     - cloudkarafka-mgmt.tar.gz
     target_paths:
     - "/cloudkarafka-mgmt/$TRAVIS_BRANCH"
+deploy:
+  provider: releases
+  api_key:
+    secure: KNPZsf3PYt/FUHSkNXM1a83yeNau+G5+EixZRYRxqZXK5L7okJbYyEg2OdHvtJhtXr+uXA8n145S1LJm6Bzrjv+iJF7ZQxgkLtrUWcv/bt7Sh2viLVpCCzXGsm3i9msHjgbFXhMg1HzE0i0VFbF4/pk6Ut2QCMrb+awIhwk7i2kXhjuvVHifgZDdECV4VOimUi902x0OjYu4sQlFbQrlbHHtg/viLMlVP/N1uF0gHhKjE9YzYKdFSf2JdNb3BZS0C1gWZHkWYi+0SbLGTqA0D6Z5BE9/hOxqaxGYFlodyzRRRO2wICOK4uqN/HxitX7H08NKF4LBDMi3f27Gz0oGS8Hgp9cdOaLuO84HhbWKIZl8+HULN9fNlo7aCL6RNYtGLhwyaBndQxrTIKokflti5Wbq8f1qUHtPLtXKUKD1m/lBACl0qq84eZLXpXdOkvjGXxv8mvYyjxJSqun/PqBeToobCVH0mDOaFCrZvFnmvoXPKGRZiS3rM0N9qtCqGG9D4qEk6cNA8gjrefvmm0QjGnf+oVOjDxAUB1f5Aqa5njm3d/2fFvKIop9Gr5cLigVh/M7TaU/9juneDeF3Hd+fdAzgpDuuzVvqYwb3L1BXdUp3ssNVXWgMldl8Q/VGdthJ5dxj4kImM3tA4kTT/zPNuM9QMAB1DqYXdks/4BnNHQU=
+  file: cloudkarafka-mgmt.tar.gz
+  skip_cleanup: true
+  on:
+    tags: true
 notifications:
   slack:
     secure: ktQ1ONer4EBdsZ8Xs3DYAUFWcy/Odxd1+lob8c/aHQMpcqL2XGg28cXiLJGyaUbmOAWGr6BeySRyBBoTyj3fozCB9uy82uwW8Pt4arl7WdQOqvLPvcJLPWe1YOHqGT1j4KAVZKGfY78h66VjKZw7L7ybbntgCPKxgmHz9jtCr4m6yD2Hdrc+1y8xcJRelNPgHSuXul1fCiEbjyw6hpRHg0t6AGbYYREJSygBsyDeXKict/p9CKxS0zBw8NILAOuCwm1G2bIVKm9VnE6GQMNsc2tjYJxy9CdeDwun3zsUNH8NEGLM4Rs1mYqzbC+N9UuuV6zWUOKy8eUYZlGyHqB2Nx3y5FrPMajkJuJO/N4lmX5RhL8o6hTFvv4p7e39+FXS8NCoyRkFjAPBQq0EVscolTNU83FP+bbXQ6/rK5b26Tx3SWLNhhx4mCiH10TXI+jwh/VS1T34MKuG5HVxpOGynLvH5BvZKyFyOalZuiekgHa8CwqrTFhRDb3LpZhcTZ8h0aAbp9IeS0uWJifpo6xLW1ieQUUeQ88Z3+SFhE4gYgpkzRWhFNkvZVRyD/hnZWRG5+fuDD1ImX6ewVkMP8LI/hBr+0L6w5aFCr8m7cc7pmRZEdeJDtqt4Kr+tGq4e50LwndX2B4/t/NV4lq/qY0Jqkx54t0411L7Cmx5fcz3sjs=
