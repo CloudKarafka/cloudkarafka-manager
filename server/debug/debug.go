@@ -8,8 +8,8 @@ import (
 
 	"net/http/pprof"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	mw "github.com/84codes/cloudkarafka-mgmt/server/middleware"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	goji "goji.io"
 	"goji.io/pat"
 )

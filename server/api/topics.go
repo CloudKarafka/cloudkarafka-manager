@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/db"
-	m "github.com/84codes/cloudkarafka-mgmt/metrics"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/db"
+	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	bolt "go.etcd.io/bbolt"
 	"goji.io/pat"
 )

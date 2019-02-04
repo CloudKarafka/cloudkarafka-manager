@@ -7,8 +7,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 type Partition struct {

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
 )
 
 type PromMetric struct {

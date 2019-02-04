@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	m "github.com/84codes/cloudkarafka-mgmt/server/middleware"
+	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	goji "goji.io"
 	"goji.io/pat"
 )

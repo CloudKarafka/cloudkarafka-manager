@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"goji.io/pat"
 )

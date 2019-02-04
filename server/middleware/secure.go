@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 func credentials(r *http.Request) (string, string) {

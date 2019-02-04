@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/db"
+	"github.com/cloudkarafka/cloudkarafka-manager/db"
 	bolt "go.etcd.io/bbolt"
 )
 

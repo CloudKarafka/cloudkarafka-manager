@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/metrics"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 func KafkaMetrics(w http.ResponseWriter, r *http.Request) {

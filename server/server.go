@@ -3,10 +3,10 @@ package server
 import (
 	"log"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 
-	"github.com/84codes/cloudkarafka-mgmt/server/api"
-	"github.com/84codes/cloudkarafka-mgmt/server/debug"
+	"github.com/cloudkarafka/cloudkarafka-manager/server/api"
+	"github.com/cloudkarafka/cloudkarafka-manager/server/debug"
 
 	"fmt"
 	"net/http"

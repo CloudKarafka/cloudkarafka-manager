@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
 )
 
 func CheckPluginVersion(ch chan []Notification) {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	n "github.com/84codes/cloudkarafka-mgmt/notifications"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	n "github.com/cloudkarafka/cloudkarafka-manager/notifications"
 	bolt "go.etcd.io/bbolt"
 )
 

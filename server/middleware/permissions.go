@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 func ClusterRead(h http.Handler) http.Handler {

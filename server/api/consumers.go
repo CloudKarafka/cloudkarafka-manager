@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	m "github.com/84codes/cloudkarafka-mgmt/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	"goji.io/pat"
 )
 

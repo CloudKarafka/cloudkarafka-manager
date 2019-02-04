@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	m "github.com/84codes/cloudkarafka-mgmt/metrics"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"goji.io/pat"
 )
 

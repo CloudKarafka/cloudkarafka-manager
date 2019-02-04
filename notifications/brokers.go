@@ -5,8 +5,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
 )
 
 func buildNotification(brokerId int, level Level, key, title, message string) Notification {

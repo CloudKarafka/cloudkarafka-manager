@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/db"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/db"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	humanize "github.com/dustin/go-humanize"
 	bolt "go.etcd.io/bbolt"
 )

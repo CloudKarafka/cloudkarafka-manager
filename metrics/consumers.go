@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 )
 
 type ConsumerGroupMember struct {

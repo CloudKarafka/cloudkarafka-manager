@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/db"
-	"github.com/84codes/cloudkarafka-mgmt/metrics"
-	"github.com/84codes/cloudkarafka-mgmt/server"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/db"
+	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/server"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 var (
