@@ -2,7 +2,14 @@ language: go
 go:
 - 1.10.3
 env:
-- VERSION=0.4.0 CGO_ENABLED=1 GOOS=linux
+- CGO_ENABLED=1 GOOS=linux
+before_deploy:
+  if ! [[ $TRAVIS_TAG ]]; then
+    export LAST_TAG=$(git tag --list | tail -1)
+    export VERSION=$LAST_TAG-$(git rev-list $LAST_TAG..HEAD --count)
+  else
+    export VERSION=$TRAVIS_TAG
+  fi
 install: bash ./scripts/install.sh
 script:
 - go test -v ./...
