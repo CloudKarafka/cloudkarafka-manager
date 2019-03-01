@@ -31,6 +31,9 @@ func User(name string) ([]byte, error) {
 }
 
 func CreateUser(name, password string) error {
+	if name == "" {
+		return fmt.Errorf("Username can not be empty string")
+	}
 	cryptos := []string{"SCRAM-SHA-256"}
 	cfg := make(map[string]string)
 	for _, crypto := range cryptos {
