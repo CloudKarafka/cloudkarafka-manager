@@ -7,6 +7,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/server/api"
 	"github.com/cloudkarafka/cloudkarafka-manager/server/debug"
+	"github.com/cloudkarafka/cloudkarafka-manager/server/web"
 
 	"fmt"
 	"net/http"
@@ -20,6 +21,8 @@ func Start() {
 	root.Handle(pat.New("/api/*"), api.Router())
 	root.Handle(pat.New("/debug/*"), debug.Router())
 	root.Handle(pat.New("/metrics"), http.HandlerFunc(api.Prometheus))
+
+	root.Handle(pat.New("/*"), web.Router())
 
 	root.Handle(pat.Get("/*"), http.FileServer(http.Dir("static/")))
 	fmt.Println("[INFO] Listening on Port", config.Port)

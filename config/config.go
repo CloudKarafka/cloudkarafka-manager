@@ -23,6 +23,7 @@ var (
 	KafkaDir          string
 	CertsDir          string
 	ZookeeperURL      []string
+	WebRequestTimeout time.Duration = 5 * time.Second
 )
 
 func PrintConfig() {
