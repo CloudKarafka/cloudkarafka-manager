@@ -27,7 +27,7 @@ func buildURPNotification(m metrics.Metric) Notification {
 		WARNING,
 		"URP",
 		"Under replicated partitions",
-		fmt.Sprintf("Broker %d has %d under replicated paritions", m.Broker, int(m.Value)))
+		fmt.Sprintf("Broker %d has %d under replicated partitions", m.Broker, int(m.Value)))
 }
 
 func CheckURP(out chan []Notification) {
