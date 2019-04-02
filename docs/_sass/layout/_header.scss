@@ -1,0 +1,58 @@
+#header {
+
+}
+.container{
+    max-width: 1230px;
+}
+
+.logo{
+    a{
+        text-decoration: none;
+        width: 210px;
+        @include media('>=tablet'){
+            width: 300px;
+        }
+    }
+    p{
+        color: $white;
+        font-size: 15px;
+        font-weight: 700;
+        @include media('>=tablet'){
+            font-size: 24px;
+        }
+        &:after{
+            content: none;
+        }
+    }
+    img{
+        width: 21px;;
+        @include media('>=tablet'){
+            width: auto;
+        }
+    }
+}
+.nav-list{
+    .icon-svg{
+        color: $white;
+        font-size: 22px;
+        transition: 0.3s;
+    }
+    strong{
+        color: $white;
+        font-size: 16px;
+        transition: 0.3s;
+        display: none;
+        @include media('>=tablet'){
+           display: block;
+        }
+    }
+    a{
+        text-decoration: none;
+        &:hover{
+            strong,
+            .icon-svg{
+                opacity: 0.5;
+            }
+        }
+    }
+}

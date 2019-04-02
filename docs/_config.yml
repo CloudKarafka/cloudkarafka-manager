@@ -1,0 +1,26 @@
+# Site settings
+title: CloudKarafka Manager
+email: team@84codes.com
+name: CloudKarafka Manager
+description: >
+  The best tool to monitor and administrate your Apache Kafka cluster. Free to use and Open Source.
+url: http://manager.cloudkarafka.com
+
+twitter:
+  username: CloudKarafka
+author:
+    name: CloudKarafka Manager Team
+    email: team@84codes.com
+
+# Other
+highlighter: rouge # or rouge or null
+
+# Build settings
+markdown: kramdown
+sass:
+    sass_dir: _sass
+    sourcemap: true
+    style: compressed
+pliugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap

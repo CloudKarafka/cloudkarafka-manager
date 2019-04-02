@@ -1,0 +1,69 @@
+---
+---
+@charset "UTF-8";
+/*
+Theme: CloudKarafka Manager
+Version: 1.0
+Author: Daniel Marklund
+Author URL: 84codes.com
+*/
+$breakpoints: (
+	'xs-phone': 320px,
+	'phone': 576px,
+	'tablet': 768px,
+	'desktop': 992px,
+	'widescreen': 1200px
+);
+
+// keywords
+$media-expressions: (
+	'screen': 'screen',
+	'print': 'print',
+	'handheld': 'handheld',
+	'landscape': '(orientation: landscape)',
+	'portrait': '(orientation: portrait)',
+	'retina2x': '(-webkit-min-device-pixel-ratio: 1.5), (min-resolution: 144dpi)',
+	'retina3x': '(-webkit-min-device-pixel-ratio: 2.5), (min-resolution: 240dpi)'
+);
+
+// ligatured operators ≥ ≤
+@import 'bootstrap';
+@import 'vendors/include-media';
+
+@import "vendors/bootstrap/functions";
+@import "vendors/bootstrap/variables";
+@import "vendors/bootstrap/mixins";
+@import "vendors/icommon";
+@import "vendors/fonts";
+
+@import "bootstrap-custom";
+
+@import 'base/functions';
+@import 'base/mixins';
+@import 'base/helpers';
+
+@import 'layout/common';
+@import 'layout/header';
+@import 'layout/footer';
+
+
+body {
+	min-width: $base-min-width;
+	font-family: $font-family-sans-serif;
+}
+
+svg:not(:root) {
+    overflow: hidden;
+}
+[class^="icon-"],
+[class*="icon-"] {
+    display: block;
+    width: 1em;
+    height: 1em;
+    fill: currentColor;
+}
+
+img{
+	max-width: 100%;
+	height: auto;
+}

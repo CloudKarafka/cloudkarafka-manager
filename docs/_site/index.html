@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="shortcut icon" type="image/png" href="/favicon.png"/>
+  <link rel="apple-touch-icon" href="/apple-touch-icon-iphone.png" />
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-ipad.png" />
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-iphone4.png" />
+  <link rel="alternate" type="application/rss+xml" title="index.html" href="/feed.xml" />
+  <link rel="alternate" type="application/atom+xml" title="index.html" href="/atom.xml" />
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+
+  <!-- Begin Jekyll SEO tag v2.4.0 -->
+<title>Apache Kafka Manager | CloudKarafka Manager</title>
+<meta name="generator" content="Jekyll v3.7.3" />
+<meta property="og:title" content="Apache Kafka Manager" />
+<meta name="author" content="CloudKarafka Manager Team" />
+<meta property="og:locale" content="en_US" />
+<meta name="description" content="The best tool to monitor and administrate your Apache Kafka cluster. Free to use and Open Source." />
+<meta property="og:description" content="The best tool to monitor and administrate your Apache Kafka cluster. Free to use and Open Source." />
+<link rel="canonical" href="http://localhost:4000/" />
+<meta property="og:url" content="http://localhost:4000/" />
+<meta property="og:site_name" content="CloudKarafka Manager" />
+<meta property="og:image" content="http://localhost:4000/img/og-frontpage.jpg" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@CloudKarafka" />
+<meta name="twitter:creator" content="@CloudKarafka Manager Team" />
+<script type="application/ld+json">
+{"image":"http://localhost:4000/img/og-frontpage.jpg","author":{"@type":"Person","name":"CloudKarafka Manager Team"},"description":"The best tool to monitor and administrate your Apache Kafka cluster. Free to use and Open Source.","@type":"WebSite","name":"CloudKarafka Manager","headline":"Apache Kafka Manager","url":"http://localhost:4000/","@context":"http://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+</head>
+
+  <body>
+    <svg aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden;" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <defs>
+    <symbol id="icon-Icon-error-xl-Copy" viewBox="0 0 32 32">
+      <title>Icon-error-xl-Copy</title>
+      <path fill="#ff9800" style="fill: var(--color1, #ff9800)" d="M15.882 31.765c8.772 0 15.882-7.111 15.882-15.882s-7.111-15.882-15.882-15.882c-8.772 0-15.882 7.111-15.882 15.882s7.111 15.882 15.882 15.882z"></path>
+      <path fill="#fff" style="fill: var(--color2, #fff)" d="M17.614 18.704h-3.137l-0.494-11.432h4.125l-0.494 11.432zM13.869 22.265c0-0.567 0.203-1.030 0.609-1.39 0.414-0.368 0.927-0.551 1.54-0.551s1.122 0.184 1.528 0.551c0.414 0.36 0.62 0.823 0.62 1.39s-0.207 1.034-0.62 1.402c-0.406 0.36-0.915 0.54-1.528 0.54s-1.126-0.18-1.54-0.54c-0.406-0.368-0.609-0.835-0.609-1.402z"></path>
+    </symbol>
+    <symbol id="icon-Icon-error-xl" viewBox="0 0 36 32">
+      <title>Icon-error-xl</title>
+      <path fill="#f44336" style="fill: var(--color3, #f44336)" d="M15.169 1.503c1.178-2.003 4.075-2.003 5.254 0l14.24 24.209c1.195 2.032-0.27 4.593-2.627 4.593h-28.481c-2.357 0-3.822-2.561-2.627-4.593l14.24-24.209z"></path>
+      <path fill="#fff" style="fill: var(--color2, #fff)" d="M19.52 19.68h-3.385l-0.533-12.339h4.452l-0.533 12.339zM15.478 23.524c0-0.612 0.219-1.112 0.657-1.5 0.446-0.397 1-0.595 1.662-0.595s1.211 0.198 1.649 0.595c0.446 0.389 0.67 0.889 0.67 1.5s-0.223 1.116-0.67 1.513c-0.438 0.389-0.988 0.583-1.649 0.583s-1.215-0.194-1.662-0.583c-0.438-0.397-0.657-0.901-0.657-1.513z"></path>
+    </symbol>
+    <symbol id="icon-icon-info" viewBox="0 0 32 32">
+      <title>icon-info</title>
+      <path fill="#47b0ec" style="fill: var(--color4, #47b0ec)" d="M31.314 15.886c0 8.521-6.908 15.429-15.429 15.429s-15.429-6.908-15.429-15.429c0-8.521 6.908-15.429 15.429-15.429s15.429 6.908 15.429 15.429z"></path>
+      <path fill="#fff" style="fill: var(--color2, #fff)" d="M14.229 22v-5.143h-0.714c-0.19 0-0.357-0.071-0.5-0.214s-0.214-0.31-0.214-0.5v-1.714c0-0.19 0.071-0.357 0.214-0.5s0.31-0.214 0.5-0.214h4c0.19 0 0.357 0.071 0.5 0.214s0.214 0.31 0.214 0.5v7.571h0.714c0.19 0 0.357 0.071 0.5 0.214s0.214 0.31 0.214 0.5v1.714c0 0.19-0.071 0.357-0.214 0.5s-0.31 0.214-0.5 0.214h-5.429c-0.19 0-0.357-0.071-0.5-0.214s-0.214-0.31-0.214-0.5v-1.714c0-0.19 0.071-0.357 0.214-0.5s0.31-0.214 0.5-0.214h0.714zM16.229 6.857c0.714 0 1.321 0.25 1.821 0.75s0.75 1.107 0.75 1.821c0 0.714-0.25 1.321-0.75 1.821s-1.107 0.75-1.821 0.75c-0.714 0-1.321-0.25-1.821-0.75s-0.75-1.107-0.75-1.821c0-0.714 0.25-1.321 0.75-1.821s1.107-0.75 1.821-0.75z"></path>
+    </symbol>
+    <symbol id="icon-book" viewBox="0 0 28 32">
+      <title>book</title>
+      <path d="M8 9.5v-2c0-0.275 0.225-0.5 0.5-0.5h13c0.275 0 0.5 0.225 0.5 0.5v2c0 0.275-0.225 0.5-0.5 0.5h-13c-0.275 0-0.5-0.225-0.5-0.5zM8.5 15h13c0.275 0 0.5-0.225 0.5-0.5v-2c0-0.275-0.225-0.5-0.5-0.5h-13c-0.275 0-0.5 0.225-0.5 0.5v2c0 0.275 0.225 0.5 0.5 0.5zM27.194 24.981c-0.262 0.813-0.262 3.225 0 4.037 0.456 0.087 0.806 0.494 0.806 0.981v1c0 0.55-0.45 1-1 1h-22c-2.763 0-5-2.238-5-5v-22c0-2.763 2.237-5 5-5h22c0.55 0 1 0.45 1 1v23c0 0.488-0.344 0.887-0.806 0.981zM24.625 25h-19.625c-1.1 0-2 0.9-2 2 0 1.106 0.894 2 2 2h19.625c-0.169-1.081-0.169-2.919 0-4zM25 3h-20c-1.106 0-2 0.894-2 2v17.419c0.612-0.269 1.287-0.419 2-0.419h20v-19z"></path>
+    </symbol>
+    <symbol id="icon-github" viewBox="0 0 31 32">
+      <title>github</title>
+      <path d="M10.369 24.837c0 0.125-0.144 0.225-0.325 0.225-0.206 0.019-0.35-0.081-0.35-0.225 0-0.125 0.144-0.225 0.325-0.225 0.188-0.019 0.35 0.081 0.35 0.225zM8.425 24.556c-0.044 0.125 0.081 0.269 0.269 0.306 0.162 0.063 0.35 0 0.387-0.125s-0.081-0.269-0.269-0.325c-0.162-0.044-0.344 0.019-0.387 0.144zM11.188 24.45c-0.181 0.044-0.306 0.163-0.287 0.306 0.019 0.125 0.181 0.206 0.369 0.163 0.181-0.044 0.306-0.163 0.287-0.288-0.019-0.119-0.188-0.2-0.369-0.181zM15.3 0.5c-8.669 0-15.3 6.581-15.3 15.25 0 6.931 4.362 12.863 10.594 14.95 0.8 0.144 1.081-0.35 1.081-0.756 0-0.387-0.019-2.525-0.019-3.837 0 0-4.375 0.938-5.294-1.863 0 0-0.713-1.819-1.737-2.288 0 0-1.431-0.981 0.1-0.962 0 0 1.556 0.125 2.412 1.613 1.369 2.413 3.662 1.719 4.556 1.306 0.144-1 0.55-1.694 1-2.106-3.494-0.387-7.019-0.894-7.019-6.906 0-1.719 0.475-2.581 1.475-3.681-0.162-0.406-0.694-2.081 0.162-4.244 1.306-0.406 4.313 1.688 4.313 1.688 1.25-0.35 2.594-0.531 3.925-0.531s2.675 0.181 3.925 0.531c0 0 3.006-2.1 4.313-1.688 0.856 2.169 0.325 3.838 0.163 4.244 1 1.106 1.613 1.969 1.613 3.681 0 6.031-3.681 6.512-7.175 6.906 0.575 0.494 1.063 1.431 1.063 2.9 0 2.106-0.019 4.712-0.019 5.225 0 0.406 0.288 0.9 1.081 0.756 6.25-2.075 10.488-8.006 10.488-14.938 0-8.669-7.031-15.25-15.7-15.25zM6.075 22.056c-0.081 0.063-0.063 0.206 0.044 0.325 0.1 0.1 0.244 0.144 0.325 0.063 0.081-0.063 0.063-0.206-0.044-0.325-0.1-0.1-0.244-0.144-0.325-0.063zM5.4 21.55c-0.044 0.081 0.019 0.181 0.144 0.244 0.1 0.063 0.225 0.044 0.269-0.044 0.044-0.081-0.019-0.181-0.144-0.244-0.125-0.038-0.225-0.019-0.269 0.044zM7.425 23.775c-0.1 0.081-0.063 0.269 0.081 0.387 0.144 0.144 0.325 0.163 0.406 0.063 0.081-0.081 0.044-0.269-0.081-0.387-0.138-0.144-0.325-0.163-0.406-0.063zM6.713 22.856c-0.1 0.063-0.1 0.225 0 0.369s0.269 0.206 0.35 0.144c0.1-0.081 0.1-0.244 0-0.387-0.088-0.144-0.25-0.206-0.35-0.125z"></path>
+    </symbol>
+    <symbol id="icon-copy" viewBox="0 0 28 32">
+      <title>copy</title>
+      <path d="M27.121 4.121l-3.243-3.243c-0.543-0.543-1.293-0.879-2.121-0.879h-10.757c-1.657 0-3 1.343-3 3v3h-5c-1.657 0-3 1.343-3 3v20c0 1.657 1.343 3 3 3h14c1.657 0 3-1.343 3-3v-3h5c1.657 0 3-1.343 3-3v-16.757c0-0.828-0.336-1.578-0.879-2.121v0zM16.625 29h-13.25c-0.207 0-0.375-0.168-0.375-0.375v0-19.25c0-0.207 0.168-0.375 0.375-0.375v0h4.625v14c0 1.657 1.343 3 3 3h6v2.625c0 0.207-0.168 0.375-0.375 0.375v0zM24.625 23h-13.25c-0.207 0-0.375-0.168-0.375-0.375v0-19.25c0-0.207 0.168-0.375 0.375-0.375v0h6.625v5.5c0 0.828 0.672 1.5 1.5 1.5h5.5v12.625c0 0.207-0.168 0.375-0.375 0.375v0zM25 7h-4v-4h0.602c0.099 0 0.195 0.039 0.265 0.11l3.023 3.023c0.068 0.068 0.11 0.162 0.11 0.265 0 0 0 0 0 0v0 0.602z"></path>
+    </symbol>
+    <symbol id="icon-check" viewBox="0 0 32 32">
+      <title>check</title>
+      <path d="M27.241 5.217l-16.44 16.44-6.041-6.041c-0.293-0.293-0.768-0.293-1.061 0l-1.768 1.768c-0.293 0.293-0.293 0.768 0 1.061l8.339 8.339c0.293 0.293 0.768 0.293 1.061 0l18.738-18.738c0.293-0.293 0.293-0.768 0-1.061l-1.768-1.768c-0.293-0.293-0.768-0.293-1.061 0z"></path>
+    </symbol>
+    <symbol id="icon-item-heart" viewBox="0 0 34 32">
+      <title>item-heart</title>
+      <path fill="#fdb913" style="fill: var(--color5, #fdb913)" d="M2.612 5.878c0-1.443 1.17-2.612 2.612-2.612v0h6.531c1.443 0 2.612 1.17 2.612 2.612v0 7.51c0 1.443-1.17 2.612-2.612 2.612v0h-6.531c-1.443 0-2.612-1.17-2.612-2.612v0z"></path>
+      <path fill="#3a5b85" style="fill: var(--color4, #3a5b85)" d="M33.612 13.204c-0.704 2.984-2.33 5.697-4.701 7.846l-12.033 10.735-11.83-10.736c-2.371-2.149-3.997-4.862-4.701-7.845-0.488-2.068-0.328-3.337-0.289-3.577 0.495-5.456 4.357-9.414 9.189-9.414 3.168 0 5.995 1.697 7.639 4.51 1.659-2.777 4.607-4.509 7.826-4.509 4.833 0 8.694 3.958 9.19 9.414 0.039 0.241 0.199 1.509-0.289 3.577zM11.101 4.835c0-0.361-0.292-0.653-0.653-0.653-3.601 0-6.531 2.93-6.531 6.531 0 0.361 0.292 0.653 0.653 0.653s0.653-0.292 0.653-0.653c0-2.881 2.344-5.224 5.224-5.224 0.361 0 0.653-0.292 0.653-0.653v0z"></path>
+    </symbol>
+    <symbol id="icon-quote-left" viewBox="0 0 36 32">
+      <title>quote-left</title>
+      <path d="M31.5 14h-3.5v-0.5c0-1.381 1.119-2.5 2.5-2.5h0.5c1.656 0 3-1.344 3-3v-3c0-1.656-1.344-3-3-3h-0.5c-6.344 0-11.5 5.156-11.5 11.5v12c0 2.481 2.019 4.5 4.5 4.5h8c2.481 0 4.5-2.019 4.5-4.5v-7c0-2.481-2.019-4.5-4.5-4.5zM33 25.5c0 0.825-0.675 1.5-1.5 1.5h-8c-0.825 0-1.5-0.675-1.5-1.5v-12c0-4.688 3.813-8.5 8.5-8.5h0.5v3h-0.5c-3.031 0-5.5 2.469-5.5 5.5v3.5h6.5c0.825 0 1.5 0.675 1.5 1.5v7zM12.5 14h-3.5v-0.5c0-1.381 1.119-2.5 2.5-2.5h0.5c1.656 0 3-1.344 3-3v-3c0-1.656-1.344-3-3-3h-0.5c-6.344 0-11.5 5.156-11.5 11.5v12c0 2.481 2.019 4.5 4.5 4.5h8c2.481 0 4.5-2.019 4.5-4.5v-7c0-2.481-2.019-4.5-4.5-4.5zM14 25.5c0 0.825-0.675 1.5-1.5 1.5h-8c-0.825 0-1.5-0.675-1.5-1.5v-12c0-4.688 3.813-8.5 8.5-8.5h0.5v3h-0.5c-3.031 0-5.5 2.469-5.5 5.5v3.5h6.5c0.825 0 1.5 0.675 1.5 1.5v7z"></path>
+    </symbol>
+    <symbol id="icon-external-link-square" viewBox="0 0 28 32">
+      <title>external-link-square</title>
+      <path d="M25 2h-22c-1.657 0-3 1.343-3 3v22c0 1.657 1.343 3 3 3h22c1.657 0 3-1.343 3-3v-22c0-1.657-1.343-3-3-3zM24.625 27h-21.25c-0.207 0-0.375-0.168-0.375-0.375v0-21.25c0-0.207 0.168-0.375 0.375-0.375v0h21.25c0.207 0 0.375 0.168 0.375 0.375v0 21.25c0 0.207-0.168 0.375-0.375 0.375v0zM21.25 8l-8.5 0.009c-0.414 0-0.75 0.336-0.75 0.75v1.735c0 0.42 0.345 0.758 0.765 0.75l3.625-0.134-10.171 10.171c-0.293 0.293-0.293 0.768 0 1.061l1.439 1.439c0.293 0.293 0.768 0.293 1.061 0l10.171-10.171-0.134 3.625c-0.009 0.42 0.33 0.765 0.75 0.765h1.735c0.414 0 0.75-0.336 0.75-0.75l0.009-8.5c0-0.414-0.336-0.75-0.75-0.75z"></path>
+    </symbol>
+    <symbol id="icon-exclamation-circle" viewBox="0 0 32 32">
+      <title>exclamation-circle</title>
+      <path d="M16 0.5c-8.56 0-15.5 6.943-15.5 15.5 0 8.562 6.94 15.5 15.5 15.5s15.5-6.938 15.5-15.5c0-8.557-6.94-15.5-15.5-15.5zM16 28.5c-6.908 0-12.5-5.589-12.5-12.5 0-6.906 5.592-12.5 12.5-12.5 6.906 0 12.5 5.592 12.5 12.5s-5.589 12.5-12.5 12.5zM18.625 22c0 1.447-1.178 2.625-2.625 2.625s-2.625-1.178-2.625-2.625 1.178-2.625 2.625-2.625 2.625 1.178 2.625 2.625zM13.539 8.787l0.425 8.5c0.020 0.399 0.349 0.713 0.749 0.713h2.573c0.4 0 0.729-0.313 0.749-0.713l0.425-8.5c0.021-0.428-0.32-0.787-0.749-0.787h-3.423c-0.429 0-0.771 0.359-0.749 0.787z"></path>
+    </symbol>
+    <symbol id="icon-file-alt" viewBox="0 0 24 32">
+      <title>file-alt</title>
+      <path d="M18 15.5v1.75c0 0.413-0.337 0.75-0.75 0.75h-10.5c-0.412 0-0.75-0.337-0.75-0.75v-1.75c0-0.412 0.338-0.75 0.75-0.75h10.5c0.413 0 0.75 0.338 0.75 0.75zM17.25 20h-10.5c-0.412 0-0.75 0.337-0.75 0.75v1.75c0 0.413 0.338 0.75 0.75 0.75h10.5c0.413 0 0.75-0.337 0.75-0.75v-1.75c0-0.413-0.337-0.75-0.75-0.75zM24 8.244v20.756c0 1.656-1.344 3-3 3h-18c-1.656 0-3-1.344-3-3v-26c0-1.656 1.344-3 3-3h12.756c0.794 0 1.556 0.319 2.119 0.881l5.244 5.244c0.563 0.556 0.881 1.325 0.881 2.119zM16 3.244v4.756h4.756l-4.756-4.756zM21 29v-18h-6.5c-0.831 0-1.5-0.669-1.5-1.5v-6.5h-10v26h18z"></path>
+    </symbol>
+  </defs>
+</svg>
+
+    <div id="wrapper">
+      <main id="main">
+  <div class="section-intro bg-top-primary pt-2">
+    <header id="header" class="py-4  pb-sm-7">
+      <div class="container d-flex align-items-center ">
+        <div class="logo mr-auto">
+          <a class="d-flex align-items-center justify-content-start" href="/"><img src="img/logo.svg" alt="CloudKarafka Manager"> <p class="m-0 pl-2">CloudKarafka Manager</p> </a>
+        </div>
+        <nav>
+          <ul class="nav-list d-flex list-unstyled m-0 p-0 flex-wrap ml-3">
+            <li>
+              <a class="d-flex align-items-center" href="https://github.com/CloudKarafka/cloudkarafka-manager#cloudkarafka-manager">
+                <svg class="icon-svg">
+                  <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-book"></use>
+                </svg>
+                <strong class="ml-2">Documentation</strong>
+              </a>
+            </li>
+            <li class="ml-3 ml-md-5">
+              <a class="d-flex align-items-center" href="https://github.com/CloudKarafka/cloudkarafka-manager">
+                <svg class="icon-svg">
+                  <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-github"></use>
+                </svg>
+                <strong class="ml-2">Github</strong>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <div class="container position-relative">
+      <div class="card-text-intro d-flex align-items-center justify-content-center flex-column py-3 py-md-6">
+        <h1 class="title text-center  mb-4">Say hi to your new favourite manager.</h1>
+        <p class="descrip text-center"> <span class="no-content">The #1 tool to</span>  <span class="position-relative">monitor and administrate</span> your Apache Kafka cluster.</p>
+      </div>
+      <div class="section-copy-link">
+        <div class="card-link d-flex flex-column align-items-center justify-content-center py-2 py-md-5">
+          <a class="btn btn-primary btn-download m-1 m-md-3" href="https://github.com/CloudKarafka/cloudkarafka-manager#cloudkarafka-manager">Download CloudKarafka Manager</a>
+          <p class="link-line d-flex align-items-center justify-content-center flex-wrap py-3">
+            Open Sourced. Built with <span class="mx-1">❤</span> by <a href="https://www.84codes.com/" target="_blank"><img class="mx-1" src="img/84-codes.svg" alt="84codes logo"></a> + you?
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <section class="section-details">
+    <div class="container">
+      <div class="card-link-demo position-relative">
+        <div class="card-img text-center">
+          <div class="img-container">
+            <img src="img/ckmgr-screenshot.png" alt="">
+          </div>
+        </div>
+      </div>
+      <div class="row card-advantages">
+        <div class="col-sm-6 card-item d-flex flex-column align-items-center justify-content-center pb-sm-7">
+          <div class="card-header d-flex align-items-center justify-content-center">
+            <img src="img/item-speed.svg" alt="">
+          </div>
+          <div class="card-body text-center">
+            <h2 class="pb-3">Fast & Reliable</h2>
+            <p>The CloudKarafka Manager acts as a standalone application. It's not affected by the health of your cluster. So you can retrieve critical information when you need it the most.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 card-item d-flex flex-column align-items-center justify-content-center pb-sm-7">
+          <div class="card-header d-flex align-items-center justify-content-center">
+            <img src="img/item-footprints.svg" alt="">
+          </div>
+          <div class="card-body text-center">
+            <h2 class="pb-3">Minimal Footprint</h2>
+            <p>The manager is written in Go. It consists of thin wrappers around existing plugins. No virtual machines are in use here and therefore far less CPU and Ram is required.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 card-item d-flex flex-column align-items-center justify-content-center pb-sm-7">
+          <div class="card-header d-flex align-items-center justify-content-center">
+            <img src="img/item-health.svg" alt="">
+          </div>
+          <div class="card-body text-center">
+            <h2 class="pb-3">Efficient troubleshooting</h2>
+            <p>Automatic diagnostics, timely graphs and data tables give you a good overview of what is going on in your cluster. With the possibility to deep-dive for further investigation.</p>
+          </div>
+        </div>
+        <div class="col-sm-6 card-item d-flex flex-column align-items-center justify-content-center pb-sm-7">
+          <div class="card-header d-flex align-items-center justify-content-center">
+            <img src="img/item-stopwatch.svg" alt="">
+          </div>
+          <div class="card-body text-center">
+            <h2 class="pb-3">Historical Data</h2>
+            <p>A Kafka plugin samples data on a regular basis, and saves it to a database. Making it possible to monitor the health of your cluster backward in time.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section-tools bg-light-grey py-3 py-md-6">
+    <div class="container d-flex align-items-center justify-content-center flex-column">
+      <div class="card-descrip d-flex align-items-center justify-content-center flex-column text-center py-2 py-md-5">
+        <h2 class="h1 text-center">Monitor &amp; Administrate - within the same tool.</h2>
+      </div>
+      <div class="card-puzzle d-flex align-items-center justify-content-center pt-3 pb-5 pt-md-5 pb-md-9">
+        <div class="card-left">
+          <h2 class="title text-center ">Monitoring</h2>
+          <div class="card-item position-relative">
+            <ul class="list-unstyled ">
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Message and Data statistics</span>
+                </p>
+              </li>
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Monitor Topics & Consumers</span>
+                </p>
+              </li>
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Running Kafka Version</span>
+                </p>
+              </li>
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Endpoints Status</span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="card-right">
+          <h2 class="title text-center">Administration</h2>
+          <div class="card-item position-relative">
+            <ul class="list-unstyled">
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Add Topics</span>
+                </p>
+              </li>
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Change Configuration</span>
+                </p>
+              </li>
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Testing: Consume & Publish Message</span>
+                </p>
+              </li>
+              <li>
+                <p class="d-flex mb-2">
+                  <svg class="icon-svg mr-3">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-check"></use>
+                  </svg>
+                  <span>Administrate Users & ACL rules</span>
+                </p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-hot-link pt-2 pb-3 pb-md-5 px-4 w-100 mb-3 mb-md-7">
+        <div class="row align-items-center justify-content-center ">
+          <p class="link-line d-flex align-items-center justify-content-center py-3 text-uppercase text-center flex-wrap">PROMOTION FROM THE LEAD DEVELOPERS - <a href="https://www.84codes.com/" target="_blank"><img class="mx-1" src="img/84-codes.svg" alt="84codes logo"></a>
+          </p>
+        </div>
+        <div class="row p-4">
+          <div class=" d-flex flex-column justify-content-between w-100">
+            <div class="card-img pb-3 d-flex flex-column flex-md-row justify-content-center justify-content-md-start">
+              <a href="https://www.cloudkarafka.com/" target="_blank" title="Apache Kafka Message streaming as a Service"><img src="img/logo-cloudkarafka.svg" alt="Logo CloudKarafka"></a>
+            </div>
+            <div class="d-flex flex-column flex-md-row justify-content-center justify-content-md-between align-items-center">
+              <div class="card-text text-center text-md-left mr-2">
+                <p>We offer fully managed Apache Kafka clusters with great performance & support. The CloudKarafka Manager comes pre-installed.</p>
+              </div>
+              <div class="card-button mb-3">
+                <a class="btn btn-success" href="https://customer.cloudkarafka.com/signup" target="_blank">Get a Managed Kafka cluster today</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-benefits w-100 pb-md-6">
+        <div class="card-descrip d-flex align-items-center justify-content-center flex-column text-center py-5 pb-6">
+          <h2 class="h1 text-center">Reasons why you'll love the Cloudkarafka Manager</h2>
+        </div>
+        <div class="row card-advantages position-relative justify-content-center">
+          <span class="icon-heart d-none d-md-block">
+            <svg class="icon-svg">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-item-heart"></use>
+            </svg>
+          </span>
+          <div class="col-md-6 card-item d-flex align-items-center justify-content-center">
+            <div class="card-body text-center">
+              <h2>Quick & easy to install</h2>
+              <p>With just a few commands you'll be downloading the CloudKarafka Manager. You are up and running in less than a minute.</p>
+            </div>
+          </div>
+          <div class="col-md-6 card-item d-flex  align-items-center justify-content-center ">
+            <div class="card-body text-center">
+              <h2>User Friendly</h2>
+              <p>The goal from the start has been to build a manager that is intuitive and helpful. That's why we ship CloudKarafka Management with a gorgeous and "intelligent" user interface.</p>
+            </div>
+          </div>
+          <div class="col-md-6 card-item d-flex align-items-center justify-content-center">
+            <div class="card-body text-center">
+              <h2>Monitor & Administrate</h2>
+              <p>Manage topics, consumers, retention period, users and permissions. And check the status of your entire cluster at the same time.</p>
+            </div>
+          </div>
+          <div class="col-md-6 card-item d-flex align-items-center justify-content-center">
+            <div class="card-body text-center">
+              <h2>Free & Open Source</h2>
+              <p>CloudKarafka Manager is released under <a href="https://github.com/CloudKarafka/cloudkarafka-manager/blob/master/LICENSE" target="_blank">Apache License, v 2.0</a>. That means it’s free to use, distribute and modify. Together we can build the best Apache Kafka Manager out there.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-works flex-column-reverse flex-lg-row d-flex">
+      <div class="col-lg-6 card-left d-flex">
+        <div class="card-img d-flex align-items-center justify-content-center justify-content-lg-end pr-5">
+          <img src="img/illu-cloudkarafka-manager.svg" alt="">
+        </div>
+      </div>
+      <div class="col-lg-6 card-right">
+        <h2 class="h1 text-center  pb-md-4">How it works</h2>
+        <ul class="step-works list-unstyled position-relative">
+          <li class="pb-md-6">
+            <p>CloudKarafka Manager is shipped with a Kafka plugin called <em class="p-1 rounded bg-secondary">cloudkarafka-http-reporter</em>  . It collects metrics from your entire Kafka cluster on a regular basis and saves it to a database. The result is a manager that is great not only for administration but also for monitoring. Even if the cluster is unresponsive at the moment.</p>
+          </li>
+          <li>
+            <p>All data is requested and collected via the <em class="p-1 rounded bg-secondary">http-api </em>  that is used in the communication between the app and Kafka + Zookeper. The app itself is running locally in Go’s runtime system and is accessible through your web browser. The end result is a manager where you can keep track of the health of the cluster, retrieve historical data and render beautiful graphs - with no interruption. </p>
+          </li>
+        </ul>
+      </div>
+    </div>
+    <div class="container diagnostic py-2 py-md-5">
+      <div class="card-descrip d-flex align-items-center justify-content-center flex-column text-center py-2 py-md-5">
+        <h2 class="h1 pb-4 ">Stay on top with built-in diagnostics</h2>
+        <p>The CloudKarafka Manager will help you via notifications for common errors and mis-configurations.</p>
+      </div>
+      <div class="card-diagnostic position-relative mt-3 mt-md-6 mb-2 mb-md-5">
+        <div class="card-item d-flex align-items-center ">
+          <div class="figure position-relative mr-2 mr-sm-4">
+            <svg class="icon-svg">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-Icon-error-xl"></use>
+            </svg>
+          </div>
+          <div class="card-text">
+            <h5>Under-replicated partitions</h5>
+            <p>You have  <span>5 under-replicated partitions on Broker A</span></p>
+          </div>
+        </div>
+        <div class="card-item d-flex align-items-center">
+          <div class="figure position-relative mr-2 mr-sm-4">
+            <svg class="icon-svg">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-Icon-error-xl-Copy"></use>
+            </svg>
+          </div>
+          <div class="card-text">
+            <h5>Uneven spread of partitions</h5>
+            <p>Your cluster has an uneven partition spread. <span>Broker B</span> has 20% of the total number (100) of partitions.
+              <strong>
+                This will have a negative impact on the throughput.
+              </strong>
+            </p>
+          </div>
+        </div>
+        <div class="card-item d-flex align-items-center">
+          <div class="figure position-relative mr-2 mr-sm-4">
+            <svg class="icon-svg">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-icon-info"></use>
+            </svg>
+          </div>
+          <div class="card-text">
+            <h5>Uneven spread of leaders</h5>
+            <p>
+              Your cluster has an uneven leader spread. <span>Broker C</span> is the leader of 80% of the total number (100) of partitions.
+              <strong>
+                This will have a negative impact on the throughput.
+              </strong>
+            </p>
+          </div>
+        </div>
+        <div class="examples position-absolute" href="#"> <span>examples</span></div>
+      </div>
+    </div>
+  </section>
+  <section class="section-interview bg-light-grey pt-3 pt-md-6 pb-4 pb-md-9">
+    <div class="container">
+      <div class="card-descrip card-descrip d-flex align-items-center justify-content-center flex-column text-center py-2 py-md-5">
+        <h2 class="h1 text-center">Why an another Apache Kafka Manager?</h2>
+      </div>
+      <div class="card-interview">
+        <blockquote>
+          <div class="card-header d-flex justify-content-center">
+            <svg class="icon-svg quote">
+              <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-quote-left"></use>
+            </svg>
+          </div>
+          <div class="card-body px-sm-5">
+            <em class="d-block py-1 py-sm-2">The CloudKarafka Manager takes a more user centered approach...</em >
+            <em class="d-block py-1 py-sm-2">Most Kafka Managers are built around this extreme use case: an enterprise expert managing multiple clusters.</em>
+            <em class="d-block py-1 py-sm-2">The result is a confusing and complex management interface, at least for the majority of Kafka users.</em>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center flex-wrap">
+              <div class="card-user d-flex align-items-center mr-3">
+                <div class="card-img mr-3 mb-3">
+                  <img class="mr-3" src="img/magnus.png" alt="Magnus - Lead Developer">
+                </div>
+                <cite>
+                  <strong>MAGNUS HÖRBERG</strong>
+                  <span class="d-block m-0">Lead Developer</span>
+                </cite>
+              </div>
+              <!--
+              <div class="card-btn">
+                <a class="btn btn-light d-flex align-items-center" href="#">Read Full Interview
+                  <svg class="icon-svg link ml-2">
+                    <use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-external-link-square"></use>
+                  </svg></a>
+                </div>
+              </div>
+            -->
+            </blockquote>
+          </div>
+        </div>
+      </section>
+      <section class="section-copy-link bg-primary py-3 py-md-6">
+        <div class="container position-relative">
+          <div class="card-text-intro d-flex align-items-center justify-content-center flex-column py-2 py-md-5">
+            <h1 class="title text-center">Get CloudKarafka Manager</h1>
+          </div>
+          <div class="card-link d-flex flex-column align-items-center justify-content-center">
+            <div class="btn-line py-3 py-md-6">
+              <a class="btn btn-primary m-1" href="https://github.com/CloudKarafka/cloudkarafka-manager#cloudkarafka-manager">Download</a>
+              <a class="btn btn-primary m-1" href="https://customer.cloudkarafka.com/signup">Get Free Test Cluster</a>
+              <a class="btn btn-light m-1" href="https://github.com/CloudKarafka/cloudkarafka-manager#cloudkarafka-manager">Documentation</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer id="footer" class="bg-primary-dark py-3 pt-sm-6 pb-sm-3">
+    	<div class="container">
+    		<div class="logo py-3">
+    			<div class="d-flex flex-column align-items-center justify-content-center"><img class="py-1" src="img/logo.svg" alt="CloudKarafka Manager"> <p class="position-relative m-0 pl-2">CloudKarafka Manager</p></div>
+    		</div>
+    		<p class="link-line d-flex align-items-center justify-content-center flex-wrap py-2">Built with <span class="mx-1">❤</span> by <a href="https://www.84codes.com/" target="_blank"><img class="mx-1" src="img/84-codes.svg" alt="84codes logo"></a> + <a href="https://github.com/CloudKarafka/cloudkarafka-manager/graphs/contributors" target="_blank" class="contributors-link"><ins class="m-0 pl-2">5 contributors</ins></a>
+    		</p>
+    		<ul class="nav-list d-flex list-unstyled justify-content-center m-0 p-0 pt-2 pt-md-4 pb-3 pb-md-7 flex-wrap">
+    			<li class="m-2 ml-sm-3">
+    				<a class="d-flex align-items-center" href="https://github.com/CloudKarafka/cloudkarafka-manager#cloudkarafka-manager">
+    					<svg class="icon-svg">
+    						<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-book"></use>
+    					</svg>
+    					<strong class="ml-2">Documentation</strong>
+    				</a>
+    			</li>
+    			<li class="m-2 ml-sm-3">
+    				<a class="d-flex align-items-center" href="https://github.com/CloudKarafka/cloudkarafka-manager">
+    					<svg class="icon-svg">
+    						<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-github"></use>
+    					</svg>
+    					<strong class="ml-2">Github</strong>
+    				</a>
+    			</li>
+    			<li class="m-2 ml-sm-3">
+    				<a class="d-flex align-items-center" href="https://github.com/CloudKarafka/cloudkarafka-manager/issues">
+    					<svg class="icon-svg">
+    						<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-exclamation-circle"></use>
+    					</svg>
+    					<strong class="ml-2">Issues</strong>
+    				</a>
+    			</li>
+    			<li class="m-2 ml-sm-3">
+    				<a class="d-flex align-items-center" href="https://github.com/CloudKarafka/cloudkarafka-manager/blob/master/LICENSE">
+    					<svg class="icon-svg">
+    						<use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#icon-file-alt"></use>
+    					</svg>
+    					<strong class="ml-2">License</strong>
+    				</a>
+    			</li>
+    		</ul>
+    		<div class="d-flex justify-content-center">
+    			<p class="copy text-center">© Copyright 2018 - present. CloudKarafka Manager is released under the terms of <a href="https://github.com/CloudKarafka/cloudkarafka-manager/blob/master/LICENSE">Apache License, v. 2.0</a>. Apache Kafka and the Apache Kafka Logo are trademarks of the Apache Software Foundation.</p>
+    		</div>
+    	</div>
+    </footer>
+
+    </div>
+  </body>
+</html>

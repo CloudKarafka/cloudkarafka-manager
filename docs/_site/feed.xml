@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>CloudKarafka Manager - Articles</title>
+    <description>The best tool to monitor and administrate your Apache Kafka cluster. Free to use and Open Source.
+</description>
+    <link>
+    http://localhost:4000</link>
+    
+  </channel>
+</rss>

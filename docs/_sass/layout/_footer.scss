@@ -1,0 +1,50 @@
+#footer {
+    .logo{
+        img{
+            width: 50px;
+            @include media('>=phone'){
+                width: 79px;
+            }
+        }
+        p{
+            font-size: 26px;
+            font-weight: 700;
+            @include media('>=phone'){
+                font-size: 40px;
+            }
+            &:after{
+                content: '';
+                background-image: url(../img/yellow-dash.svg);
+                background-repeat: no-repeat;
+                display: block;
+                width: 218px;
+                height: 5px;
+                position: absolute;
+                left: 25px;
+                @include media('>=phone'){
+                    left: 75px;
+                    width: 322px;
+                }
+            }
+        }
+        a{
+            width: auto;
+        }
+    }
+    .nav-list{
+        strong{
+            display: block;
+
+        }
+    }
+}
+.copy{
+    max-width: 660px;
+    color: #2a5687;
+    font-size: 14px;
+    font-weight: 400;
+
+    a {
+      color: #4b87ca;
+    }
+}
