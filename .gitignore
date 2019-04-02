@@ -8,3 +8,4 @@ cloudkarafka-mgmt.linux
 cloudkarafka-mgmt.tar*
 cloudkarafka-mgmt
 *.db
+Gemfile.lock
