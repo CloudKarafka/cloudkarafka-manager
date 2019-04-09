@@ -20,6 +20,7 @@ var (
 	Version           string = "dev"
 	GitCommit         string = "master"
 	JMXRequestTimeout time.Duration
+	KafkaDir          string
 )
 
 func PrintConfig() {

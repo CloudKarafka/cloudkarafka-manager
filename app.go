@@ -24,6 +24,7 @@ var (
 	requestTimeout  = flag.Int("request-timeout", 500, "Timeout in ms for requests to brokers to fetch metrics")
 	printJMXQueries = flag.Bool("print-jmx-queries", false, "Print all JMX requests to the broker")
 	zk              = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
+	kafkaDir        = flag.String("kafkadir", "/opt/kafka", "The directory where kafka lives")
 )
 
 // TODO: Handle brokers going offline.....
@@ -88,6 +89,7 @@ func main() {
 	config.Port = *port
 	config.AuthType = *auth
 	config.JMXRequestTimeout = time.Duration(*requestTimeout) * time.Millisecond
+	config.KafkaDir = *kafkaDir
 	config.PrintConfig()
 
 	zookeeper.Connect(strings.Split(*zk, ","))
