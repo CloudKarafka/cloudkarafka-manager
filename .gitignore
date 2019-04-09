@@ -9,3 +9,9 @@ cloudkarafka-mgmt.tar*
 cloudkarafka-mgmt
 *.db
 Gemfile.lock
+.keystorepassword
+clientkey.store
+Gemfile.lock
+.keystorepassword
+clientkey.store
+
