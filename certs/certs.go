@@ -113,15 +113,19 @@ func logCommand(desc string, cmd *exec.Cmd) {
 }
 
 func (me JKS) List() ([]StoreEntity, error) {
-	cmd := fmt.Sprintf("keytool -keystore %s -storepass %s -list | tail +6", me.Path, me.Password)
-	out, err := exec.Command("bash", "-c", cmd).Output()
+	cmd := exec.Command("keytool",
+		"-keystore", me.Path,
+		"-storepass", me.Password,
+		"-list")
+	logCommand("List entries in keystore", cmd)
+	out, err := cmd.Output()
 	if err != nil {
-		return nil, fmt.Errorf("Failed to execute command: %s", cmd)
+		return nil, fmt.Errorf("Failed to execute command: %s\n%s", err, out)
 	}
 	rows := strings.Split(string(out), "\n")
 	res := make([]StoreEntity, 0)
 	fingerprintExp := regexp.MustCompile(`^Certificate fingerprint \((.*?)\): (.*?)$`)
-	for i := 0; i < len(rows); i++ {
+	for i := 5; i < len(rows); i++ {
 		if rows[i] != "" {
 			p := strings.Split(rows[i], ",")
 			fingerprintMatch := fingerprintExp.FindStringSubmatch(rows[i+1])
