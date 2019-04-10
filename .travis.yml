@@ -9,8 +9,8 @@ before_deploy: if ! [[ $TRAVIS_TAG ]]; then export LAST_TAG=$(git tag --list | t
 install: bash ./scripts/install.sh
 script:
 - go test -v ./...
-- go build -ldflags "-X github.com/84codes/cloudkarafka-mgmt/config.GitCommit=$TRAVIS_COMMIT
-  -X github.com/84codes/cloudkarafka-mgmt/config.Version=$VERSION" -tags static -a
+- go build -ldflags "-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$TRAVIS_COMMIT
+  -X github.com/cloudkarafka/cloudkarafka-manager/config.Version=$VERSION" -tags static -a
   -installsuffix cgo -o cloudkarafka-mgmt.linux
 after_success: bash ./scripts/package.sh
 addons:
