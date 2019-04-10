@@ -127,13 +127,13 @@ func TestImportMultiplePrivateKey(t *testing.T) {
 		t.Fail()
 		return
 	}
-	if entries[0].Alias != "test2" {
-		t.Logf("Expected first alias to match test2 got %v", entries[0].Alias)
+	if entries[0].Alias != "test1" {
+		t.Logf("Expected first alias to match test1 got %v", entries[0].Alias)
 		t.Fail()
 		return
 	}
-	if entries[1].Alias != "test1" {
-		t.Logf("Expected first alias to match test1 got %s", entries[1].Alias)
+	if entries[1].Alias != "test2" {
+		t.Logf("Expected second alias to match test2 got %s", entries[1].Alias)
 		t.Fail()
 		return
 	}
