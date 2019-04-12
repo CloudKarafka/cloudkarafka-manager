@@ -366,3 +366,29 @@ func RemoveSSLKey(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 }
+
+func SignCert(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.SignCert: %s", err)
+		http.Error(w, "Cannot parse request body", http.StatusBadRequest)
+		return
+	}
+	q := r.URL.Query()
+	var validity string
+	if q["validity"] == nil {
+		validity = "365"
+	} else {
+		validity = q["validity"][0]
+	}
+	signedCert, err := certs.SignCert(string(bytes), validity)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.SignCert: %s", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Disposition", "attachment; filename=signed_cert.pem")
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(signedCert))
+}

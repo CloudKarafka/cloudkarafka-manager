@@ -10,6 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 )
 
 var NoAliasError = errors.New("Alias doesn't exists in keystore")
@@ -149,17 +151,11 @@ func (me JKS) List() ([]StoreEntity, error) {
 	return res, nil
 }
 func ValidateCert(cert string) (bool, error) {
-	tmpfile, err := ioutil.TempFile("", "cert_")
+	tmpfile, err := writeTmpfile(cert, "cert_")
 	if err != nil {
 		return false, err
 	}
 	defer os.Remove(tmpfile.Name()) // clean up
-	if _, err := tmpfile.WriteString(cert); err != nil {
-		return false, err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return false, err
-	}
 	cmd := exec.Command("openssl", "x509", "-in", tmpfile.Name(), "-text")
 	logCommand("Validate cert", cmd)
 	out, err := cmd.Output()
@@ -204,14 +200,8 @@ func GenerateCert(privateKey string, subject CertSubject, validity string) (Publ
 			return EmptyKeyPair, err
 		}
 	} else {
-		tmpfile, err := ioutil.TempFile("", "key_")
+		tmpfile, err := writeTmpfile(privateKey, "key_")
 		if err != nil {
-			return EmptyKeyPair, err
-		}
-		if _, err := tmpfile.WriteString(privateKey); err != nil {
-			return EmptyKeyPair, err
-		}
-		if err := tmpfile.Close(); err != nil {
 			return EmptyKeyPair, err
 		}
 		defer os.Remove(tmpfile.Name())
@@ -235,18 +225,67 @@ func GenerateCert(privateKey string, subject CertSubject, validity string) (Publ
 	return PublicPrivateKeyPair{string(certContent), privateKey}, nil
 }
 
+func writeTmpfile(content, prefix string) (*os.File, error) {
+	tmpfile, err := ioutil.TempFile("", prefix)
+	if err != nil {
+		return tmpfile, fmt.Errorf("Could not create temporary file: %s", err)
+	}
+	if content != "" {
+		if _, err := tmpfile.WriteString(content); err != nil {
+			return tmpfile, fmt.Errorf("Could not create temporary file: %s", err)
+		}
+		if err := tmpfile.Close(); err != nil {
+			return tmpfile, fmt.Errorf("Could not create temporary file: %s", err)
+		}
+	}
+	return tmpfile, nil
+}
+
+func SignCert(csr string, validity string) (string, error) {
+	csrfile, err := writeTmpfile(csr, "csr_")
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(csrfile.Name())
+	certfile, err := writeTmpfile("", "cert_")
+	if err != nil {
+		return "", err
+	}
+	defer os.Remove(certfile.Name())
+	caCert := filepath.Join(config.CertsDir, "ca.pem")
+	if _, err := os.Stat(caCert); os.IsNotExist(err) {
+		return "", fmt.Errorf("CA certificate %s not found, cannot sign CSR", caCert)
+	}
+	caKey := filepath.Join(config.CertsDir, "ca.key")
+	if _, err := os.Stat(caKey); os.IsNotExist(err) {
+		return "", fmt.Errorf("CA certificate key %s not found, cannot sign CSR", caKey)
+	}
+	fmt.Println(csr)
+	cmd := exec.Command("openssl", "x509",
+		"-req", "-CA", caCert,
+		"-CAkey", caKey,
+		"-CAcreateserial",
+		"-days", validity,
+		"-in", csrfile.Name(),
+		"-out", certfile.Name())
+	logCommand("Signing CSR", cmd)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errors.New("Failed to sign CSR")
+	}
+	certContent, err := ioutil.ReadFile(certfile.Name())
+	if err != nil {
+		return "", err
+	}
+	return string(certContent), nil
+}
+
 func (me JKS) ImportCert(cert, alias string) error {
-	tmpfile, err := ioutil.TempFile("", "cert_")
+	tmpfile, err := writeTmpfile(cert, "cert_")
 	if err != nil {
 		return err
 	}
-	// defer os.Remove(tmpfile.Name()) // clean up
-	if _, err := tmpfile.WriteString(cert); err != nil {
-		return err
-	}
-	if err := tmpfile.Close(); err != nil {
-		return err
-	}
+	defer os.Remove(tmpfile.Name()) // clean up
 	cmd := exec.Command("keytool", "-import",
 		"-alias", alias,
 		"-file", tmpfile.Name(),

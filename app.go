@@ -25,6 +25,7 @@ var (
 	printJMXQueries = flag.Bool("print-jmx-queries", false, "Print all JMX requests to the broker")
 	zk              = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
 	kafkaDir        = flag.String("kafkadir", "/opt/kafka", "The directory where kafka lives")
+	certsDir        = flag.String("certsdir", "/opt/certs", "The directory where the certificate for kafka is")
 )
 
 // TODO: Handle brokers going offline.....
@@ -90,6 +91,7 @@ func main() {
 	config.AuthType = *auth
 	config.JMXRequestTimeout = time.Duration(*requestTimeout) * time.Millisecond
 	config.KafkaDir = *kafkaDir
+	config.CertsDir = *certsDir
 	config.ZookeeperURL = strings.Split(*zk, ",")
 	config.PrintConfig()
 

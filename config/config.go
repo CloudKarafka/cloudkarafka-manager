@@ -21,6 +21,7 @@ var (
 	GitCommit         string = "master"
 	JMXRequestTimeout time.Duration
 	KafkaDir          string
+	CertsDir          string
 	ZookeeperURL      []string
 )
 
