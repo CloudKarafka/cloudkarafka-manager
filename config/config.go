@@ -47,6 +47,14 @@ func (b BrokerURLs) HttpUrl(k int) string {
 	return fmt.Sprintf("http://%s:1%d", b[k].Host, b[k].Port)
 }
 
+// Metrics reporter exposes http server on port 10000+PLAINTEXT-PORT (19092)
+func (b BrokerURLs) MgmtUrl(k int) string {
+	if b[k].Host == "" {
+		return ""
+	}
+	return fmt.Sprintf("http://%s:8080", b[k].Host)
+}
+
 func (b BrokerURLs) Rand() string {
 	if len(b) == 0 {
 		return ""

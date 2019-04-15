@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -269,7 +270,7 @@ func SignCert(csr string, validity string) (string, error) {
 		"-in", csrfile.Name(),
 		"-out", certfile.Name())
 	logCommand("Signing CSR", cmd)
-	out, err := cmd.Output()
+	_, err = cmd.Output()
 	if err != nil {
 		return "", errors.New("Failed to sign CSR")
 	}
@@ -413,4 +414,26 @@ func (me JKS) RemoveEntry(alias string) error {
 
 func (me JKS) DeleteStore() error {
 	return os.Remove(me.Path)
+}
+
+func (me JKS) Distribute() error {
+	file, err := os.Open(me.Path)
+	if err != nil {
+		return err
+	}
+	name := filepath.Base(me.Path)
+	for brokerId, _ := range config.BrokerUrls {
+		url := fmt.Sprintf("%s/api/certificates/keystore/%s", config.BrokerUrls.MgmtUrl(brokerId), name)
+		fmt.Fprintf(os.Stderr, "[INFO] Posting keystore %s to broker %d\n", me.Path, brokerId)
+		resp, err := http.Post(url, "application/octet-stream", file)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		body, _ := ioutil.ReadAll(resp.Body)
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("Got status %d from broker %d: %s", resp.StatusCode, brokerId, body)
+		}
+	}
+	return nil
 }
