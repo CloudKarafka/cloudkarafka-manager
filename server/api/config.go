@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	"github.com/cloudkarafka/cloudkarafka-manager/processes"
 	"goji.io/pat"
@@ -23,7 +24,7 @@ func badRequest(w http.ResponseWriter, err error, fn string) {
 
 func serverError(w http.ResponseWriter, err error, fn, msg string) {
 	fmt.Fprintf(os.Stderr, "[ERROR] api.%s: %s\n", fn, err)
-	http.Error(w, msg, http.StatusBadRequest)
+	http.Error(w, msg, http.StatusInternalServerError)
 }
 
 func checkBrokerURP(brokerId int) {

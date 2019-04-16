@@ -73,7 +73,9 @@ func watchBrokers() {
 			le[fmt.Sprintf("%d", id)] = config.HostPort{broker.Host, broker.Port}
 		}
 	}
-	log.Info("broker_change", le)
+	if len(le) > 0 {
+		log.Info("broker_change", le)
+	}
 	config.BrokerUrls = res
 	_, ok := <-events
 	if ok {
