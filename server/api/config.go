@@ -97,11 +97,18 @@ func UpdateKafkaConfigAll(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	client := &http.Client{}
 	jsonData, _ := json.Marshal(changes)
+	body := bytes.NewBuffer(jsonData)
 	for brokerId, _ := range config.BrokerUrls {
 		fmt.Fprintf(os.Stderr, "[INFO] Starting config update on broker %d\n", brokerId)
 		url := fmt.Sprintf("%s/api/config/kafka/%d", config.BrokerUrls.MgmtUrl(brokerId), brokerId)
-		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+		req, err := http.NewRequest("POST", url, body)
+		req.Header.Set("Content-Type", "application/json")
+		if username, passwd, ok := r.BasicAuth(); ok {
+			req.SetBasicAuth(username, passwd)
+		}
+		resp, err := client.Do(req)
 		if err != nil {
 			serverError(w, err, "UpdateKafkaConfigAll", "Couldn't request config update on broker")
 			return
