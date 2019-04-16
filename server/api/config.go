@@ -44,7 +44,7 @@ func checkBrokerURP(brokerId int) {
 }
 
 func GetKafkaConfig(w http.ResponseWriter, r *http.Request) {
-	configs = make(map[int]map[string]string)
+	configs := make(map[int]map[string]string)
 	for brokerId, _ := range config.BrokerUrls {
 		config, err := config.GetKafkaConfig(brokerId)
 		if err != nil {
