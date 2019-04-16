@@ -135,7 +135,7 @@ func IsDynamicClusterSetting(key string) bool {
 
 func getKafkaConfig(url string) (map[string]string, error) {
 	res := make(map[string]string)
-	r, err := http.Get(url)
+	r, err := http.Get(url + "/config")
 	if err != nil {
 		return res, err
 	}
@@ -150,7 +150,7 @@ func getKafkaConfig(url string) (map[string]string, error) {
 
 // Assuming PLAINTEXT port on the broker is default, 9092
 func GetLocalKafkaConfig() (map[string]string, error) {
-	return getKafkaConfig("http://localhost:19092/config")
+	return getKafkaConfig("http://localhost:19092")
 }
 
 func GetKafkaConfig(brokerId int) (map[string]string, error) {
