@@ -144,9 +144,16 @@ func UpdateKafkaConfig(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
-	file, err := os.OpenFile(
-		fmt.Sprintf("%s/config/server.properties", config.KafkaDir),
-		os.O_RDWR, 0755)
+	filePath := fmt.Sprintf("%s/config/server.properties", config.KafkaDir)
+	backupPath := fmt.Sprintf("%s/config/server-%s.properties",
+		config.KafkaDir,
+		time.Now().UTC().Format("2006-01-02T15_04_05"))
+	if err := os.Link(filePath, backupPath); err != nil {
+		log.Error("kafkaconfig_backup", log.MapEntry{"err": err})
+		http.Error(w, "Couldn't make backup of config file", http.StatusInternalServerError)
+		return
+	}
+	file, err := os.OpenFile(filePath, os.O_RDWR, 0755)
 	if err != nil {
 		serverError(w, err, "UpdateKafkaConfig", "Couldn't find kafka config file")
 		return
