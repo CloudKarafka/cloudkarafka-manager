@@ -43,6 +43,35 @@ func checkBrokerURP(brokerId int) {
 
 }
 
+func GetKafkaConfig(w http.ResponseWriter, r *http.Request) {
+	configs = make(map[int]map[string]string)
+	for brokerId, _ := range config.BrokerUrls {
+		config, err := config.GetKafkaConfig(brokerId)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[WARN] Could not get kafka config from broker %d: %s", brokerId, err)
+		} else {
+			configs[brokerId] = config
+		}
+	}
+	writeAsJson(w, configs)
+}
+
+// Get kafka config for a specific broker
+func GetKafkaConfigBroker(w http.ResponseWriter, r *http.Request) {
+	brokerId, err := strconv.Atoi(pat.Param(r, "brokerId"))
+	if err != nil {
+		badRequest(w, err, "GetKafkaConfigBroker")
+		return
+	}
+	config, err := config.GetKafkaConfig(brokerId)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] Could not get kafka config from broker %d: %s", brokerId, err)
+		serverError(w, err, "GetKafkaConfigBroker", "Couldn't get broker config")
+		return
+	}
+	writeAsJson(w, config)
+}
+
 // Update kafka config on all brokers, rolling
 func UpdateKafkaConfigAll(w http.ResponseWriter, r *http.Request) {
 	var changes map[string]string

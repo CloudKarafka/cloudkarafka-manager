@@ -65,6 +65,8 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Post("/metrics/kafka"), m.ClusterRead(http.HandlerFunc(KafkaMetrics)))
 	mux.Handle(pat.Get("/metrics/zookeeper"), m.ClusterRead(http.HandlerFunc(ZookeeperMetrics)))
 
+	mux.Handle(pat.Get("/config/kafka"), m.ClusterRead(http.HandlerFunc(GetKafkaConfig)))
+	mux.Handle(pat.Get("/config/kafka/:brokerId"), m.ClusterRead(http.HandlerFunc(GetKafkaConfigBroker)))
 	mux.Handle(pat.Post("/config/kafka"), m.ClusterWrite(http.HandlerFunc(UpdateKafkaConfigAll)))
 	mux.Handle(pat.Post("/config/kafka/:brokerId"), m.ClusterWrite(http.HandlerFunc(UpdateKafkaConfig)))
 	return mux
