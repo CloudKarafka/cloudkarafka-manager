@@ -127,7 +127,9 @@ func main() {
 					})
 				}
 			case <-hourly.C:
-				db.Cleaner(time.Now().Add(time.Hour * time.Duration(config.Retention) * -1))
+				if config.Retention > 0 {
+					db.Cleaner(time.Now().Add(time.Hour * time.Duration(config.Retention) * -1))
+				}
 			}
 		}
 	}()
