@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/db"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	"github.com/cloudkarafka/cloudkarafka-manager/server"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
@@ -63,16 +63,17 @@ func watchBrokers() {
 			ids = append(ids, id)
 		}
 	}
-	fmt.Fprintf(os.Stderr, "[INFO] Number of brokers changed: previous=%d, now=%d\n", current, new)
+	le := make(log.MapEntry)
 	for _, id := range ids {
 		broker, err := zookeeper.Broker(id)
 		if err != nil {
 			res[id] = config.HostPort{"", -1}
 		} else {
 			res[id] = config.HostPort{broker.Host, broker.Port}
+			le[fmt.Sprintf("%d", id)] = config.HostPort{broker.Host, broker.Port}
 		}
 	}
-	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", res)
+	log.Info("broker_change", le)
 	config.BrokerUrls = res
 	_, ok := <-events
 	if ok {
@@ -101,9 +102,11 @@ func main() {
 	metrics.TimeRequests = *printJMXQueries
 	go watchBrokers()
 
-	if err := db.Connect(); err != nil {
-		log.Fatalf("[ERROR] Could not connect to DB: %s\n", err)
-		os.Exit(1)
+	if config.Retention > 0 {
+		if err := db.Connect(); err != nil {
+			log.Error("db_connect", log.MapEntry{"err": err})
+			os.Exit(1)
+		}
 	}
 	hourly := time.NewTicker(time.Hour)
 	metricsTicker := time.NewTicker(60 * time.Second)
@@ -133,13 +136,7 @@ func main() {
 	go server.Start()
 	//Wait for term
 	<-signals
-	fmt.Println("[INFO] Closing down...")
 	quit <- true
-	time.AfterFunc(2*time.Second, func() {
-		log.Fatal("[ERROR] could not exit in reasonable time")
-	})
 	zookeeper.Stop()
 	db.Close()
-	fmt.Println("[INFO] Stopped successfully")
-	return
 }

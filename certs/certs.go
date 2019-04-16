@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
 
 var NoAliasError = errors.New("Alias doesn't exists in keystore")
@@ -98,23 +99,7 @@ type JKS struct {
 var ignoreParams = []string{"-deststorepass", "-srcstorepass", "-destkeypass", "-password", "-storepass"}
 
 func logCommand(desc string, cmd *exec.Cmd) {
-	skipNext := false
-	var buffer bytes.Buffer
-	buffer.WriteString(cmd.Path)
-	for _, v := range cmd.Args[1:] {
-		if skipNext {
-			buffer.WriteString(" *******")
-		} else {
-			buffer.WriteString(" " + v)
-		}
-		skipNext = false
-		for _, skip := range ignoreParams {
-			if v == skip {
-				skipNext = true
-			}
-		}
-	}
-	fmt.Fprintf(os.Stderr, "[INFO] %s: %s\n", desc, buffer.String())
+	log.Info("cmd", log.CmdEntry{cmd})
 }
 
 func (me JKS) Exists() bool {
@@ -124,15 +109,24 @@ func (me JKS) Exists() bool {
 	return true
 }
 
+func execCmc(cmd *exec.Cmd) ([]byte, error) {
+	log.Info("cmd", log.CmdEntry{cmd})
+	out, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("Command failed: %s\n%s", err, out)
+	}
+	return out, err
+}
+
 func (me JKS) List() ([]StoreEntity, error) {
+
 	cmd := exec.Command("keytool",
 		"-keystore", me.Path,
 		"-storepass", me.Password,
 		"-list")
-	logCommand("List entries in keystore", cmd)
-	out, err := cmd.Output()
+	out, err := execCmd(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to execute command: %s\n%s", err, out)
+		return nil, err
 	}
 	rows := strings.Split(string(out), "\n")
 	res := make([]StoreEntity, 0)
