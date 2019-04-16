@@ -138,5 +138,7 @@ func main() {
 	<-signals
 	quit <- true
 	zookeeper.Stop()
-	db.Close()
+	if config.Retention > 0 {
+		db.Close()
+	}
 }
