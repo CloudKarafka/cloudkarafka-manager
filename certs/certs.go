@@ -109,7 +109,7 @@ func (me JKS) Exists() bool {
 	return true
 }
 
-func execCmc(cmd *exec.Cmd) ([]byte, error) {
+func execCmd(cmd *exec.Cmd) ([]byte, error) {
 	log.Info("cmd", log.CmdEntry{cmd})
 	out, err := cmd.Output()
 	if err != nil {
@@ -119,11 +119,7 @@ func execCmc(cmd *exec.Cmd) ([]byte, error) {
 }
 
 func (me JKS) List() ([]StoreEntity, error) {
-
-	cmd := exec.Command("keytool",
-		"-keystore", me.Path,
-		"-storepass", me.Password,
-		"-list")
+	cmd := exec.Command("keytool", "-keystore", me.Path, "-storepass", me.Password, "-list")
 	out, err := execCmd(cmd)
 	if err != nil {
 		return nil, err
