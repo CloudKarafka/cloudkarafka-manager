@@ -32,7 +32,7 @@ func checkBrokerURP(brokerId int) {
 		r, err := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions", "Value", "")
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
-		} else {
+		} else if len(r) > 0 { // Got a response
 			fmt.Fprintf(os.Stderr, "[INFO] URP status: broker=%d, URP=%.0f\n", brokerId, r[0].Value)
 			if r[0].Value == 0 {
 				return
