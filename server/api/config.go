@@ -33,7 +33,7 @@ func checkBrokerURP(brokerId int) {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "[INFO] URP status: broker=%d, URP=%d\n", brokerId, r[0].Value)
+			fmt.Fprintf(os.Stderr, "[INFO] URP status: broker=%d, URP=%.0f\n", brokerId, r[0].Value)
 			if r[0].Value == 0 {
 				return
 			}
@@ -64,7 +64,7 @@ func UpdateKafkaConfigAll(w http.ResponseWriter, r *http.Request) {
 	if len(changesToApply) > 0 {
 		if err := config.ReloadClusterConfig(changesToApply); err != nil {
 			serverError(w, err, "UpdateKafkaConfigAll",
-				fmt.Sprintf("Couldn't reload cluster-wide changed", err))
+				fmt.Sprintf("Couldn't reload cluster-wide change: %s", err))
 			return
 		}
 	}
@@ -122,7 +122,7 @@ func UpdateKafkaConfig(w http.ResponseWriter, r *http.Request) {
 	}
 	file.Seek(0, 0)
 	if err := conf.Write(file); err != nil {
-		serverError(w, err, "UpdateKafkaConfig", fmt.Sprintf("Couldn't write changes to config file", err))
+		serverError(w, err, "UpdateKafkaConfig", fmt.Sprintf("Couldn't write changes to config file: %s", err))
 		return
 	}
 	changesToApply := make(map[string]string)
