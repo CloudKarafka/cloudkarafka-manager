@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"goji.io/pat"
@@ -59,7 +60,7 @@ func CreateAcl(w http.ResponseWriter, r *http.Request) {
 		acl.Permission.String(),
 	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateAcl: %s", err)
+		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateAcl: %s\n", err)
 		http.Error(w, "Could not save ACL rule", http.StatusInternalServerError)
 		return
 	}
@@ -71,6 +72,9 @@ func DeleteAcl(w http.ResponseWriter, r *http.Request) {
 	resource := pat.Param(r, "resource")
 	name := pat.Param(r, "name")
 	principal := pat.Param(r, "principal")
+	if !strings.HasPrefix(principal, "User:") {
+		principal = "User:" + principal
+	}
 	if !p.ClusterWrite() {
 		http.NotFound(w, r)
 		return
