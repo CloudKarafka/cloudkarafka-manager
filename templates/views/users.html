@@ -1,0 +1,49 @@
+{{define "title"}}Users{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>Admin</h1>
+  </div>
+  <div class="col-sm-8 col-12 text-sm-right">
+    <p>
+      <a href="/users/add.html" class="btn btn-primary float-sm-none float-right ml-2">+ Add User</a>
+    </p>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="row">
+  <div class="col-md-12">
+    <h4>Users</h4>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col" class="text-center">Type</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Content }}
+        <tr class="row_link" data-href="/users/{{toLower .Type}}/{{.Name}}">
+          <td>
+            <a href="/users/{{toLower .Type}}/{{.Name}}">{{ .Name }}</a></td>
+          <td class="text-center">{{ .Type}}</td>
+          <td class="text-center">
+            <form action="/users/{{toLower .Type}}/{{.Name}}/delete" method="POST">
+              <button type="submit" title="Delete user" href="/users/{{toLower .Type}}/{{.Name}}" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><img src="/assets/icons/trashcan.svg" /></button>
+              </form>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

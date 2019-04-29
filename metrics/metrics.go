@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
 
 var (
@@ -31,33 +32,31 @@ type Metric struct {
 	Key              string  `json:"key"`
 }
 
-// Cache request for some seconds?
-// Register failed requests, if X fails within interval Y pause requests or stop logging
-func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
-	var (
-		err error
-		v   []Metric
-		r   *http.Response
-	)
-	host := config.BrokerUrls.HttpUrl(brokerId)
-	if host == "" {
-		return v, nil //fmt.Errorf("No URL found to broker %d", brokerId)
-	}
-	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", config.BrokerUrls.HttpUrl(brokerId), bean, attr)
-	start := time.Now()
-	r, err = http.Get(url)
-	if TimeRequests {
-		fmt.Fprintf(os.Stderr, "Request GET %s took %.4fs\n", url, time.Since(start).Seconds())
-	}
+func doRequest(url string) ([]Metric, error) {
+	var v []Metric
+	r, err := http.Get(url)
+	defer r.Body.Close()
 	if err != nil {
-		return v, err
+		return nil, err
 	}
 	if r.StatusCode != 200 {
-		fmt.Fprintf(os.Stderr, "[INFO] GET %s returned %s\n", url, r.Status)
+		log.Error("doRequest", log.MapEntry{"url": url, "status": r.StatusCode})
+		return nil, fmt.Errorf("URL %s returned %d", url, r.StatusCode)
+	}
+	if err = json.NewDecoder(r.Body).Decode(&v); err != nil {
+		return nil, err
+	}
+	return v, nil
+
+}
+
+func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
+	host := config.BrokerUrls.HttpUrl(brokerId)
+	if host == "" {
 		return nil, nil
 	}
-	defer r.Body.Close()
-	err = json.NewDecoder(r.Body).Decode(&v)
+	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", host, bean, attr)
+	v, err := doRequest(url)
 	if err == nil {
 		for i, _ := range v {
 			v[i].Broker = brokerId

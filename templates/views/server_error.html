@@ -1,0 +1,23 @@
+{{define "title"}}Error{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>Server error</h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<h4>Internal server error</h4>
+<div class="notification">
+  <span class="icon float-left danger">
+  </span>
+  <div class="message">
+    <h2>Internal Server Error</h2>
+    <p>
+      {{.Content.Error}}
+    </p>
+  </div>
+</div>
+{{end}}

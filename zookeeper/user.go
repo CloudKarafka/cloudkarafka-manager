@@ -15,9 +15,9 @@ var (
 	userAlreadyExists = errors.New("ERROR: user already exists.")
 )
 
-func Users(p Permissions) ([]string, error) {
+func Users(username string, p Permissions) ([]string, error) {
 	users, err := all("/config/users", func(usr string) bool {
-		return p.ClusterRead() || usr == p.Username
+		return p.ReadCluster() || usr == username
 	})
 	if err == zk.ErrNoNode {
 		return []string{}, nil

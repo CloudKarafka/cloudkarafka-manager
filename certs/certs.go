@@ -427,3 +427,34 @@ func (me JKS) Distribute() error {
 	}
 	return nil
 }
+
+func (me JKS) DistinguishedName(alias string) (string, error) {
+	tmpfile, err := ioutil.TempDir("", "keystore_")
+	if err != nil {
+		return "", err
+	}
+	defer os.RemoveAll(tmpfile)
+	cmd := exec.Command("keytool", "-importkeystore",
+		"-srckeystore", me.Path,
+		"-srcalias", alias,
+		"-srcstoretype", me.Type,
+		"-srcstorepass", me.Password,
+		"-destkeystore", filepath.Join(tmpfile, "store"),
+		"-deststoretype", "pkcs12",
+		"-deststorepass", "secret")
+	log.Info("cmd", log.CmdEntry{cmd})
+	out, err := cmd.Output()
+	if err != nil {
+		fmt.Println(string(out))
+		return "", err
+	}
+	cmd = exec.Command("bash", "-c",
+		fmt.Sprintf("openssl pkcs12 -password pass:secret -in %s -nokeys | grep subject", filepath.Join(tmpfile, "store")))
+	log.Info("cmd", log.CmdEntry{cmd})
+	out, err = cmd.Output()
+	if err != nil {
+		fmt.Println(string(out))
+		return "", err
+	}
+	return string(out[8:]), nil
+}

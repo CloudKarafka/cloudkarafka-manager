@@ -27,7 +27,7 @@ func Router() *goji.Mux {
 
 	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
 	mux.Handle(pat.Get("/notifications"), http.HandlerFunc(Notifications))
-	mux.Handle(pat.Get("/overview"), http.HandlerFunc(Overview))
+	//mux.Handle(pat.Get("/overview"), http.HandlerFunc(Overview))
 	mux.Handle(pat.Get("/brokers"), http.HandlerFunc(Brokers))
 	mux.Handle(pat.Get("/brokers/throughput"), http.HandlerFunc(BrokersThroughput))
 	mux.Handle(pat.Get("/brokers/:id"), http.HandlerFunc(Broker))

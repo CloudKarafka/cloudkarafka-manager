@@ -1,0 +1,118 @@
+{{define "title"}}Topic {{.Content.Name}}{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-4">
+    <h1><a href="/topics/">Topics</a> / {{.Content.Name}} </h1>
+  </div>
+  <div class="col-8">
+    <a href="#" id="consumeTopicBtn" class="btn btn-sm btn-primary float-right">Browse</a>
+    <a href="#" id="editTopicBtn" class="btn btn-sm btn-primary float-right edit">Edit</a>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="row">
+  <div class="col-md-6 col-lg-4">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <h2>
+          Overview
+        </h2>
+      </div>
+      <div class="box-body p-0">
+        <div class="clearfix">
+          <table class="table">
+            <tbody id="topic-overview">
+              <tr>
+                <td>Partitions</td>
+                <td class="text-right">{{len .Content.Partitions}}</td>
+              </tr>
+              <tr>
+                <td>Replication Factor</td>
+                <td class="text-right">{{ len (index .Content.Partitions 0).Replicas }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-4">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <h2>Config</h2>
+      </div>
+      <div class="box-body p-0">
+        <div class="clearfix">
+          <table class="table">
+            <tbody id="topic-config">
+              <tr>
+                <td></td>
+                <td class="text-right"></td>
+              </tr>
+              <tr>
+                <td></td>
+                <td class="text-right"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mt-3">
+  <div class="col-4">
+    <h4>Partitions</h4>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <table class="table mt-2">
+      <thead>
+        <tr>
+          <th scope="col">Number</th>
+          <th scope="col" class="text-center">Leader</th>
+          <th scope="col" class="text-center">Replicas</th>
+          <th scope="col" class="text-center">In Sync Replicas</th>
+          <th scope="col" class="text-center">Size</th>
+          <th scope="col" class="text-center">Start Offset</th>
+          <th scope="col" class="text-center">End Offset</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range $i,$p := .Content.Partitions}}
+        <tr>
+          <td>{{ $i }}</td>
+          <td class="text-center">{{ $p.Leader }}</td>
+          <td class="text-center">{{ $p.Replicas }}</td>
+          <td class="text-center">{{ $p.ISR }}</td>
+          <td class="text-center">0 </td>
+          <td class="text-center">0 </td>
+          <td class="text-center">0</td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <form id="delete-topic" method="post">
+      <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/assets/icons/trashcan.svg" /></span> <span>Delete this topic</span></button>
+    </form>
+  </div>
+</div>
+
+{{end}}
+
+{{define "js"}}
+<script src="/js/d3.v3.min.js"></script>
+<script src="/js/rickshaw.min.js"></script>
+<script src="/js/throughput-chart.js"></script>
+{{end}}

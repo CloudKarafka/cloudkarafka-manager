@@ -22,17 +22,20 @@ type user struct {
 
 func Users(w http.ResponseWriter, r *http.Request) {
 	p := r.Context().Value("permissions").(zookeeper.Permissions)
-	users, err := zookeeper.Users(p)
+	username := r.Context().Value("username").(string)
+	users, err := zookeeper.Users(username, p)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[INFO] api.Users: %s", err)
 		http.Error(w, "Could not retrive save user in ZooKeeper", http.StatusInternalServerError)
 		return
 	}
-	res := make([]zookeeper.Permissions, len(users))
-	for i, user := range users {
-		res[i] = zookeeper.PermissionsFor(user)
-	}
-	writeAsJson(w, res)
+	/*
+		res := make([]zookeeper.Permissions, len(users))
+		for i, user := range users {
+			res[i] = zookeeper.PermissionsFor(user)
+		}
+	*/
+	writeAsJson(w, users)
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +57,12 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 func User(w http.ResponseWriter, r *http.Request) {
 	name := pat.Param(r, "name")
-	user := zookeeper.PermissionsFor(name)
+	user, err := zookeeper.PermissionsFor(name)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.User: %s", err)
+		http.Error(w, "Couldn't get info from zookeeper", http.StatusInternalServerError)
+		return
+	}
 	writeAsJson(w, user)
 }
 
@@ -93,9 +101,6 @@ func getKeystore(storetype string) (certs.JKS, error) {
 		}
 		password := kafkaConfig["ssl.truststore.password"]
 		storeType := kafkaConfig["ssl.truststore.type"]
-		if password == "" {
-			return certs.JKS{}, errors.New("Could not find ssl.truststore.password in kafka config")
-		}
 		if storeType == "" {
 			storeType = "JKS"
 		}
@@ -110,6 +115,9 @@ func getKeystore(storetype string) (certs.JKS, error) {
 		return certs.JKS{}, errors.New("Could not read keystore password")
 	}
 	return certs.JKS{"clientkey.store", string(b), "PKCS12"}, nil
+}
+func GetKeystore(storetype string) (certs.JKS, error) {
+	return getKeystore(storetype)
 }
 
 func ListSSLCerts(w http.ResponseWriter, r *http.Request) {

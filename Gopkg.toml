@@ -7,7 +7,7 @@
 
 [[constraint]]
   name = "github.com/confluentinc/confluent-kafka-go"
-  version = "0.11.4"
+  version = "1.0.0"
 
 [[constraint]]
   name = "goji.io"
@@ -20,3 +20,7 @@
 [prune]
   go-tests = true
   unused-packages = true
+
+[[constraint]]
+  name = "github.com/gorilla/securecookie"
+  version = "1.1.1"

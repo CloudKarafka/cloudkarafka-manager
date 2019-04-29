@@ -1,64 +1,66 @@
 package web
 
 import (
-	"context"
-	"fmt"
-	"html/template"
+	"encoding/gob"
+	"errors"
 	"net/http"
-	"os"
-	"sort"
 
-	"github.com/84codes/cloudkarafka-mgmt/config"
-	"github.com/84codes/cloudkarafka-mgmt/metrics"
-	m "github.com/84codes/cloudkarafka-mgmt/server/middleware"
-	"github.com/84codes/cloudkarafka-mgmt/zookeeper"
+	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
+	"github.com/cloudkarafka/cloudkarafka-manager/templates"
+	"github.com/gorilla/securecookie"
+	"github.com/gorilla/sessions"
 	goji "goji.io"
 	"goji.io/pat"
 )
 
-func getTemplate(name string) (*template.Template, error) {
-	mainTmpl := fmt.Sprintf("templates/%s.html", name)
-	//t := template.New("content")
-	t, err := template.ParseFiles([]string{mainTmpl}...)
-	if err != nil {
-		return nil, err
-	}
-	return t.ParseGlob("templates/partials/*.html")
-}
+var (
+	badRequest  = errors.New("Bad request")
+	Cookiestore *sessions.CookieStore
+)
 
-func Topics(w http.ResponseWriter, r *http.Request) {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
-	ctx, cancel := context.WithTimeout(r.Context(), config.WebRequestTimeout)
-	defer cancel()
-	topics, err := metrics.FetchTopicList(ctx, p)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] could not create template: %s\n", err)
-		return
-	}
-	sort.Slice(topics, func(i, j int) bool {
-		return topics[i].Name < topics[j].Name
-	})
-	t, err := getTemplate("topics")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] could not create template: %s\n", err)
-		return
-	}
-	err = t.ExecuteTemplate(w, "content", topics)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERR] execute template failed:  %s\n", err)
-		return
-	}
+func init() {
+	templates.Load()
 
+	authKeyOne := securecookie.GenerateRandomKey(64)
+	encryptionKeyOne := securecookie.GenerateRandomKey(32)
+	Cookiestore = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
+	Cookiestore.Options = &sessions.Options{
+		MaxAge:   60 * 15,
+		HttpOnly: true,
+	}
+	gob.Register(m.SessionUser{})
 }
 
 func Router() *goji.Mux {
-	mux := goji.SubMux()
-	mux.Use(m.RequestId)
-	mux.Use(m.Logger)
-	mux.Use(m.HostnameToResponse)
-	mux.Use(m.Secure)
-	mux.Handle(pat.New("/topics"), http.HandlerFunc(Topics))
+	secureMux := goji.SubMux()
+	secureMux.Use(m.SessionSecure(Cookiestore))
 
-	mux.Handle(pat.Get("/*"), http.FileServer(http.Dir("static/")))
+	//mux.Handle(pat.New("/topics"), http.HandlerFunc(Topics))
+	secureMux.Handle(pat.Get("/"), templates.TemplateHandler(Overview))
+
+	secureMux.Handle(pat.Get("/brokers"), templates.TemplateHandler(Brokers))
+	secureMux.Handle(pat.Get("/brokers/:id"), templates.TemplateHandler(Broker))
+
+	secureMux.Handle(pat.Get("/topics"), templates.TemplateHandler(ListTopics))
+	secureMux.Handle(pat.Get("/create_topic"), templates.TemplateHandler(CreateTopic))
+	secureMux.Handle(pat.Post("/create_topic"), templates.TemplateHandler(SaveTopic))
+	secureMux.Handle(pat.Get("/edit_topic/:name"), templates.TemplateHandler(ListTopics))
+	secureMux.Handle(pat.Post("/edit_topic/:name"), templates.TemplateHandler(SaveTopic))
+
+	secureMux.Handle(pat.Get("/topics/:name"), templates.TemplateHandler(ViewTopic))
+
+	secureMux.Handle(pat.Get("/admin"), templates.TemplateHandler(ListUsers))
+	secureMux.Handle(pat.Get("/admin/users"), templates.TemplateHandler(ListUsers))
+	secureMux.Handle(pat.Get("/admin/acl"), http.RedirectHandler("/admin/acl/topic", 301))
+	secureMux.Handle(pat.Get("/admin/acl/:type"), templates.TemplateHandler(ListACLs))
+
+	secureMux.Handle(pat.Get("/throughput"), templates.JsonHandler(Throughput))
+	secureMux.Handle(pat.Get("/throughput/follow"), templates.SseHandler(ThroughputFollow))
+
+	mux := goji.SubMux()
+	mux.Use(m.Logger)
+	mux.Handle(pat.Get("/login"), templates.TemplateHandler(GetLogin))
+	mux.Handle(pat.Post("/login"), templates.TemplateHandler(PostLogin))
+	mux.Handle(pat.New("/*"), secureMux)
 	return mux
 }

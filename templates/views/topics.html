@@ -1,0 +1,64 @@
+{{define "title"}}Topics{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>Topics</h1>
+  </div>
+  <div class="col-sm-8 col-12 text-sm-right">
+    <p>
+      <a href="/create_topic" class="btn btn-primary float-sm-none float-right ml-2">
+        + Add Topic
+      </a>
+    </p>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="form-row">
+  <div class="col-md-3 mb-3">
+    <form action="">
+      <input type="text" class="form-control" autocomplete="off" name="s" placeholder="Search">
+      </form>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <table class="table" id="topics">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col" class="text-center">Partitions</th>
+          <th scope="col" class="text-center">Replication Factor</th>
+          <th scope="col" class="text-center">Bytes in/s</th>
+          <th scope="col" class="text-center">Bytes out/s</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Content }}
+        <tr class="{{if .Deleted}}broker-down{{end}}">
+          <td>
+            {{if .Deleted}}
+            {{ .Name }} (pending deletion)
+            {{ else }}
+            <a href="/topics/{{.Name}}">{{ .Name }}</a>
+            {{end}}
+          </td>
+          <td class="text-center">{{ len .Partitions }}</td>
+          <td class="text-center">{{ len (index .Partitions 0).Replicas }}</td>
+          <td class="text-center">{{throughput .BytesIn }}</td>
+          <td class="text-center">{{throughput .BytesOut}}</td>
+        </tr>
+        {{else}}
+        <tr>
+          <td colspan="5" class="text-center">
+            <strong>No Topics...</strong>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

@@ -40,6 +40,14 @@ func (me CmdEntry) ToLog() string {
 	return buffer.String()
 }
 
+type ErrorEntry struct {
+	Err error
+}
+
+func (me ErrorEntry) ToLog() string {
+	return me.Err.Error()
+}
+
 type MapEntry map[string]interface{}
 
 func (me MapEntry) ToLog() string {

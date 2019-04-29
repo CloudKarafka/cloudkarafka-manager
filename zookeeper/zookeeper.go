@@ -50,12 +50,21 @@ func Connect(urls []string) error {
 	}
 	return nil
 }
+
+func Exists(path string) bool {
+	exists, _, _ := conn.Exists(path)
+	return exists
+}
+
 func WatchChildren(path string) ([]string, *zk.Stat, <-chan zk.Event, error) {
 	return conn.ChildrenW(path)
 }
 
 func all(path string, fn permissionFunc) ([]string, error) {
 	rows := make([]string, 0)
+	if exists, _, _ := conn.Exists(path); !exists {
+		return rows, PathDoesNotExistsErr
+	}
 	children, _, err := conn.Children(path)
 	if err != nil {
 		return rows, err

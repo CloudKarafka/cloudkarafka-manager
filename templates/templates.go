@@ -1,0 +1,230 @@
+package templates
+
+import (
+	"encoding/json"
+	"fmt"
+	"html/template"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	humanize "github.com/dustin/go-humanize"
+)
+
+var templates map[string]*template.Template
+var defaultTmpl = `{{define "main" }} {{ template "default" . }} {{ end }}`
+
+type TemplateError struct {
+	s string
+}
+
+func (e *TemplateError) Error() string {
+	return e.s
+}
+
+func NewError(text string) error {
+	return &TemplateError{text}
+}
+
+func Load() error {
+	templateFuncs := template.FuncMap{
+		"toLower": func(str string) string {
+			return strings.ToLower(str)
+		},
+		"throughput": func(value int) string {
+			if value == -1 {
+				return "No data"
+			}
+			return fmt.Sprintf("%s/s", humanize.Bytes(uint64(value)))
+		},
+	}
+
+	templates = make(map[string]*template.Template)
+	layoutFiles, err := filepath.Glob("templates/layouts/*.html")
+	if err != nil {
+		return err
+	}
+	includeFiles, err := filepath.Glob("templates/views/*.html")
+	if err != nil {
+		return err
+	}
+	snippetFiles, err := filepath.Glob("templates/snippets/*.html")
+	if err != nil {
+		return err
+	}
+	defaultTemplate := template.New("default")
+	defaultTemplate, err = defaultTemplate.Parse(defaultTmpl)
+	if err != nil {
+		return err
+	}
+	for _, file := range includeFiles {
+		fileName := filepath.Base(file)
+		extension := filepath.Ext(fileName)
+		name := fileName[0 : len(fileName)-len(extension)]
+		templates[name], err = defaultTemplate.Clone()
+		if err != nil {
+			return err
+		}
+		files := append(append(layoutFiles, file), snippetFiles...)
+		templates[name] = template.Must(templates[name].Funcs(templateFuncs).ParseFiles(files...))
+	}
+	pageFiles, err := filepath.Glob("templates/pages/*.html")
+	if err != nil {
+		return err
+	}
+	for _, file := range pageFiles {
+		fileName := filepath.Base(file)
+		extension := filepath.Ext(fileName)
+		name := fileName[0 : len(fileName)-len(extension)]
+		if _, ok := templates[name]; ok {
+			return fmt.Errorf("Template %s is already defined by a view, pages and views cannot have the same name", name)
+		}
+		templates[name] = template.Must(template.ParseFiles(file))
+	}
+	return nil
+}
+
+type Result interface {
+	Template() string
+	Content() interface{}
+	Standalone() bool
+}
+
+type Error struct {
+	err error
+}
+
+func ErrorRenderer(err error) Error {
+	return Error{err}
+}
+
+func (e Error) Template() string {
+	return "server_error"
+}
+func (e Error) Content() interface{} {
+	return e.err
+}
+func (e Error) Standalone() bool {
+	return false
+}
+
+type Default struct {
+	template   string
+	content    interface{}
+	standalone bool
+}
+
+func DefaultRenderer(template string, content interface{}) Default {
+	return Default{template, content, false}
+}
+func StandaloneRenderer(template string, content interface{}) Default {
+	return Default{template, content, true}
+}
+
+func (e Default) Template() string {
+	return e.template
+}
+func (e Default) Content() interface{} {
+	return e.content
+}
+func (e Default) Standalone() bool {
+	return e.standalone
+}
+
+type TemplateData struct {
+	Username string
+	Hostname string
+	Content  interface{}
+}
+
+func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		username := "admin" //r.Context().Value("username").(string)
+		hostname, err := os.Hostname()
+		if err != nil {
+			hostname = ""
+		}
+		res := fn(w, r)
+		if res != nil {
+			data := TemplateData{
+				Username: username,
+				Hostname: hostname,
+				Content:  res.Content(),
+			}
+			err = RenderDefault(w, res.Standalone(), res.Template(), data)
+			if err != nil {
+				log.Error("render_template", log.ErrorEntry{err})
+				w.Write([]byte(err.Error()))
+			}
+		}
+	})
+}
+
+func JsonHandler(fn func(r *http.Request) (interface{}, error)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res, err := fn(r)
+		if err != nil {
+			log.Error("web.JsonHandler", log.ErrorEntry{err})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
+	})
+}
+
+func SseHandler(fn func(*http.Request, <-chan bool) <-chan []byte) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		// Listen to connection close and un-register messageChan
+		notify := w.(http.CloseNotifier).CloseNotify()
+		for {
+			select {
+			case <-notify:
+				return
+			case v := <-fn(r, notify):
+				fmt.Fprintf(w, "data: %s\n\n", v)
+				flusher.Flush()
+			}
+		}
+	})
+}
+
+func RenderDefault(w http.ResponseWriter, standalone bool, name string, data interface{}) error {
+	if config.DevMode {
+		if err := Load(); err != nil {
+			return err
+		}
+	}
+	tmpl, ok := templates[name]
+	if !ok {
+		return fmt.Errorf("The template %s does not exist.", name)
+	}
+	var err error
+	if standalone {
+		err = tmpl.Execute(w, data)
+	} else {
+		err = tmpl.ExecuteTemplate(w, "base", data)
+	}
+	if err != nil {
+		return fmt.Errorf("Template execution failed: %s", err)
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	return nil
+}
+
+func RenderError(w http.ResponseWriter, err error) error {
+	return RenderDefault(w, false, "server_error", err)
+}

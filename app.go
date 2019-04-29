@@ -26,6 +26,7 @@ var (
 	zk              = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
 	kafkaDir        = flag.String("kafkadir", "/opt/kafka", "The directory where kafka lives")
 	certsDir        = flag.String("certsdir", "/opt/certs", "The directory where the certificate for kafka is")
+	devMode         = flag.Bool("dev", false, "Devmode add more logging and reloadable assets")
 )
 
 // TODO: Handle brokers going offline.....
@@ -96,6 +97,7 @@ func main() {
 	config.KafkaDir = *kafkaDir
 	config.CertsDir = *certsDir
 	config.ZookeeperURL = strings.Split(*zk, ",")
+	config.DevMode = *devMode
 	config.PrintConfig()
 
 	zookeeper.Connect(config.ZookeeperURL)

@@ -172,7 +172,6 @@ func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, erro
 		return nil, err
 	}
 	deletedTopics := zookeeper.TopicsMarkedForDeletion()
-
 	res := make([]Topic, len(topics))
 	for i, topicName := range topics {
 		topic, err := fetchTopic(ctx, topicName)
@@ -181,11 +180,11 @@ func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, erro
 			res[i] = EmptyTopic
 		} else {
 			for _, dt := range deletedTopics {
-				fmt.Println(dt, topic.Name)
 				if dt == topic.Name {
 					topic.Deleted = true
 				}
 			}
+			fmt.Println(topic)
 			res[i] = topic
 		}
 	}

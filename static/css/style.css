@@ -7289,7 +7289,6 @@ main.login-container {
   display: flex;
   height: 100%;
   justify-content: center;
-  margin-top: 10%;
   padding: 2rem .5rem; }
   main.login-container .box {
     border-radius: 0.25rem;

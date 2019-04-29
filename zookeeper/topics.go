@@ -32,7 +32,7 @@ func (topic T) partitionList() partitionList {
 }
 
 func Topics(p Permissions) ([]string, error) {
-	return all("/brokers/topics", p.TopicRead)
+	return all("/brokers/topics", p.ReadTopic)
 }
 
 func fetchTopicInfo(name string, withConfig bool) (T, error) {

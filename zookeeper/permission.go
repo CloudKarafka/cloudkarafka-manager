@@ -1,119 +1,85 @@
 package zookeeper
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
-type Permission int
+type Permission struct {
+	Operation string
+	Type      string
+	Pattern   string
+	Name      string
+}
 
-const (
-	N  Permission = 0
-	R  Permission = 1
-	W  Permission = 2
-	RW Permission = R + W // RW == 3
-)
+func (p Permission) Allow(resource string) bool {
+	return p.Type == "ALLOW"
+}
+func (p Permission) Deny(resource string) bool {
+	return p.Type == "DENY"
+}
+func (p Permission) All(resource string) bool {
+	return p.Operation == "ALL"
+}
+func (p Permission) Alter(resource string) bool {
+	return p.All(resource) || p.Operation == "ALTER"
+}
+func (p Permission) AlterConfigs(resource string) bool {
+	return p.All(resource) || p.Operation == "ALTER_CONFIGS"
+}
+func (p Permission) Create(resource string) bool {
+	return p.All(resource) || p.Operation == "CREATE"
+}
+func (p Permission) Read(resource string) bool {
+	return p.All(resource) || p.Operation == "READ"
+}
+func (p Permission) Write(resource string) bool {
+	return p.All(resource) || p.Operation == "WRITE"
+}
+func (p Permission) Delete(resource string) bool {
+	return p.All(resource) || p.Operation == "DELETE"
+}
+func (p Permission) Describe(resource string) bool {
+	return p.All(resource) || p.Operation == "DESCRIBE"
+}
+func (p Permission) DescribeConfigs(resource string) bool {
+	return p.All(resource) || p.Operation == "DESCRIBE_CONFIGS"
+}
+func (p Permission) IdempotentWrite(resource string) bool {
+	return p.All(resource) || p.Operation == "IDEMPOTENT_WRITE"
+}
 
-func (p *Permission) UnmarshalJSON(b []byte) error {
-	var s string
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
+func PermissionsFor(username string) (Permissions, error) {
+	cAcls, err := ClusterAcls(AdminPermissions)
+	if err != nil {
+		return Permissions{}, err
 	}
-	*p = ParsePermission(s)
-	return nil
-}
-
-func ParsePermission(s string) Permission {
-	switch s {
-	default:
-		return N
-	case "Read":
-		return R
-	case "Write":
-		return W
-	case "All", "Read/Write":
-		return RW
+	tAcls, err := TopicAcls(AdminPermissions)
+	if err != nil {
+		return Permissions{}, err
 	}
-}
-
-func (p Permission) MarshalJSON() ([]byte, error) {
-	return json.Marshal(p.String())
-}
-
-func (p Permission) String() string {
-	var s string
-	switch {
-	case p >= RW:
-		s = "Read/Write"
-	case p >= W:
-		s = "Write"
-	case p >= R:
-		s = "Read"
-	default:
-		s = "None"
+	gAcls, err := GroupAcls(AdminPermissions)
+	if err != nil {
+		return Permissions{}, err
 	}
-	return s
+	return Permissions{
+		Cluster: permissionsMap(username, []ACLRule{cAcls}),
+		Topic:   permissionsMap(username, tAcls),
+		Group:   permissionsMap(username, gAcls)}, nil
 }
 
-type Permissions struct {
-	Username string                `json:"username"`
-	Cluster  Permission            `json:"cluster"`
-	Topics   map[string]Permission `json:"topics"`
-	Groups   map[string]Permission `json:"groups"`
-}
-
-type permissionFunc func(string) bool
-
-func (me Permissions) ClusterRead() bool {
-	return me.Cluster >= R
-}
-
-func (me Permissions) ClusterWrite() bool {
-	return me.Cluster >= W
-}
-
-func (me Permissions) TopicRead(t string) bool {
-	return me.Topics[t] >= R || me.Topics["*"] >= R
-}
-
-func (me Permissions) TopicWrite(t string) bool {
-	return me.Topics[t] >= W || me.Topics["*"] >= W
-}
-
-func (me Permissions) ConsumerRead(g string) bool {
-	return me.Groups[g] >= R || me.Groups["*"] >= R
-}
-
-func (me Permissions) ConsumerWrite(g string) bool {
-	return me.Groups[g] >= W || me.Groups["*"] >= W
-}
-
-func PermissionsFor(username string) Permissions {
-	ar := Permissions{Username: username}
-	ar.Cluster = permissionsMap(username, AllAcls(ClusterAcls, ClusterAcl))["kafka-cluster"]
-	ar.Topics = permissionsMap(username, AllAcls(TopicsAcls, TopicAcl))
-	ar.Groups = permissionsMap(username, AllAcls(GroupsAcls, GroupAcl))
-	return ar
-}
-
-func permissionsMap(username string, aclMap map[string][]acl) map[string]Permission {
-	m := make(map[string]Permission)
-	for k, acls := range aclMap {
-		for _, a := range acls {
-			if a.PermissionType != "Allow" {
-				continue
-			}
-			if a.Principal == fmt.Sprintf("User:%s", username) {
-				switch a.Operation {
-				case "All":
-					m[k] = RW
-				case "Read":
-					m[k] = R
-				case "Write":
-					m[k] = W
-				}
+func permissionsMap(username string, rules []ACLRule) []Permission {
+	res := make([]Permission, 0)
+	principal := fmt.Sprintf("User:%s", username)
+	for _, rule := range rules {
+		for _, user := range rule.Users {
+			if user.Principal == principal {
+				res = append(res, Permission{
+					Operation: user.Operation,
+					Type:      user.PermissionType,
+					Pattern:   rule.Resource.PatternType,
+					Name:      rule.Resource.Name})
 			}
 		}
 	}
-	return m
+	return res
 }

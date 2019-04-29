@@ -9,7 +9,7 @@ import (
 func ClusterRead(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		p := r.Context().Value("permissions").(zookeeper.Permissions)
-		if !p.ClusterRead() {
+		if !p.ReadCluster() {
 			http.NotFound(w, r)
 			return
 		}
@@ -21,7 +21,7 @@ func ClusterRead(h http.Handler) http.Handler {
 func ClusterWrite(h http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		p := r.Context().Value("permissions").(zookeeper.Permissions)
-		if !p.ClusterWrite() {
+		if !p.WriteCluster() {
 			http.NotFound(w, r)
 			return
 		}
