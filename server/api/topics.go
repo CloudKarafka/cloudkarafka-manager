@@ -12,7 +12,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/db"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	bolt "go.etcd.io/bbolt"
 	"goji.io/pat"
@@ -22,51 +22,70 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 	p := r.Context().Value("permissions").(zookeeper.Permissions)
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topics, err := m.FetchTopicList(ctx, p)
+	topicNames, err := zookeeper.Topics(p)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
-	metricNames := []string{"BytesOutPerSec", "BytesInPerSec"}
-	metrics, err := m.FetchTopicMetrics(ctx, "*", metricNames)
-	res := make([]map[string]interface{}, len(topics))
-	sort.Slice(topics, func(i, j int) bool {
-		return topics[i].Name < topics[j].Name
-	})
-
-	for i, topic := range topics {
-		res[i] = map[string]interface{}{
-			"topic":   topic,
-			"metrics": metrics[topic.Name],
-		}
+	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*3)
+	i := 0
+	for id, _ := range config.BrokerUrls {
+		metricRequests[i] = store.PartitionLogStartOffset(id, "*")
+		metricRequests[i+1] = store.TopicBytesInPerSec(id, "*")
+		metricRequests[i+2] = store.TopicBytesOutPerSec(id, "*")
+		i = i + 2
 	}
-	writeAsJson(w, res)
+	req := store.TopicRequest{
+		TopicNames: topicNames,
+		Config:     false,
+		Metrics:    metricRequests,
+	}
+	topics, err := store.FetchTopics(ctx, req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+	sort.Slice(topics, func(i, j int) bool {
+		return topics[i].Topic.Name < topics[j].Topic.Name
+	})
+	ts := make([]store.Topic, len(topics))
+	for i, t := range topics {
+		ts[i] = t.Topic
+	}
+
+	writeAsJson(w, ts)
+
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
 	topicName := pat.Param(r, "name")
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topic, err := m.FetchTopic(ctx, topicName)
-	if err != nil {
-		if err == zookeeper.PathDoesNotExistsErr {
-			http.NotFound(w, r)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+	zkPath := fmt.Sprintf("/brokers/topics/%s", topicName)
+	if !zookeeper.Exists(zkPath) {
+		http.NotFound(w, r)
 		return
 	}
-	metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
-	metrics, err := m.FetchTopicMetrics(ctx, topicName, metricNames)
-	config, err := m.FetchTopicConfig(ctx, topicName)
-
-	res := map[string]interface{}{
-		"details": topic,
-		"config":  config,
-		"metrics": metrics[topic.Name],
+	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*3)
+	i := 0
+	//metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
+	for id, _ := range config.BrokerUrls {
+		metricRequests[i] = store.PartitionLogStartOffset(id, "*")
+		metricRequests[i+1] = store.TopicBytesInPerSec(id, "*")
+		metricRequests[i+2] = store.TopicBytesOutPerSec(id, "*")
+		i = i + 2
 	}
-	writeAsJson(w, res)
+	req := store.TopicRequest{
+		TopicNames: []string{topicName},
+		Config:     true,
+		Metrics:    metricRequests,
+	}
+	topics, err := store.FetchTopics(ctx, req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+	writeAsJson(w, topics[0].Topic)
 }
 
 func TopicThroughput(w http.ResponseWriter, r *http.Request) {

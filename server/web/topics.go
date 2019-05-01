@@ -15,58 +15,34 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"goji.io/pat"
 )
 
-func sumMetrics(l []m.TopicMetricValue) int {
-	res := 0
-	for _, v := range l {
-		res += v.Value
-	}
-	return res
-}
-func addMetrics(ctx context.Context, topics []m.Topic) ([]Topic, error) {
-	metricNames := []string{"BytesOutPerSec", "BytesInPerSec"}
-	metrics, err := m.FetchTopicMetrics(ctx, "*", metricNames)
-	if err != nil {
-		return nil, err
-	}
-	res := make([]Topic, len(topics))
-	for i, topic := range topics {
-		res[i] = Topic{topic, m.TopicConfig{}, -1, -1}
-		if v, ok := metrics[topic.Name]; ok {
-			for k, v := range v {
-				if k == "BytesInPerSec" {
-					res[i].BytesIn = sumMetrics(v)
-				} else if k == "BytesOutPerSec" {
-					res[i].BytesOut = sumMetrics(v)
-				}
-			}
-		}
-	}
-	return res, nil
-}
-
 func ListTopics(w http.ResponseWriter, r *http.Request) templates.Result {
 	p := r.Context().Value("permissions").(zookeeper.Permissions)
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topics, err := m.FetchTopicList(ctx, p)
+	topicNames, err := zookeeper.Topics(p)
 	if err != nil {
 		return templates.ErrorRenderer(err)
 	}
-	topicsWithMetrics, err := addMetrics(ctx, topics)
+	req := store.TopicRequest{
+		TopicNames: topicNames,
+		Config:     false,
+		Metrics:    []store.MetricRequest{},
+	}
+	topics, err := store.FetchTopics(ctx, req)
 	if err != nil {
 		return templates.ErrorRenderer(err)
 	}
-	sort.Slice(topicsWithMetrics, func(i, j int) bool {
-		return topicsWithMetrics[i].Name < topicsWithMetrics[j].Name
+	sort.Slice(topics, func(i, j int) bool {
+		return topics[i].Topic.Name < topics[j].Topic.Name
 	})
-
-	return templates.DefaultRenderer("topics", topicsWithMetrics)
+	return templates.DefaultRenderer("topics", topics)
 }
 
 func ViewTopic(w http.ResponseWriter, r *http.Request) templates.Result {

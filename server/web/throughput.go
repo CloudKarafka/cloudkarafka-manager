@@ -34,9 +34,11 @@ func ThroughputFollow(r *http.Request, quit <-chan bool) <-chan []byte {
 				data := make(map[string]interface{})
 				x := 0
 				for _, key := range keys {
-					l := m.GetSerie(key).Last()
-					data[key] = l.Y
-					x = l.X
+					if s, err := m.GetSerie(key); err == nil {
+						l := s.Last()
+						data[key] = l.Y
+						x = l.X
+					}
 				}
 				res := map[string]interface{}{
 					"x":    x,
@@ -72,9 +74,11 @@ func Throughput(r *http.Request) (interface{}, error) {
 	}
 	res := make([]map[string]interface{}, len(keys))
 	for i, key := range keys {
-		res[i] = map[string]interface{}{
-			"name": key,
-			"data": m.GetSerie(key).All(),
+		if s, err := m.GetSerie(key); err == nil {
+			res[i] = map[string]interface{}{
+				"name": key,
+				"data": s.All(),
+			}
 		}
 	}
 	return res, nil

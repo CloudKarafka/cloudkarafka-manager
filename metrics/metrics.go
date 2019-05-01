@@ -47,13 +47,12 @@ func doRequest(url string) ([]Metric, error) {
 		return nil, err
 	}
 	return v, nil
-
 }
 
 func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 	host := config.BrokerUrls.HttpUrl(brokerId)
 	if host == "" {
-		return nil, nil
+		return nil, fmt.Errorf("Broker %d not available", brokerId)
 	}
 	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", host, bean, attr)
 	v, err := doRequest(url)

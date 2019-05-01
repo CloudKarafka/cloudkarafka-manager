@@ -1,4 +1,4 @@
-package metrics
+package store
 
 import (
 	"errors"
@@ -11,12 +11,6 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
-
-type Request struct {
-	BrokerId int
-	Bean     string
-	Attr     string
-}
 
 type TimeSerie interface {
 	Interval() int
@@ -37,7 +31,7 @@ type BeanTimeSerie struct {
 	cursor    int
 }
 
-func NewBeanTimeSerie(r Request, interval, maxPoints int) *BeanTimeSerie {
+func NewBeanTimeSerie(r MetricRequest, interval, maxPoints int) *BeanTimeSerie {
 	ts := &BeanTimeSerie{
 		interval: interval,
 		Points:   make([]Point, maxPoints),
@@ -82,10 +76,10 @@ func (me *BeanTimeSerie) Last() Point {
 	}
 }
 
-func (me *BeanTimeSerie) fromBean(r Request) {
+func (me *BeanTimeSerie) fromBean(r MetricRequest) {
 	for {
 		time.Sleep(time.Duration(me.interval) * time.Second)
-		metrics, err := QueryBroker(r.BrokerId, r.Bean, r.Attr, "")
+		metrics, err := QueryBroker(r)
 		if err != nil {
 			log.Error("timeserie_getdata", log.ErrorEntry{err})
 		} else {
@@ -148,22 +142,12 @@ var (
 	Series = make(map[string]TimeSerie)
 )
 
-func BrokerRequest(id int, metric string) Request {
-	bean := fmt.Sprintf("kafka.server:type=BrokerTopicMetrics,name=%s", metric)
-	return Request{id, bean, "Count"}
-}
-
-func TopicRequest(id int, topic string, metric string) Request {
-	bean := fmt.Sprintf("kafka.server:type=BrokerTopicMetrics,name=%s,topic=%s", metric, topic)
-	return Request{id, bean, "Count"}
-}
-
 func ensureExists(key string) error {
 	parts := strings.Split(key, "/")
 	if _, ok := Series[key]; !ok || parts[0] == "total" {
 		if parts[0] == "broker" {
 			id, _ := strconv.Atoi(parts[1])
-			Series[key] = NewBeanTimeSerie(BrokerRequest(id, parts[2]), 5, 500)
+			Series[key] = NewBeanTimeSerie(BrokerBeanRequest(id, parts[2]), 5, 500)
 		} else if parts[0] == "total" {
 			for id, _ := range config.BrokerUrls {
 				ensureExists(fmt.Sprintf("broker/%d/BytesInPerSec", id))
@@ -182,7 +166,7 @@ func ensureExists(key string) error {
 		} else if parts[0] == "topic" {
 			series := make([]TimeSerie, 0)
 			for id, _ := range config.BrokerUrls {
-				series = append(series, NewBeanTimeSerie(TopicRequest(id, parts[1], parts[2]), 5, 200))
+				series = append(series, NewBeanTimeSerie(TopicBeanRequest(id, parts[1], parts[2]), 5, 200))
 			}
 			Series[key] = NewSumTimeSerie(series)
 		}
