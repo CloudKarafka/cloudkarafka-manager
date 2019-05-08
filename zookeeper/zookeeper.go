@@ -12,7 +12,6 @@ import (
 
 var (
 	conn                 *zk.Conn
-	authenticaionMethod  string
 	PathDoesNotExistsErr = errors.New("Zookeeper: Path does not exists")
 )
 
@@ -22,16 +21,6 @@ func Stop() {
 	if conn != nil {
 		conn.Close()
 	}
-}
-
-func SetAuthentication(method string) {
-	authenticaionMethod = method
-}
-func SkipAuthentication() bool {
-	return authenticaionMethod == "none"
-}
-func SkipAuthenticationWithWrite() bool {
-	return authenticaionMethod == "none-with-write"
 }
 
 func Connect(urls []string) error {
@@ -44,8 +33,6 @@ func Connect(urls []string) error {
 	})
 	conn, _, err = zk.Connect(urls, 30*time.Second, opts)
 	if err != nil {
-		time.Sleep(1 * time.Second)
-		Connect(urls)
 		return err
 	}
 	return nil

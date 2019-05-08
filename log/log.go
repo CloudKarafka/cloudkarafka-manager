@@ -72,14 +72,15 @@ func Log(w io.Writer, level string, key string, data Entry) {
 func Trace(key string, data Entry) {
 	Log(os.Stderr, "trace", key, data)
 }
-
+func Debug(key string, data Entry) {
+	Log(os.Stderr, "debug", key, data)
+}
 func Info(key string, data Entry) {
 	Log(os.Stderr, "info", key, data)
 }
 func Warn(key string, data Entry) {
 	Log(os.Stderr, "warn", key, data)
 }
-
 func Error(key string, data Entry) {
 	Log(os.Stderr, "error", key, data)
 }

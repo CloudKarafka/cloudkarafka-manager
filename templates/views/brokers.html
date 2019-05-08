@@ -25,17 +25,29 @@
       </thead>
       <tbody>
         {{range .Content }}
+        {{if .Error }}
+        <tr>
+          <td colspan="7">
+            Could not get data about broker: {{ .Error }}
+            </td>
+          </tr>
+        {{else }}
         <tr>
           <td>
-            <a href="/brokers/{{.Id}}">{{ .Id }}</a>
+            <a href="/brokers/{{.Broker.Id}}">{{ .Broker.Id }}</a>
           </td>
-          <td class="text-center">{{ .Type}}</td>
+          <td class="text-center">{{ .Broker.KafkaVersion}}</td>
           <td class="text-center">
-            <form action="/users/{{toLower .Type}}/{{.Name}}/delete" method="POST">
-              <button type="submit" title="Delete user" href="/users/{{toLower .Type}}/{{.Name}}" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><img src="/assets/icons/trashcan.svg" /></button>
-            </form>
+            {{range  .Broker.Endpoints}}
+            {{.}}<br />
+            {{end}}
           </td>
+          <td class="text-center">{{ .Broker.Uptime}}</td>
+          <td class="text-center">{{throughput (index .Broker.Metrics "MessagesInPerSec") }}</td>
+          <td class="text-center">{{throughput (index .Broker.Metrics "BytesInPerSec") }}</td>
+          <td class="text-center">{{throughput (index .Broker.Metrics "BytesOutPerSec") }}</td>
         </tr>
+        {{end}}
         {{end}}
       </tbody>
     </table>

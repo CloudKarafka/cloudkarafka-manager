@@ -1,11 +1,8 @@
 package store
 
 import (
-	"errors"
 	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
@@ -23,25 +20,23 @@ type Point struct {
 	Y int `json:"y"`
 }
 
-type BeanTimeSerie struct {
-	interval  int
-	Points    []Point
-	listeners []chan Point
-	last      int
-	cursor    int
+type SimpleTimeSerie struct {
+	interval int
+	Points   []Point
+	last     int
+	cursor   int
 }
 
-func NewBeanTimeSerie(r MetricRequest, interval, maxPoints int) *BeanTimeSerie {
-	ts := &BeanTimeSerie{
+func NewSimpleTimeSerie(interval, maxPoints int) *SimpleTimeSerie {
+	return &SimpleTimeSerie{
 		interval: interval,
 		Points:   make([]Point, maxPoints),
 		cursor:   0,
 		last:     -1,
 	}
-	go ts.fromBean(r)
-	return ts
 }
-func (me *BeanTimeSerie) add(x int, y int) {
+
+func (me *SimpleTimeSerie) Add(x int, y int) {
 	if me.last != -1 {
 		v := (y - me.last) / me.interval
 		p := Point{x, v}
@@ -53,10 +48,10 @@ func (me *BeanTimeSerie) add(x int, y int) {
 	}
 	me.last = y
 }
-func (me *BeanTimeSerie) Interval() int {
+func (me *SimpleTimeSerie) Interval() int {
 	return me.interval
 }
-func (me *BeanTimeSerie) All() []Point {
+func (me *SimpleTimeSerie) All() []Point {
 	res := make([]Point, 0)
 	l := len(me.Points)
 	c := me.cursor
@@ -68,7 +63,7 @@ func (me *BeanTimeSerie) All() []Point {
 	}
 	return res
 }
-func (me *BeanTimeSerie) Last() Point {
+func (me *SimpleTimeSerie) Last() Point {
 	if me.cursor == 0 {
 		return me.Points[len(me.Points)-1]
 	} else {
@@ -76,26 +71,11 @@ func (me *BeanTimeSerie) Last() Point {
 	}
 }
 
-func (me *BeanTimeSerie) fromBean(r MetricRequest) {
-	for {
-		time.Sleep(time.Duration(me.interval) * time.Second)
-		metrics, err := QueryBroker(r)
-		if err != nil {
-			log.Error("timeserie_getdata", log.ErrorEntry{err})
-		} else {
-			timestamp := int(time.Now().UTC().Unix())
-			for _, metric := range metrics {
-				me.add(timestamp, int(metric.Value))
-			}
-		}
-	}
-}
-
 type SumTimeSerie struct {
 	Series []TimeSerie
 }
 
-func NewSumTimeSerie(series []TimeSerie) *SumTimeSerie {
+func NewSumTimeSerie(series []TimeSerie) TimeSerie {
 	return &SumTimeSerie{Series: series}
 }
 func (me *SumTimeSerie) Interval() int {
@@ -138,45 +118,103 @@ func (me *SumTimeSerie) Last() Point {
 	return all[len(all)-1]
 }
 
-var (
-	Series = make(map[string]TimeSerie)
-)
-
-func ensureExists(key string) error {
-	parts := strings.Split(key, "/")
-	if _, ok := Series[key]; !ok || parts[0] == "total" {
-		if parts[0] == "broker" {
-			id, _ := strconv.Atoi(parts[1])
-			Series[key] = NewBeanTimeSerie(BrokerBeanRequest(id, parts[2]), 5, 500)
-		} else if parts[0] == "total" {
-			for id, _ := range config.BrokerUrls {
-				ensureExists(fmt.Sprintf("broker/%d/BytesInPerSec", id))
-				ensureExists(fmt.Sprintf("broker/%d/BytesOutPerSec", id))
-			}
-			series := make([]TimeSerie, 0)
-			for k, v := range Series {
-				if strings.HasPrefix(k, "broker/") && strings.HasSuffix(k, parts[2]) {
-					series = append(series, v)
-				}
-			}
-			if len(series) == 0 {
-				return errors.New("No brokers to sum throughput for")
-			}
-			Series[key] = NewSumTimeSerie(series)
-		} else if parts[0] == "topic" {
-			series := make([]TimeSerie, 0)
-			for id, _ := range config.BrokerUrls {
-				series = append(series, NewBeanTimeSerie(TopicBeanRequest(id, parts[1], parts[2]), 5, 200))
-			}
-			Series[key] = NewSumTimeSerie(series)
-		}
-	}
-	return nil
+type SerieKey struct {
+	Type      string
+	BrokerId  int
+	TopicName string
+	Metric    string
 }
 
-func GetSerie(key string) (TimeSerie, error) {
-	if err := ensureExists(key); err != nil {
-		return nil, err
+func (sk SerieKey) String() string {
+	if sk.Type == "broker" {
+		return fmt.Sprintf("broker[%d] %s", sk.BrokerId, sk.Metric)
 	}
-	return Series[key], nil
+	return fmt.Sprintf("broker[%d] topic=%s %s", sk.BrokerId, sk.TopicName, sk.Metric)
+}
+
+var (
+	Series  = make(map[SerieKey]TimeSerie)
+	quitter = make(chan bool)
+)
+
+func Subscribe(interval, maxPoints int, requests *[]MetricRequest) {
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	defer ticker.Stop()
+	ch := make(chan Metric)
+	for {
+		select {
+		case <-ticker.C:
+			for _, request := range *requests {
+				go func(request MetricRequest) {
+					data, err := GetMetrics(request)
+					if err != nil {
+						log.Error("timeserie_getdata", log.ErrorEntry{err})
+					} else {
+						for _, metric := range data {
+							ch <- metric
+						}
+					}
+				}(request)
+			}
+		case metric := <-ch:
+			var key SerieKey
+			if metric.Topic == "" {
+				key = SerieKey{"broker", metric.Broker, "", metric.Name}
+			} else {
+				key = SerieKey{"topic", metric.Broker, metric.Topic, metric.Name}
+			}
+			if _, ok := Series[key]; !ok {
+				Series[key] = NewSimpleTimeSerie(interval, maxPoints)
+			}
+			timestamp := int(time.Now().UTC().Unix())
+			Series[key].(*SimpleTimeSerie).Add(timestamp, int(metric.Value))
+		}
+	}
+}
+
+func GetTimeserie(key SerieKey) TimeSerie {
+	return Series[key]
+}
+
+func BrokerTotal(metricName string) TimeSerie {
+	series := make([]TimeSerie, 0)
+	for k, v := range Series {
+		if k.Type == "broker" && k.Metric == metricName {
+			series = append(series, v)
+		}
+	}
+	if len(series) == 0 {
+		return nil
+	}
+	return NewSumTimeSerie(series)
+}
+func TopicTotal(topic, metricName string) TimeSerie {
+	series := make([]TimeSerie, 0)
+	for k, v := range Series {
+		if k.Type == "topic" && k.TopicName == topic && k.Metric == metricName {
+			series = append(series, v)
+		}
+	}
+	if len(series) == 0 {
+		return nil
+	}
+	return NewSumTimeSerie(series)
+}
+
+func StartCollect() {
+	ch := make(chan map[int]config.HostPort)
+	config.BrokerChangeListeners = append(config.BrokerChangeListeners, ch)
+	reqs := make([]MetricRequest, 0)
+	go Subscribe(5, 500, &reqs)
+	for v := range ch {
+		tr := make([]MetricRequest, 0)
+		for id, _ := range v {
+			tr = append(tr, MetricRequest{id, BeanAllTopicsBytesInPerSec, "Count"})
+			tr = append(tr, MetricRequest{id, BeanAllTopicsBytesOutPerSec, "Count"})
+			tr = append(tr, MetricRequest{id, BeanBrokerBytesInPerSec, "Count"})
+			tr = append(tr, MetricRequest{id, BeanBrokerBytesOutPerSec, "Count"})
+		}
+		reqs = tr
+	}
+
 }

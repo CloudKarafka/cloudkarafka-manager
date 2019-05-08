@@ -9,7 +9,6 @@ import (
 	"net/http/pprof"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	goji "goji.io"
 	"goji.io/pat"
 )
@@ -21,7 +20,6 @@ func writeAsJson(w http.ResponseWriter, bytes interface{}) {
 
 func Router() *goji.Mux {
 	mux := goji.SubMux()
-	mux.Use(mw.OnlyAdmin)
 	mux.Handle(pat.Get("/pprof"), http.HandlerFunc(pprof.Index))
 	mux.Handle(pat.Get("/pprof/:profile"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		profile := pat.Param(r, "profile")

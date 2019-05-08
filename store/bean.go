@@ -5,52 +5,25 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/patrickmn/go-cache"
 )
+
+var jmxCache1Min = cache.New(1*time.Minute, 1*time.Minute)
+var plainCache = cache.New(1*time.Hour, 1*time.Hour)
 
 type MetricRequest struct {
 	BrokerId int
-	Bean     string
+	Bean     JMXBean
 	Attr     string
 }
 
-func BrokerBeanRequest(id int, metric string) MetricRequest {
-	bean := fmt.Sprintf("kafka.server:type=BrokerTopicMetrics,name=%s", metric)
-	return MetricRequest{id, bean, "Count"}
+func (mr MetricRequest) String() string {
+	return fmt.Sprintf("%d:%s/%s", mr.BrokerId, mr.Bean, mr.Attr)
 }
-
-func TopicBeanRequest(id int, topic string, metric string) MetricRequest {
-	bean := fmt.Sprintf("kafka.server:type=BrokerTopicMetrics,name=%s,topic=%s", metric, topic)
-	return MetricRequest{id, bean, "Count"}
-}
-
-var (
-	TopicBytesInPerSec = func(id int, topic string) MetricRequest {
-		return MetricRequest{id, "kafka.server:type=BrokerTopicMetrics,name=BytesInPerSec,topic=" + topic, "OneMinuteRate"}
-	}
-	TopicBytesOutPerSec = func(id int, topic string) MetricRequest {
-		return MetricRequest{id, "kafka.server:type=BrokerTopicMetrics,name=BytesOutPerSec,topic=" + topic, "OneMinuteRate"}
-	}
-	PartitionLogStartOffset = func(id int, topic string) MetricRequest {
-		return MetricRequest{
-			id,
-			fmt.Sprintf("kafka.log:type=Log,name=LogStartOffset,topic=%s,partition=*", topic),
-			"OneMinuteRate"}
-	}
-	PartitionLogEndOffset = func(id int, topic string) MetricRequest {
-		return MetricRequest{
-			id,
-			fmt.Sprintf("kafka.log:type=Log,name=LogEndOffset,topic=%s,partition=*", topic),
-			"OneMinuteRate"}
-	}
-	PartitionSize = func(id int, topic string) MetricRequest {
-		return MetricRequest{
-			id,
-			fmt.Sprintf("kafka.log:type=Log,name=Size,topic=%s,partition=*", topic),
-			"OneMinuteRate"}
-	}
-)
 
 type MetricResponse struct {
 	Metrics []Metric
@@ -78,16 +51,66 @@ func doRequest(url string) ([]Metric, error) {
 		return nil, err
 	}
 	defer r.Body.Close()
+	log.Info("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
 	if r.StatusCode != 200 {
+		log.Warn("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
 		return nil, fmt.Errorf("URL %s returned %d", url, r.StatusCode)
 	}
 	if err = json.NewDecoder(r.Body).Decode(&v); err != nil {
 		return nil, err
 	}
+	if len(v) == 0 {
+		log.Info("bean_request", log.MapEntry{"body": "[]", "url": url})
+	}
 	return v, nil
 }
 
-func QueryBroker(query MetricRequest) ([]Metric, error) {
+func GetTimeSerieMetric(query MetricRequest) []Metric {
+	var key SerieKey
+	if query.Bean.Params["topic"] != "" {
+		key = SerieKey{"topic", query.BrokerId, query.Bean.Params["topic"], query.Bean.Params["name"]}
+	} else {
+		key = SerieKey{"broker", query.BrokerId, "", query.Bean.Params["name"]}
+	}
+	serie := Series[key]
+	if serie == nil {
+		return nil
+	}
+	fmt.Println("GetTimeSerieMetric", serie.Last(), serie.All())
+	value := serie.Last()
+	metric := Metric{
+		Broker: query.BrokerId,
+		Topic:  query.Bean.Params["topic"],
+		Name:   query.Bean.Params["name"],
+		Type:   query.Bean.Params["type"],
+		Value:  float64(value.X),
+	}
+	return []Metric{metric}
+}
+
+func GetMetrics(query MetricRequest) ([]Metric, error) {
+	if query.Attr == "TimeSerie" {
+		if r := GetTimeSerieMetric(query); r != nil {
+			return r, nil
+		} else {
+			return nil, fmt.Errorf("Could not get timeseries data for %s, no serie", query)
+		}
+	}
+	switch query.Attr {
+	case "OneMinuteRate":
+		if r, found := jmxCache1Min.Get(query.String()); found {
+			log.Info("GetMetrics cached", log.MapEntry{"Bean": query.Bean.String(), "Attr": query.Attr})
+			return r.([]Metric), nil
+		}
+	case "TimeSerie":
+		// Never cache
+	case "Count":
+		// Never cache
+	case "Value":
+		// Never cache
+	default:
+		log.Info("GetMetrics nocache", log.MapEntry{"Attr": query.Attr})
+	}
 	host := config.BrokerUrls.HttpUrl(query.BrokerId)
 	if host == "" {
 		return nil, fmt.Errorf("Broker %d not available", query.BrokerId)
@@ -99,14 +122,18 @@ func QueryBroker(query MetricRequest) ([]Metric, error) {
 			v[i].Broker = query.BrokerId
 		}
 	}
+	switch query.Attr {
+	case "OneMinuteRate":
+		jmxCache1Min.Set(query.String(), v, cache.DefaultExpiration)
+	}
 	return v, err
 }
 
-func QueryBrokerAsync(queries []MetricRequest) <-chan MetricResponse {
+func GetMetricsAsync(queries []MetricRequest) <-chan MetricResponse {
 	ch := make(chan MetricResponse)
 	for _, query := range queries {
 		go func(query MetricRequest) {
-			data, err := QueryBroker(query)
+			data, err := GetMetrics(query)
 			ch <- MetricResponse{data, err}
 		}(query)
 	}
@@ -126,11 +153,28 @@ func getSimpleValue(url string) (string, error) {
 }
 
 func KafkaVersion(brokerId int) (string, error) {
-	url := fmt.Sprintf("%s/kafka-version", config.BrokerUrls.HttpUrl(brokerId))
-	return getSimpleValue(url)
+	key := fmt.Sprintf("kafka_version_%d", brokerId)
+	if r, found := plainCache.Get(key); found {
+		return r.(string), nil
+	}
+	res, err := getSimpleValue(fmt.Sprintf("%s/kafka-version", config.BrokerUrls.HttpUrl(brokerId)))
+	if err != nil {
+		return "", nil
+	}
+	plainCache.Set(key, res, cache.DefaultExpiration)
+	return res, nil
 }
 
 func PluginVersion(brokerId int) (string, error) {
-	url := fmt.Sprintf("%s/plugin-version", config.BrokerUrls.HttpUrl(brokerId))
-	return getSimpleValue(url)
+	key := fmt.Sprintf("plugin_version_%d", brokerId)
+	if r, found := plainCache.Get(key); found {
+		return r.(string), nil
+	}
+	res, err := getSimpleValue(fmt.Sprintf("%s/plugin-version", config.BrokerUrls.HttpUrl(brokerId)))
+	if err != nil {
+		return "", nil
+	}
+	plainCache.Set(key, res, cache.DefaultExpiration)
+	return res, nil
+
 }

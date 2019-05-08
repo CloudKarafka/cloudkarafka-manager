@@ -23,7 +23,7 @@ func Router() *goji.Mux {
 	mux.Use(m.RequestId)
 	mux.Use(m.Logger)
 	mux.Use(m.HostnameToResponse)
-	mux.Use(m.Secure)
+	mux.Use(m.SecureApi)
 
 	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
 	mux.Handle(pat.Get("/notifications"), http.HandlerFunc(Notifications))

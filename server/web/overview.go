@@ -8,6 +8,7 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	n "github.com/cloudkarafka/cloudkarafka-manager/notifications"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	humanize "github.com/dustin/go-humanize"
@@ -85,14 +86,14 @@ func userOverview(p zookeeper.Permissions, res map[string]int) map[string]int {
 */
 
 func Overview(w http.ResponseWriter, r *http.Request) templates.Result {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
 	res := struct {
 		Boxes         []OverviewItem
 		Notifications []n.Notification
 	}{
-		append(topicOverview(ctx, p), brokerOverview()...),
+		append(topicOverview(ctx, user.Permissions), brokerOverview()...),
 		n.List(ctx),
 	}
 	return templates.DefaultRenderer("overview", res)

@@ -70,7 +70,9 @@
         g.fetch(url, {headers: {Accept: 'application/json'}})
             .then(r => r.json())
             .then(r => {
-                return renderThroughputChart("chart", r)
+                if (r[0] !== null) {
+                    return renderThroughputChart("chart", r)    
+                }
             }).then(graph => {
                 if (followUrl) {
                     var evtSource = new EventSource(followUrl, { withCredentials: true } )

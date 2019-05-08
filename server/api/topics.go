@@ -27,13 +27,16 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
-	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*3)
+	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*2)
 	i := 0
 	for id, _ := range config.BrokerUrls {
-		metricRequests[i] = store.PartitionLogStartOffset(id, "*")
-		metricRequests[i+1] = store.TopicBytesInPerSec(id, "*")
-		metricRequests[i+2] = store.TopicBytesOutPerSec(id, "*")
-		i = i + 2
+		//metricRequests[i] = store.PartitionLogStartOffset(id, "*")
+		//metricRequests[i+1] = store.PartitionLogEndOffset(id, "*")
+		//metricRequests[i+2] = store.PartitionSize(id, "*")
+		metricRequests[i] = store.MetricRequest{id, store.BeanAllTopicsBytesInPerSec, "OneMinuteRate"}
+		metricRequests[i+2] = store.MetricRequest{id, store.BeanAllTopicsLogSize, "Value"}
+		//metricRequests[i] = store.TopicBytesOutPerSec(id)
+		i = i + 1
 	}
 	req := store.TopicRequest{
 		TopicNames: topicNames,
@@ -48,13 +51,16 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(topics, func(i, j int) bool {
 		return topics[i].Topic.Name < topics[j].Topic.Name
 	})
-	ts := make([]store.Topic, len(topics))
+	ts := make([]interface{}, len(topics))
 	for i, t := range topics {
-		ts[i] = t.Topic
+		if t.Error != nil {
+			ts[i] = t.Error
+		} else {
+			ts[i] = t.Topic
+		}
 	}
-
+	fmt.Println(ts)
 	writeAsJson(w, ts)
-
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
@@ -70,10 +76,10 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 	i := 0
 	//metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
 	for id, _ := range config.BrokerUrls {
-		metricRequests[i] = store.PartitionLogStartOffset(id, "*")
-		metricRequests[i+1] = store.TopicBytesInPerSec(id, "*")
-		metricRequests[i+2] = store.TopicBytesOutPerSec(id, "*")
-		i = i + 2
+		metricRequests[i] = store.MetricRequest{id, store.BeanTopicBytesInPerSec(topicName), "OneMinuteRate"}
+		metricRequests[i+1] = store.MetricRequest{id, store.BeanTopicBytesOutPerSec(topicName), "OneMinuteRate"}
+		metricRequests[i+2] = store.MetricRequest{id, store.BeanTopicLogSize(topicName), "Value"}
+		i = i + 3
 	}
 	req := store.TopicRequest{
 		TopicNames: []string{topicName},

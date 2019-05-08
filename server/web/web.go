@@ -7,7 +7,6 @@ import (
 
 	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
-	"github.com/gorilla/securecookie"
 	"github.com/gorilla/sessions"
 	goji "goji.io"
 	"goji.io/pat"
@@ -20,10 +19,7 @@ var (
 
 func init() {
 	templates.Load()
-
-	authKeyOne := securecookie.GenerateRandomKey(64)
-	encryptionKeyOne := securecookie.GenerateRandomKey(32)
-	Cookiestore = sessions.NewCookieStore(authKeyOne, encryptionKeyOne)
+	Cookiestore = sessions.NewCookieStore([]byte("abc")) //os.Getenv("SESSION_KEY")))
 	Cookiestore.Options = &sessions.Options{
 		MaxAge:   60 * 15,
 		HttpOnly: true,
@@ -33,7 +29,7 @@ func init() {
 
 func Router() *goji.Mux {
 	secureMux := goji.SubMux()
-	secureMux.Use(m.SessionSecure(Cookiestore))
+	secureMux.Use(m.SecureWeb(Cookiestore))
 
 	//mux.Handle(pat.New("/topics"), http.HandlerFunc(Topics))
 	secureMux.Handle(pat.Get("/"), templates.TemplateHandler(Overview))
@@ -44,7 +40,7 @@ func Router() *goji.Mux {
 	secureMux.Handle(pat.Get("/topics"), templates.TemplateHandler(ListTopics))
 	secureMux.Handle(pat.Get("/create_topic"), templates.TemplateHandler(CreateTopic))
 	secureMux.Handle(pat.Post("/create_topic"), templates.TemplateHandler(SaveTopic))
-	secureMux.Handle(pat.Get("/edit_topic/:name"), templates.TemplateHandler(ListTopics))
+	secureMux.Handle(pat.Get("/edit_topic/:name"), templates.TemplateHandler(EditTopic))
 	secureMux.Handle(pat.Post("/edit_topic/:name"), templates.TemplateHandler(SaveTopic))
 
 	secureMux.Handle(pat.Get("/topics/:name"), templates.TemplateHandler(ViewTopic))

@@ -17,6 +17,27 @@ import (
 var templates map[string]*template.Template
 var defaultTmpl = `{{define "main" }} {{ template "default" . }} {{ end }}`
 
+var templateFuncs = template.FuncMap{
+	"toLower": func(str string) string {
+		return strings.ToLower(str)
+	},
+	"commaList": func(items []int) string {
+		return strings.Trim(strings.Join(strings.Fields(fmt.Sprint(items)), ","), "[]")
+	},
+	"throughput": func(value int) string {
+		if value == -1 {
+			return "No data"
+		}
+		return fmt.Sprintf("%s/s", humanize.Bytes(uint64(value)))
+	},
+	"size": func(value int) string {
+		return humanize.Bytes(uint64(value))
+	},
+	"number": func(value int) string {
+		return humanize.Comma(int64(value))
+	},
+}
+
 type TemplateError struct {
 	s string
 }
@@ -30,17 +51,6 @@ func NewError(text string) error {
 }
 
 func Load() error {
-	templateFuncs := template.FuncMap{
-		"toLower": func(str string) string {
-			return strings.ToLower(str)
-		},
-		"throughput": func(value int) string {
-			if value == -1 {
-				return "No data"
-			}
-			return fmt.Sprintf("%s/s", humanize.Bytes(uint64(value)))
-		},
-	}
 
 	templates = make(map[string]*template.Template)
 	layoutFiles, err := filepath.Glob("templates/layouts/*.html")

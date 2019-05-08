@@ -3,8 +3,28 @@ package config
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
+
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
+
+func init() {
+	ch := make(chan map[int]HostPort)
+	BrokerChangeListeners = append(BrokerChangeListeners, ch)
+	go func() {
+		for v := range ch {
+			le := make(log.MapEntry)
+			for id, hostport := range v {
+				le[strconv.Itoa(id)] = hostport
+			}
+			if len(le) > 0 {
+				log.Info("broker_change", le)
+			}
+			BrokerUrls = v
+		}
+	}()
+}
 
 type HostPort struct {
 	Host string

@@ -11,13 +11,13 @@ import (
 )
 
 type Partition struct {
-	Leader          int   `json:"leader"`
-	Replicas        []int `json:"replicas"`
-	ISR             []int `json:"isr"`
-	LeaderEpoch     int   `json:"leader_epoch"`
-	Version         int   `json:"version"`
-	ControllerEpoch int   `json:"controller_epoch"`
-	Metrics         map[string]int
+	Leader          int            `json:"leader"`
+	Replicas        []int          `json:"replicas"`
+	ISR             []int          `json:"isr"`
+	LeaderEpoch     int            `json:"leader_epoch"`
+	Version         int            `json:"version"`
+	ControllerEpoch int            `json:"controller_epoch"`
+	Metrics         map[string]int `json:"metrics"`
 }
 
 type TopicConfig struct {
@@ -117,7 +117,7 @@ func fetchTopic(ctx context.Context, topicName string) (Topic, error) {
 
 func fetchTopicMetrics(ctx context.Context, metrics []MetricRequest) (map[string][]Metric, error) {
 	res := make(map[string][]Metric)
-	ch := QueryBrokerAsync(metrics)
+	ch := GetMetricsAsync(metrics)
 	l := len(metrics)
 	for i := 0; i < l; i++ {
 		select {
@@ -158,7 +158,7 @@ func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error)
 		topic, err := fetchTopic(ctx, topicName)
 		res[i] = TopicResponse{}
 		if err != nil {
-			res[i].Error = err
+			res[i].Error = fmt.Errorf("Failed to fetch info for topic %s from Zookeeper: %s", topicName, err)
 		} else {
 			for _, dt := range deletedTopics {
 				if dt == topic.Name {
@@ -169,7 +169,7 @@ func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error)
 			if req.Config {
 				cfg, err := fetchConfig(ctx, topic.Name)
 				if err != nil {
-					res[i].Error = err
+					res[i].Error = fmt.Errorf("Failed to fetch config for topic %s: %s", topicName, err)
 				} else {
 					res[i].Topic.Config = cfg
 				}
@@ -181,7 +181,7 @@ func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error)
 					case "Log":
 						i, err := strconv.Atoi(metric.Partition)
 						if err != nil {
-							res[i].Error = err
+							res[i].Error = fmt.Errorf("Failed to parse metric response: %s", err)
 						} else {
 							if topic.Partitions[i].Leader == metric.Broker {
 								topic.Partitions[i].Metrics[metric.Name] = value

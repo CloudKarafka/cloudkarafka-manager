@@ -15,6 +15,7 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
@@ -23,20 +24,31 @@ import (
 )
 
 func ListTopics(w http.ResponseWriter, r *http.Request) templates.Result {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	topicNames, err := zookeeper.Topics(p)
+	user := r.Context().Value("user").(mw.SessionUser)
+	topicNames, err := zookeeper.Topics(user.Permissions)
 	if err != nil {
+		log.Error("list_topics", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
+	}
+	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*3)
+	i := 0
+	for id, _ := range config.BrokerUrls {
+		metricRequests[i] = store.MetricRequest{id, store.BeanAllTopicsBytesInPerSec, "OneMinuteRate"}
+		metricRequests[i+1] = store.MetricRequest{id, store.BeanAllTopicsBytesOutPerSec, "OneMinuteRate"}
+		metricRequests[i+2] = store.MetricRequest{id, store.BeanAllTopicsLogSize, "Value"}
+		i = i + 3
 	}
 	req := store.TopicRequest{
 		TopicNames: topicNames,
 		Config:     false,
-		Metrics:    []store.MetricRequest{},
+		Metrics:    metricRequests,
 	}
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
+
 	topics, err := store.FetchTopics(ctx, req)
 	if err != nil {
+		log.Error("list_topics", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
 	sort.Slice(topics, func(i, j int) bool {
@@ -46,25 +58,40 @@ func ListTopics(w http.ResponseWriter, r *http.Request) templates.Result {
 }
 
 func ViewTopic(w http.ResponseWriter, r *http.Request) templates.Result {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
 	name := pat.Param(r, "name")
-	if !p.ReadTopic(name) {
+	if !user.Permissions.ReadTopic(name) {
 		return templates.ErrorRenderer(errors.New("You don't have permissions to view this topic."))
+	}
+	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*5)
+	i := 0
+	for id, _ := range config.BrokerUrls {
+		metricRequests[i] = store.MetricRequest{id, store.BeanTopicBytesInPerSec(name), "OneMinuteRate"}
+		metricRequests[i+1] = store.MetricRequest{id, store.BeanTopicBytesOutPerSec(name), "OneMinuteRate"}
+		metricRequests[i+2] = store.MetricRequest{id, store.BeanTopicLogSize(name), "Value"}
+		metricRequests[i+3] = store.MetricRequest{id, store.BeanTopicLogStart(name), "Value"}
+		metricRequests[i+4] = store.MetricRequest{id, store.BeanTopicLogEnd(name), "Value"}
+		i = i + 5
+	}
+	req := store.TopicRequest{
+		TopicNames: []string{name},
+		Config:     true,
+		Metrics:    metricRequests,
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topic, err := m.FetchTopic(ctx, name)
+	topics, err := store.FetchTopics(ctx, req)
 	if err != nil {
-		if err == zookeeper.PathDoesNotExistsErr {
-			return templates.ErrorRenderer(errors.New("This topic doesn't exists."))
-		}
+		log.Error("view_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	config, err := m.FetchTopicConfig(ctx, name)
-	if err != nil {
-		return templates.ErrorRenderer(err)
+	if len(topics) != 1 {
+		return templates.DefaultRenderer("not_found", nil)
 	}
-	return templates.DefaultRenderer("topic", Topic{topic, config, -1, 1})
+	if topics[0].Error != nil {
+		return templates.ErrorRenderer(topics[0].Error)
+	}
+	return templates.DefaultRenderer("topic", topics[0].Topic)
 }
 
 var topicConf = []TopicConfig{
@@ -74,7 +101,6 @@ var topicConf = []TopicConfig{
 	TopicConfig{"retention.ms", "long", []string{}, 604800000},
 	TopicConfig{"segment.bytes", "int", []string{}, 1073741824},
 	TopicConfig{"max.message.bytes", "int", []string{}, 1000012},
-
 	TopicConfig{"compression.type", "string", []string{"uncompressed", "zstd", "lz4", "snappy", "gzip", "producer"}, "producer"},
 	TopicConfig{"delete.retention.ms", "long", []string{}, 86400000},
 	TopicConfig{"file.delete.delay.ms", "long", []string{}, 60000},
@@ -165,7 +191,7 @@ func SaveTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 		log.Error("create_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 	results, err := a.CreateTopics(
 		ctx,
