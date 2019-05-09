@@ -42,7 +42,6 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 				user = &m.SessionUser{
 					Username:    username,
 					Permissions: p,
-					Active:      true,
 				}
 			}
 		} else {
@@ -57,7 +56,6 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 			user = &m.SessionUser{
 				Username:    "admin",
 				Permissions: zookeeper.AdminPermissions,
-				Active:      true,
 			}
 		} else {
 			err = invalidLogin
@@ -66,7 +64,6 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 		user = &m.SessionUser{
 			Username:    username,
 			Permissions: zookeeper.AdminPermissions,
-			Active:      true,
 		}
 	}
 	if err != nil {
@@ -82,4 +79,14 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 		http.Redirect(w, r, "/", http.StatusFound)
 	}
 	return nil
+}
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	session, err := Cookiestore.Get(r, "session")
+	session.Values["user"] = nil
+	err = session.Save(r, w)
+	if err != nil {
+		log.Error("logout", log.ErrorEntry{err})
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
 }

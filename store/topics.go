@@ -142,19 +142,19 @@ func fetchConfig(ctx context.Context, topicName string) (TopicConfig, error) {
 	return topicConfig, err
 }
 
-func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error) {
+func FetchTopics(ctx context.Context, topicNames []string, config bool, metricReqs []MetricRequest) ([]TopicResponse, error) {
 	deletedTopics := zookeeper.TopicsMarkedForDeletion()
-	res := make([]TopicResponse, len(req.TopicNames))
+	res := make([]TopicResponse, len(topicNames))
 	var (
 		err     error
 		metrics map[string][]Metric
 	)
-	if len(req.Metrics) > 0 {
-		if metrics, err = fetchTopicMetrics(ctx, req.Metrics); err != nil {
+	if len(metricReqs) > 0 {
+		if metrics, err = fetchTopicMetrics(ctx, metricReqs); err != nil {
 			return nil, err
 		}
 	}
-	for i, topicName := range req.TopicNames {
+	for i, topicName := range topicNames {
 		topic, err := fetchTopic(ctx, topicName)
 		res[i] = TopicResponse{}
 		if err != nil {
@@ -166,7 +166,7 @@ func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error)
 				}
 			}
 			res[i].Topic = topic
-			if req.Config {
+			if config {
 				cfg, err := fetchConfig(ctx, topic.Name)
 				if err != nil {
 					res[i].Error = fmt.Errorf("Failed to fetch config for topic %s: %s", topicName, err)
@@ -174,7 +174,7 @@ func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error)
 					res[i].Topic.Config = cfg
 				}
 			}
-			if len(req.Metrics) > 0 {
+			if len(metricReqs) > 0 {
 				for _, metric := range metrics[topic.Name] {
 					value := int(metric.Value)
 					switch metric.Type {
@@ -197,4 +197,15 @@ func FetchTopics(ctx context.Context, req TopicRequest) ([]TopicResponse, error)
 		}
 	}
 	return res, nil
+}
+
+func FetchTopic(ctx context.Context, topicName string, config bool, metricReqs []MetricRequest) (TopicResponse, error) {
+	r, err := FetchTopics(ctx, []string{topicName}, config, metricReqs)
+	if err != nil {
+
+	}
+	if len(r) == 0 {
+		return TopicResponse{}, fmt.Errorf("Topic %s not found", topicName)
+	}
+	return r[0], err
 }

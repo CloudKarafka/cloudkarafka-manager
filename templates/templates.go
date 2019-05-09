@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	humanize "github.com/dustin/go-humanize"
 )
 
@@ -18,6 +20,16 @@ var templates map[string]*template.Template
 var defaultTmpl = `{{define "main" }} {{ template "default" . }} {{ end }}`
 
 var templateFuncs = template.FuncMap{
+	"toS": func(value interface{}) string {
+		switch v := value.(type) {
+		case string:
+			return v
+		case int:
+			return strconv.Itoa(v)
+		default:
+			return ""
+		}
+	},
 	"toLower": func(str string) string {
 		return strings.ToLower(str)
 	},
@@ -145,14 +157,17 @@ func (e Default) Standalone() bool {
 }
 
 type TemplateData struct {
-	Username string
+	User     m.SessionUser
 	Hostname string
 	Content  interface{}
 }
 
 func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		username := "admin" //r.Context().Value("username").(string)
+		user, ok := r.Context().Value("user").(m.SessionUser)
+		if !ok {
+			user = m.AnonSessionUser
+		}
 		hostname, err := os.Hostname()
 		if err != nil {
 			hostname = ""
@@ -160,7 +175,7 @@ func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) htt
 		res := fn(w, r)
 		if res != nil {
 			data := TemplateData{
-				Username: username,
+				User:     user,
 				Hostname: hostname,
 				Content:  res.Content(),
 			}

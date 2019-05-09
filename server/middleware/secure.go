@@ -15,7 +15,10 @@ import (
 type SessionUser struct {
 	Username    string
 	Permissions zookeeper.Permissions
-	Active      bool
+}
+
+var AnonSessionUser = SessionUser{
+	Username: "Anonymous",
 }
 
 func SecureApi(h http.Handler) http.Handler {
@@ -33,14 +36,12 @@ func SecureApi(h http.Handler) http.Handler {
 			user = &SessionUser{
 				Username:    "dev",
 				Permissions: zookeeper.AdminPermissions,
-				Active:      true,
 			}
 		case "admin":
 			if username == "admin" && password == os.Getenv("ADMIN_PASSWORD") {
 				user = &SessionUser{
 					Username:    "admin",
 					Permissions: zookeeper.AdminPermissions,
-					Active:      true,
 				}
 			} else {
 				http.Error(w, "Not authorized", http.StatusUnauthorized)
@@ -58,12 +59,10 @@ func SecureApi(h http.Handler) http.Handler {
 				user = &SessionUser{
 					Username:    username,
 					Permissions: p,
-					Active:      true,
 				}
 			} else {
 				http.Error(w, "Not authorized", http.StatusUnauthorized)
 				return
-
 			}
 		}
 		ctx := context.WithValue(r.Context(), "user", user)
@@ -81,7 +80,7 @@ func SecureWeb(store *sessions.CookieStore) func(h http.Handler) http.Handler {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			if user, ok := session.Values["user"].(SessionUser); ok && user.Active {
+			if user, ok := session.Values["user"].(SessionUser); ok {
 				ctx := context.WithValue(r.Context(), "user", user)
 				h.ServeHTTP(w, r.WithContext(ctx))
 			} else {

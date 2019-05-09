@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/server/api"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	zk "github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
@@ -46,13 +47,13 @@ func getCertUsers() ([]User, error) {
 }
 
 func ListUsers(w http.ResponseWriter, r *http.Request) templates.Result {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
 	var (
 		saslUsers []User
 		certUsers []User
 		err       error
 	)
-	saslUsers, err = getSaslUsers(p)
+	saslUsers, err = getSaslUsers(user.Permissions)
 	if err != nil {
 		return templates.ErrorRenderer(err)
 	}

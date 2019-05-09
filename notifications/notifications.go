@@ -66,8 +66,8 @@ func List(ctx context.Context) []Notification {
 	)
 	defer close(ch)
 	checkers := []func(chan []Notification){
-		CheckURP, CheckPluginVersion,
-		CheckBalancedLeaders, CheckISRDelta,
+		//CheckURP, CheckPluginVersion,
+		//CheckBalancedLeaders, CheckISRDelta,
 	}
 	for _, fn := range checkers {
 		go fn(ch)

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"net/url"
 
 	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
@@ -13,26 +14,35 @@ type User struct {
 
 type Topic struct {
 	m.Topic
-	Config   m.TopicConfig
+	Config   TopicConfig
 	BytesIn  int
 	BytesOut int
 }
 
 type TopicConfig struct {
+	Version int                    `json:"version"`
+	Data    map[string]interface{} `json:"config"`
+}
+
+func (t TopicConfig) MarshalJSON() ([]byte, error) {
+	return json.Marshal(t.Data)
+}
+
+type TopicSetting struct {
 	Key       string
 	ValueType string
-	Options   []string
+	Options   []interface{}
 	Default   interface{}
 }
 
 type TopicForm struct {
-	ConfigOptions []TopicConfig
+	ConfigOptions []TopicSetting
 	Errors        []string
-	Values        map[string]string
+	Values        map[string]interface{}
 }
 
 func (me *TopicForm) LoadValues(values url.Values) {
-	me.Values = make(map[string]string)
+	me.Values = make(map[string]interface{})
 	for k, _ := range values {
 		v := values.Get(k)
 		if v != "" {

@@ -38,12 +38,7 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 		//metricRequests[i] = store.TopicBytesOutPerSec(id)
 		i = i + 1
 	}
-	req := store.TopicRequest{
-		TopicNames: topicNames,
-		Config:     false,
-		Metrics:    metricRequests,
-	}
-	topics, err := store.FetchTopics(ctx, req)
+	topics, err := store.FetchTopics(ctx, topicNames, false, metricRequests)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
@@ -81,17 +76,16 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 		metricRequests[i+2] = store.MetricRequest{id, store.BeanTopicLogSize(topicName), "Value"}
 		i = i + 3
 	}
-	req := store.TopicRequest{
-		TopicNames: []string{topicName},
-		Config:     true,
-		Metrics:    metricRequests,
-	}
-	topics, err := store.FetchTopics(ctx, req)
+	topic, err := store.FetchTopic(ctx, topicName, true, metricRequests)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
-	writeAsJson(w, topics[0].Topic)
+	if topic.Error != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(topic.Error.Error()))
+	}
+	writeAsJson(w, topic.Topic)
 }
 
 func TopicThroughput(w http.ResponseWriter, r *http.Request) {

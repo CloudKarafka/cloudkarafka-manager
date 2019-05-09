@@ -38,12 +38,15 @@ func Router() *goji.Mux {
 	secureMux.Handle(pat.Get("/brokers/:id"), templates.TemplateHandler(Broker))
 
 	secureMux.Handle(pat.Get("/topics"), templates.TemplateHandler(ListTopics))
+	secureMux.Handle(pat.Get("/topics/:name"), templates.TemplateHandler(ViewTopic))
 	secureMux.Handle(pat.Get("/create_topic"), templates.TemplateHandler(CreateTopic))
 	secureMux.Handle(pat.Post("/create_topic"), templates.TemplateHandler(SaveTopic))
 	secureMux.Handle(pat.Get("/edit_topic/:name"), templates.TemplateHandler(EditTopic))
-	secureMux.Handle(pat.Post("/edit_topic/:name"), templates.TemplateHandler(SaveTopic))
+	secureMux.Handle(pat.Post("/edit_topic/:name"), templates.TemplateHandler(UpdateTopic))
+	secureMux.Handle(pat.Post("/delete_topic/:name"), http.HandlerFunc(DeleteTopic))
 
-	secureMux.Handle(pat.Get("/topics/:name"), templates.TemplateHandler(ViewTopic))
+	secureMux.Handle(pat.Get("/consumer_groups"), templates.TemplateHandler(ListConsumerGroups))
+	secureMux.Handle(pat.Get("/consumer_groups/:name"), templates.TemplateHandler(ViewConsumerGroup))
 
 	secureMux.Handle(pat.Get("/admin"), templates.TemplateHandler(ListUsers))
 	secureMux.Handle(pat.Get("/admin/users"), templates.TemplateHandler(ListUsers))
@@ -52,6 +55,8 @@ func Router() *goji.Mux {
 
 	secureMux.Handle(pat.Get("/throughput"), templates.JsonHandler(Throughput))
 	secureMux.Handle(pat.Get("/throughput/follow"), templates.SseHandler(ThroughputFollow))
+
+	secureMux.Handle(pat.Get("/logout"), http.HandlerFunc(Logout))
 
 	mux := goji.SubMux()
 	mux.Use(m.Logger)

@@ -1,7 +1,7 @@
 {{define "menu"}}
 <div class="sidebar-info">
   <h2 class="host">{{.Hostname}}</h2>
-  <p>{{.Username}}</p>
+  <p>{{.User.Username}}</p>
 </div>
 <nav class="sidebar-nav">
   <ul>
@@ -18,7 +18,7 @@
       </a>
     </li>
     <li class="">
-      <a href="/consumers">
+      <a href="/consumer_groups">
         <span class="icon"><img src="/static/assets/icons/pacman.svg" /></span>
         <span>Consumers</span>
       </a>
@@ -41,12 +41,14 @@
         <span>ACL</span>
       </a>
     </li>
+    {{/*
     <li class="">
       <a href="/config">
         <span class="icon"><img src="/static/assets/icons/tools.svg" /></span>
         <span>Configuration</span>
       </a>
     </li>
+    */}}
   </ul>
 </nav>
 {{end}}

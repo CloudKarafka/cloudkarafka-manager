@@ -14,7 +14,6 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
@@ -38,15 +37,9 @@ func ListTopics(w http.ResponseWriter, r *http.Request) templates.Result {
 		metricRequests[i+2] = store.MetricRequest{id, store.BeanAllTopicsLogSize, "Value"}
 		i = i + 3
 	}
-	req := store.TopicRequest{
-		TopicNames: topicNames,
-		Config:     false,
-		Metrics:    metricRequests,
-	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-
-	topics, err := store.FetchTopics(ctx, req)
+	topics, err := store.FetchTopics(ctx, topicNames, false, metricRequests)
 	if err != nil {
 		log.Error("list_topics", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
@@ -73,55 +66,47 @@ func ViewTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 		metricRequests[i+4] = store.MetricRequest{id, store.BeanTopicLogEnd(name), "Value"}
 		i = i + 5
 	}
-	req := store.TopicRequest{
-		TopicNames: []string{name},
-		Config:     true,
-		Metrics:    metricRequests,
-	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topics, err := store.FetchTopics(ctx, req)
+	topic, err := store.FetchTopic(ctx, name, true, metricRequests)
 	if err != nil {
 		log.Error("view_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	if len(topics) != 1 {
-		return templates.DefaultRenderer("not_found", nil)
+	if topic.Error != nil {
+		return templates.ErrorRenderer(topic.Error)
 	}
-	if topics[0].Error != nil {
-		return templates.ErrorRenderer(topics[0].Error)
-	}
-	return templates.DefaultRenderer("topic", topics[0].Topic)
+	return templates.DefaultRenderer("topic", topic.Topic)
 }
 
-var topicConf = []TopicConfig{
-	TopicConfig{"cleanup.policy", "list", []string{"compact", "delete"}, "delete"},
-	TopicConfig{"min.insync.replicas", "int", []string{}, 1},
-	TopicConfig{"retention.bytes", "long", []string{}, -1},
-	TopicConfig{"retention.ms", "long", []string{}, 604800000},
-	TopicConfig{"segment.bytes", "int", []string{}, 1073741824},
-	TopicConfig{"max.message.bytes", "int", []string{}, 1000012},
-	TopicConfig{"compression.type", "string", []string{"uncompressed", "zstd", "lz4", "snappy", "gzip", "producer"}, "producer"},
-	TopicConfig{"delete.retention.ms", "long", []string{}, 86400000},
-	TopicConfig{"file.delete.delay.ms", "long", []string{}, 60000},
-	TopicConfig{"flush.messages", "long", []string{}, 9223372036854775807},
-	TopicConfig{"flush.ms", "long", []string{}, 9223372036854775807},
-	TopicConfig{"preallocate", "boolean", []string{}, false},
-	TopicConfig{"index.interval.bytes", "int", []string{}, 4096},
-	TopicConfig{"message.timestamp.difference.max.ms", "long", []string{}, 9223372036854775807},
-	TopicConfig{"message.timestamp.type", "string", []string{"CreateTime", "LogAppendTime"}, "CreateTime"},
-	TopicConfig{"min.cleanable.dirty.ratio", "double", []string{}, 0.5},
-	TopicConfig{"min.compaction.lag.ms", "long", []string{}, 0},
-	TopicConfig{"segment.index.bytes", "int", []string{}, 10485760},
-	TopicConfig{"segment.jitter.ms", "long", []string{}, 0},
-	TopicConfig{"segment.ms", "long", []string{}, 604800000},
-	TopicConfig{"unclean.leader.election.enable", "boolean", []string{}, false},
+var topicConf = []TopicSetting{
+	TopicSetting{"cleanup.policy", "list", []interface{}{"compact", "delete"}, "delete"},
+	TopicSetting{"min.insync.replicas", "int", []interface{}{}, 1},
+	TopicSetting{"retention.bytes", "long", []interface{}{}, -1},
+	TopicSetting{"retention.ms", "long", []interface{}{}, 604800000},
+	TopicSetting{"segment.bytes", "int", []interface{}{}, 1073741824},
+	TopicSetting{"max.message.bytes", "int", []interface{}{}, 1000012},
+	TopicSetting{"compression.type", "string", []interface{}{"uncompressed", "zstd", "lz4", "snappy", "gzip", "producer"}, "producer"},
+	TopicSetting{"delete.retention.ms", "long", []interface{}{}, 86400000},
+	TopicSetting{"file.delete.delay.ms", "long", []interface{}{}, 60000},
+	TopicSetting{"flush.messages", "long", []interface{}{}, 9223372036854775807},
+	TopicSetting{"flush.ms", "long", []interface{}{}, 9223372036854775807},
+	TopicSetting{"preallocate", "boolean", []interface{}{}, false},
+	TopicSetting{"index.interval.bytes", "int", []interface{}{}, 4096},
+	TopicSetting{"message.timestamp.difference.max.ms", "long", []interface{}{}, 9223372036854775807},
+	TopicSetting{"message.timestamp.type", "string", []interface{}{"CreateTime", "LogAppendTime"}, "CreateTime"},
+	TopicSetting{"min.cleanable.dirty.ratio", "double", []interface{}{}, 0.5},
+	TopicSetting{"min.compaction.lag.ms", "long", []interface{}{}, 0},
+	TopicSetting{"segment.index.bytes", "int", []interface{}{}, 10485760},
+	TopicSetting{"segment.jitter.ms", "long", []interface{}{}, 0},
+	TopicSetting{"segment.ms", "long", []interface{}{}, 604800000},
+	TopicSetting{"unclean.leader.election.enable", "boolean", []interface{}{}, false},
 }
 
 func CreateTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 	return templates.DefaultRenderer(
 		"create_topic",
-		TopicForm{topicConf, []string{}, map[string]string{}})
+		TopicForm{topicConf, []string{}, map[string]interface{}{}})
 }
 func SaveTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 	r.ParseForm()
@@ -216,55 +201,65 @@ func SaveTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 }
 
 func DeleteTopic(w http.ResponseWriter, r *http.Request) {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
 	name := pat.Param(r, "name")
-	if !p.DeleteTopic(name) {
-		http.Redirect(w, r, fmt.Sprintf("/topics", url.QueryEscape(name)), 302)
+	if !user.Permissions.DeleteTopic(name) {
+		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 		return
 
 	}
-
 	adminConfig := &kafka.ConfigMap{"bootstrap.servers": strings.Join(config.BrokerUrls.List(), ",")}
 	a, err := kafka.NewAdminClient(adminConfig)
 	if err != nil {
 		log.Error("delete_topic", log.ErrorEntry{err})
-		http.Redirect(w, r, fmt.Sprintf("/topics", url.QueryEscape(name)), 302)
+		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 	defer cancel()
 	results, err := a.DeleteTopics(
 		ctx,
 		[]string{name},
-		kafka.SetAdminOperationTimeout(5*time.Second))
+		kafka.SetAdminOperationTimeout(15*time.Second))
 	if err != nil {
 		log.Error("delete_topic", log.ErrorEntry{err})
-		http.Redirect(w, r, fmt.Sprintf("/topics", url.QueryEscape(name)), 302)
+		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 		return
 	}
 	for _, result := range results {
 		if result.Error.Code() != kafka.ErrNoError {
 			log.Error("delete_topic", log.ErrorEntry{result.Error})
-			http.Redirect(w, r, fmt.Sprintf("/topics", url.QueryEscape(name)), 302)
+			http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 			return
 		}
 	}
-	http.Redirect(w, r, fmt.Sprintf("/topics", url.QueryEscape(name)), 302)
+	http.Redirect(w, r, "/topics", 302)
 }
 
 func EditTopic(w http.ResponseWriter, r *http.Request) templates.Result {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
 	name := pat.Param(r, "name")
-	if !p.ReadTopic(name) {
+	if !user.Permissions.ReadTopic(name) {
 		return templates.ErrorRenderer(errors.New("You don't have permissions to view this topic."))
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topic, err := m.FetchTopic(ctx, name)
+	topic, err := store.FetchTopic(ctx, name, true, nil)
 	if err != nil {
+		log.Error("edit_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	return templates.DefaultRenderer("edit_topic", topic)
+	if topic.Error != nil {
+		return templates.ErrorRenderer(topic.Error)
+	}
+	values := make(map[string]interface{})
+	values["name"] = topic.Topic.Name
+	values["partitions"] = len(topic.Topic.Partitions)
+	values["replication_factor"] = len(topic.Topic.Partitions[0].Replicas)
+	for k, v := range topic.Topic.Config.Data {
+		values[k] = v.(string)
+	}
+	return templates.DefaultRenderer("edit_topic", TopicForm{topicConf, []string{}, values})
 }
 
 func UpdateTopic(w http.ResponseWriter, r *http.Request) templates.Result {

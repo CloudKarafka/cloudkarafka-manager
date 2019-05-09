@@ -3,6 +3,7 @@ package web
 import (
 	"net/http"
 
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"goji.io/pat"
@@ -15,7 +16,8 @@ func ListACLs(w http.ResponseWriter, r *http.Request) templates.Result {
 		cData zookeeper.ACLRule
 		err   error
 	)
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
+	p := user.Permissions
 	switch aclType {
 	case "cluster":
 		cData, err = zookeeper.ClusterAcls(p)

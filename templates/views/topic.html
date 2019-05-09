@@ -6,8 +6,8 @@
     <h1><a href="/topics">Topics</a> / {{.Content.Name}} </h1>
   </div>
   <div class="col-8">
-    <a href="#" id="consumeTopicBtn" class="btn btn-sm btn-primary float-right">Browse</a>
-    <a href="#" id="editTopicBtn" class="btn btn-sm btn-primary float-right edit">Edit</a>
+    {{/* <a href="#" class="btn btn-sm btn-primary float-right">Browse</a> */}}
+    <a href="/edit_topic/{{.Content.Name}}" class="btn btn-sm btn-primary float-right edit">Edit</a>
   </div>
 </div>
 {{end}}
@@ -126,8 +126,11 @@
 
 <div class="row">
   <div class="col-12">
-    <form id="delete-topic" method="post">
-      <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><span class="icon"><img src="/static/assets/icons/trashcan.svg" /></span> <span>Delete this topic</span></button>
+    <form  method="post" action="/delete_topic/{{.Content.Name}}">
+      <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right">
+        <span class="icon"><img src="/static/assets/icons/trashcan.svg" /></span>
+        <span>Delete topic</span>
+      </button>
     </form>
   </div>
 </div>

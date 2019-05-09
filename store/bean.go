@@ -51,7 +51,7 @@ func doRequest(url string) ([]Metric, error) {
 		return nil, err
 	}
 	defer r.Body.Close()
-	log.Info("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
+	log.Debug("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
 	if r.StatusCode != 200 {
 		log.Warn("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
 		return nil, fmt.Errorf("URL %s returned %d", url, r.StatusCode)
@@ -60,7 +60,7 @@ func doRequest(url string) ([]Metric, error) {
 		return nil, err
 	}
 	if len(v) == 0 {
-		log.Info("bean_request", log.MapEntry{"body": "[]", "url": url})
+		log.Debug("bean_request", log.MapEntry{"body": "[]", "url": url})
 	}
 	return v, nil
 }
@@ -76,7 +76,6 @@ func GetTimeSerieMetric(query MetricRequest) []Metric {
 	if serie == nil {
 		return nil
 	}
-	fmt.Println("GetTimeSerieMetric", serie.Last(), serie.All())
 	value := serie.Last()
 	metric := Metric{
 		Broker: query.BrokerId,

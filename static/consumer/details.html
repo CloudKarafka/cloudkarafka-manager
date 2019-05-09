@@ -132,11 +132,11 @@
               <script id='tmpl-consumed-partitions' type='text/x-handlebars-template'>
                 {{#each members }}
                 <tr>
-                  <td> {{ topic }}-{{ partition }} </td>
-                  <td> {{toLocaleString current_offset "" }} </td>
-                  <td> {{toLocaleString log_end_offset "" }} </td>
-                  <td> {{consumerLag current_offset log_end_offset }}</td>
-									<td> {{ clientid }} @ {{ host }} <br /> {{ consumerid }}</td>
+                  <td>{{ topic }}-{{ partition }}</td>
+                  <td>{{toLocaleString current_offset "" }}</td>
+                  <td>{{toLocaleString log_end_offset "" }}</td>
+                  <td>{{consumerLag current_offset log_end_offset }}</td>
+									<td>{{ clientid }} @ {{ host }} <br /> {{ consumerid }}</td>
                 </tr>
 								{{/each}}
               </script>
