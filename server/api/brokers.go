@@ -2,125 +2,44 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
 	"sort"
 	"strconv"
-	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
-	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
 )
 
-var brokerMetrics = map[string]string{
-	"messages_MessagesInPerSec": "Messages in",
-	"bytes_BytesInPerSec":       "Bytes in",
-	"bytes_BytesOutPerSec":      "Bytes out",
-	"bytes_BytesRejectedPerSec": "Bytes rejected",
-}
-
 func Brokers(w http.ResponseWriter, r *http.Request) {
-	res := make([]map[string]interface{}, 0)
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	for brokerId, _ := range config.BrokerUrls {
-		broker, err := m.FetchBroker(brokerId)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[WARN] Brokers: could not get broker info from zk: %s\n", err)
-			res = append(res, map[string]interface{}{
-				"details": broker,
-			})
-
-		} else {
-			b := map[string]interface{}{
-				"details": broker,
-			}
-			m, err := m.FetchBrokerMetrics(ctx, brokerId, false)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "[INFO] Brokers: failed fetching broker(%d) metrics: %s\n", brokerId, err)
-			} else {
-				b["metrics"] = m
-			}
-			res = append(res, b)
-		}
+	brokers, err := store.FetchBrokers(ctx, config.BrokerUrls.IDs(), nil)
+	if err != nil {
+		log.Error("brokers", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	sort.Slice(res, func(i, j int) bool {
-		return res[i]["details"].(m.Broker).Id < res[j]["details"].(m.Broker).Id
+	sort.Slice(brokers, func(i, j int) bool {
+		return brokers[i].Broker.Id < brokers[j].Broker.Id
 	})
-	writeAsJson(w, res)
+	writeAsJson(w, brokers)
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(pat.Param(r, "id"))
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Broker id must a an integer"))
+		http.Error(w, "Broker id must a an integer", http.StatusBadRequest)
 		return
-	}
-	broker, err := m.FetchBroker(id)
-	if err != nil {
-		if err == zookeeper.PathDoesNotExistsErr {
-			http.NotFound(w, r)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	res := map[string]interface{}{
-		"details": broker,
-	}
-	conn, err := m.FetchBrokerConnections(id)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching connections for %d: %s\n", id, err)
-	} else {
-		res["connections"] = conn
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	d, err := m.FetchBrokerMetrics(ctx, id, true)
+	broker, err := store.FetchBroker(ctx, id, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching broker(%d) metrics: %s\n", id, err)
-	} else {
-		res["metrics"] = d
-	}
-
-	writeAsJson(w, res)
-}
-
-func BrokersThroughput(w http.ResponseWriter, r *http.Request) {
-	from := time.Now().Add(time.Hour * 2 * -1)
-	brokerIds := make([]int, len(config.BrokerUrls))
-	i := 0
-	for id, _ := range config.BrokerUrls {
-		brokerIds[i] = id
-		i += 1
-	}
-	res, err := m.BrokersThroughput(brokerMetrics, brokerIds, from)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		log.Error("brokers", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	writeAsJson(w, res)
-}
-func BrokerThroughput(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(pat.Param(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Broker id must a an integer"))
-		return
-	}
-	from := time.Now().Add(time.Hour * 2 * -1)
-	res, err := m.BrokersThroughput(brokerMetrics, []int{id}, from)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	writeAsJson(w, res)
-
+	writeAsJson(w, broker)
 }

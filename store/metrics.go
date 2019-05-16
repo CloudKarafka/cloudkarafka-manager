@@ -63,6 +63,15 @@ var (
 		"type": "ReplicaManager",
 		"name": "OfflinePartitionsCount",
 	}}
+
+	BeanBrokerIsrShrinks = JMXBean{"kafka.server", map[string]string{
+		"type": "ReplicaManager",
+		"name": "IsrShrinksPerSec",
+	}}
+	BeanBrokerIsrExpands = JMXBean{"kafka.server", map[string]string{
+		"type": "ReplicaManager",
+		"name": "IsrExpandsPerSec",
+	}}
 	BeanBrokerConnections = JMXBean{"kafka.server", map[string]string{
 		"type":             "socket-server-metrics",
 		"listener":         "*",

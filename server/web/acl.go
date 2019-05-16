@@ -32,3 +32,18 @@ func ListACLs(w http.ResponseWriter, r *http.Request) templates.Result {
 	}
 	return templates.DefaultRenderer("acls", data)
 }
+
+func AddACL(w http.ResponseWriter, r *http.Request) {
+	aclType := pat.Param(r, "type")
+	user := r.Context().Value("user").(mw.SessionUser)
+	p := user.Permissions
+	switch aclType {
+	case "cluster":
+		cData, err = zookeeper.ClusterAcls(p)
+		data = []zookeeper.ACLRule{cData}
+	case "group":
+		data, err = zookeeper.GroupAcls(p)
+	default:
+		data, err = zookeeper.TopicAcls(p)
+	}
+}

@@ -25,24 +25,17 @@ func Router() *goji.Mux {
 	mux.Use(m.HostnameToResponse)
 	mux.Use(m.SecureApi)
 
-	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
-	mux.Handle(pat.Get("/notifications"), http.HandlerFunc(Notifications))
-	//mux.Handle(pat.Get("/overview"), http.HandlerFunc(Overview))
 	mux.Handle(pat.Get("/brokers"), http.HandlerFunc(Brokers))
-	mux.Handle(pat.Get("/brokers/throughput"), http.HandlerFunc(BrokersThroughput))
 	mux.Handle(pat.Get("/brokers/:id"), http.HandlerFunc(Broker))
-	mux.Handle(pat.Get("/brokers/:id/throughput"), http.HandlerFunc(BrokerThroughput))
 
-	mux.Handle(pat.Get("/consumers"), http.HandlerFunc(Consumers))
-	mux.Handle(pat.Get("/consumer/:name"), http.HandlerFunc(Consumer))
+	mux.Handle(pat.Get("/consumers"), http.HandlerFunc(ListConsumerGroups))
+	mux.Handle(pat.Get("/consumer/:name"), http.HandlerFunc(ViewConsumerGroup))
 
 	mux.Handle(pat.Get("/topics"), http.HandlerFunc(Topics))
 	mux.Handle(pat.Post("/topics"), m.ClusterWrite(http.HandlerFunc(CreateTopic)))
 	mux.Handle(pat.Get("/topics/:name"), http.HandlerFunc(Topic))
 	mux.Handle(pat.Put("/topics/:name"), m.ClusterWrite(http.HandlerFunc(UpdateTopic)))
 	mux.Handle(pat.Delete("/topics/:name"), m.ClusterWrite(http.HandlerFunc(DeleteTopic)))
-	mux.Handle(pat.Get("/topics/:name/throughput"), http.HandlerFunc(TopicThroughput))
-	mux.Handle(pat.Get("/topics/:name/browse"), http.HandlerFunc(TopicBrowser))
 
 	mux.Handle(pat.Get("/users"), m.ClusterRead(http.HandlerFunc(Users)))
 	mux.Handle(pat.Post("/users"), m.ClusterWrite(http.HandlerFunc(CreateUser)))

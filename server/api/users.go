@@ -1,17 +1,14 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
 	"net/http"
 	"os"
-	"path/filepath"
-	"strings"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/certs"
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"goji.io/pat"
 )
@@ -75,87 +72,27 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-func randString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
-}
-
-func getKeystore(storetype string) (certs.JKS, error) {
-	if storetype == "truststore" {
-		kafkaConfig, err := config.GetLocalKafkaConfig()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] Could not get kafka config: %s\n", err.Error())
-			return certs.JKS{}, errors.New("Could not get kafka config")
-		}
-		path := kafkaConfig["ssl.truststore.location"]
-		if path == "" {
-			return certs.JKS{}, errors.New("Could not find ssl.truststore.location in kafka config")
-		}
-		if !strings.HasPrefix(path, "/") {
-			path = filepath.Join(config.KafkaDir, path)
-		}
-		password := kafkaConfig["ssl.truststore.password"]
-		storeType := kafkaConfig["ssl.truststore.type"]
-		if storeType == "" {
-			storeType = "JKS"
-		}
-		return certs.JKS{path, password, storeType}, nil
-	}
-	if _, err := os.Stat(".keystorepassword"); os.IsNotExist(err) {
-		ioutil.WriteFile(".keystorepassword", []byte(randString(32)), 0400)
-	}
-	b, err := ioutil.ReadFile(".keystorepassword")
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[ERROR] Could not read keystore password: %s\n", err.Error())
-		return certs.JKS{}, errors.New("Could not read keystore password")
-	}
-	return certs.JKS{"clientkey.store", string(b), "PKCS12"}, nil
-}
-func GetKeystore(storetype string) (certs.JKS, error) {
-	return getKeystore(storetype)
-}
-
 func ListSSLCerts(w http.ResponseWriter, r *http.Request) {
 	var (
-		err        error
-		truststore certs.JKS
-		keystore   certs.JKS
-		trusted    []certs.StoreEntity
-		stored     []certs.StoreEntity
+		err error
+
+		trusted []certs.StoreEntity
+		stored  []certs.StoreEntity
 	)
-	truststore, err = getKeystore("truststore")
-	if err != nil {
-		w.Header().Add("Content-type", "text/plain")
-		http.Error(w, "Could not get path to trust store from the broker", http.StatusInternalServerError)
-	}
-	if truststore.Exists() {
-		trusted, err = truststore.List()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] Could not get certificates from trust store: %s\n", err.Error())
-			w.Header().Add("Content-type", "text/plain")
-			http.Error(w, "Could not read certificates from truststore", http.StatusInternalServerError)
-			return
-		}
-	}
-	keystore, err = getKeystore("keystore")
+
+	stored, err = store.KeystoreEntries()
 	if err != nil {
 		w.Header().Add("Content-type", "text/plain")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	if keystore.Exists() {
-		stored, err = keystore.List()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] Could not get certificates from keystore: %s\n", err.Error())
-			w.Header().Add("Content-type", "text/plain")
-			http.Error(w, "Could not read certificates from keystore", http.StatusInternalServerError)
-			return
-		}
+	trusted, err = store.TruststoreEntries()
+	if err != nil {
+		w.Header().Add("Content-type", "text/plain")
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
 	writeAsJson(w, map[string][]certs.StoreEntity{
 		"trusted": trusted,
 		"stored":  stored,
@@ -189,13 +126,13 @@ func CreateSSLCert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to generate certificate", http.StatusInternalServerError)
 		return
 	}
-	truststore, err := getKeystore("truststore")
+	truststore, err := store.GetKeystore("truststore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert: %s\n", err)
 		http.Error(w, "Failed to find the truststore", http.StatusInternalServerError)
 		return
 	}
-	keystore, err := getKeystore("keystore")
+	keystore, err := store.GetKeystore("keystore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert: %s\n", err)
 		http.Error(w, "Failed to find the keystore", http.StatusInternalServerError)
@@ -265,7 +202,7 @@ func ImportSSLCert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "The certificate supplied is not a valid certificate", http.StatusBadRequest)
 		return
 	}
-	truststore, err := getKeystore("truststore")
+	truststore, err := store.GetKeystore("truststore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert: %s", err)
 		http.Error(w, "Failed to find the keystore", http.StatusInternalServerError)
@@ -312,7 +249,7 @@ func RenewSSLCert(w http.ResponseWriter, r *http.Request) {
 		Company:     form["company"],
 		Section:     form["section"],
 		CommonName:  form["commonname"]}
-	keystore, err := getKeystore("keystore")
+	keystore, err := store.GetKeystore("keystore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.RenewSSLCert: %s\n", err)
 		http.Error(w, "Failed to find the keystore", http.StatusInternalServerError)
@@ -334,7 +271,7 @@ func RenewSSLCert(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	truststore, err := getKeystore("truststore")
+	truststore, err := store.GetKeystore("truststore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.RenewSSLCert: %s\n", err)
 		http.Error(w, "Failed to find the truststore", http.StatusInternalServerError)
@@ -371,7 +308,7 @@ func RenewSSLCert(w http.ResponseWriter, r *http.Request) {
 // Revoke access to a certificate
 func RevokeSSLCert(w http.ResponseWriter, r *http.Request) {
 	alias := pat.Param(r, "alias")
-	truststore, err := getKeystore("truststore")
+	truststore, err := store.GetKeystore("truststore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert: %s", err)
 		http.Error(w, "Failed to find the keystore", http.StatusInternalServerError)
@@ -400,7 +337,7 @@ func RevokeSSLCert(w http.ResponseWriter, r *http.Request) {
 
 func RemoveSSLKey(w http.ResponseWriter, r *http.Request) {
 	alias := pat.Param(r, "alias")
-	store, err := getKeystore("keystore")
+	store, err := store.GetKeystore("keystore")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.RemoveSSLKey: %s", err)
 		http.Error(w, "Failed to find the keystore", http.StatusInternalServerError)

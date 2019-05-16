@@ -156,10 +156,15 @@ func (e Default) Standalone() bool {
 	return e.standalone
 }
 
-type TemplateData struct {
-	User     m.SessionUser
+type ClusterInfo struct {
 	Hostname string
-	Content  interface{}
+}
+
+type TemplateData struct {
+	User        m.SessionUser
+	Cluster     ClusterInfo
+	QueryParams map[string]string
+	Content     interface{}
 }
 
 func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) http.Handler {
@@ -172,12 +177,19 @@ func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) htt
 		if err != nil {
 			hostname = ""
 		}
+		qp := make(map[string]string)
+		for k, v := range r.URL.Query() {
+			if len(v) > 0 {
+				qp[k] = v[0]
+			}
+		}
 		res := fn(w, r)
 		if res != nil {
 			data := TemplateData{
-				User:     user,
-				Hostname: hostname,
-				Content:  res.Content(),
+				User:        user,
+				Cluster:     ClusterInfo{hostname},
+				QueryParams: qp,
+				Content:     res.Content(),
 			}
 			err = RenderDefault(w, res.Standalone(), res.Template(), data)
 			if err != nil {
@@ -201,7 +213,7 @@ func JsonHandler(fn func(r *http.Request) (interface{}, error)) http.Handler {
 	})
 }
 
-func SseHandler(fn func(*http.Request, <-chan bool) <-chan []byte) http.Handler {
+func SseHandler(fn func(*http.Request, <-chan bool) (<-chan []byte, error)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -215,11 +227,18 @@ func SseHandler(fn func(*http.Request, <-chan bool) <-chan []byte) http.Handler 
 
 		// Listen to connection close and un-register messageChan
 		notify := w.(http.CloseNotifier).CloseNotify()
+		quit := make(chan bool, 0)
+		resp, err := fn(r, quit)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		for {
 			select {
 			case <-notify:
+				quit <- true
 				return
-			case v := <-fn(r, notify):
+			case v := <-resp:
 				fmt.Fprintf(w, "data: %s\n\n", v)
 				flusher.Flush()
 			}

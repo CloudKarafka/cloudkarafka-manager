@@ -32,10 +32,11 @@ func (me OverviewItem) Format() string {
 
 func topicOverview(ctx context.Context, p zookeeper.Permissions) []OverviewItem {
 	var (
-		res           = []OverviewItem{}
-		topicSize     = OverviewItem{"Total Topic Size", 0, "inbox", "size"}
-		topicMsgCount = OverviewItem{"Total Topic Message Count", 0, "mail-read", "count"}
-		topicCount    = OverviewItem{"Topic Count", 0, "three-bars", "count"}
+		res            = []OverviewItem{}
+		topicSize      = OverviewItem{"Total Topic Size", 0, "inbox", "size"}
+		topicMsgCount  = OverviewItem{"Total Topic Message Count", 0, "mail-read", "count"}
+		topicCount     = OverviewItem{"Topic Count", 0, "three-bars", "count"}
+		partitionCount = OverviewItem{"Partition Count", 0, "three-bars", "count"}
 	)
 	topicNames, err := zookeeper.Topics(p)
 	if err != nil {
@@ -53,9 +54,10 @@ func topicOverview(ctx context.Context, p zookeeper.Permissions) []OverviewItem 
 	for _, topic := range topics {
 		topicSize.Value += topic.Size()
 		topicMsgCount.Value += topic.Messages()
+		partitionCount.Value += len(topic.Partitions)
 		topicCount.Value += 1
 	}
-	return append(res, topicSize, topicMsgCount, topicCount)
+	return append(res, topicCount, partitionCount, topicSize, topicMsgCount)
 }
 
 func brokerOverview() []OverviewItem {
@@ -67,21 +69,21 @@ func brokerOverview() []OverviewItem {
 /*
 // TODO Show only consumer that consumes from topics that user has permissions for?
 func consumerOverview(ctx context.Context, res map[string]int) map[string]int {
-	res["consumer_count"] = 0
-	if v, err := m.FetchConsumerGroups(ctx); err == nil {
-		res["consumer_count"] = len(v)
-	}
-	return res
+    res["consumer_count"] = 0
+    if v, err := m.FetchConsumerGroups(ctx); err == nil {
+        res["consumer_count"] = len(v)
+    }
+    return res
 }
 
 func userOverview(p zookeeper.Permissions, res map[string]int) map[string]int {
-	res["user_count"] = 0
-	users, err := zookeeper.Users("", p)
-	if err != nil {
-		return res
-	}
-	res["user_count"] = len(users)
-	return res
+    res["user_count"] = 0
+    users, err := zookeeper.Users("", p)
+    if err != nil {
+        return res
+    }
+    res["user_count"] = len(users)
+    return res
 }
 */
 
@@ -93,7 +95,9 @@ func Overview(w http.ResponseWriter, r *http.Request) templates.Result {
 		Boxes         []OverviewItem
 		Notifications []n.Notification
 	}{
-		append(topicOverview(ctx, user.Permissions), brokerOverview()...),
+		append(
+			brokerOverview(),
+			topicOverview(ctx, user.Permissions)...),
 		n.List(ctx),
 	}
 	return templates.DefaultRenderer("overview", res)

@@ -6,8 +6,9 @@
     <h1><a href="/topics">Topics</a> / {{.Content.Name}} </h1>
   </div>
   <div class="col-8">
-    {{/* <a href="#" class="btn btn-sm btn-primary float-right">Browse</a> */}}
-    <a href="/edit_topic/{{.Content.Name}}" class="btn btn-sm btn-primary float-right edit">Edit</a>
+    {{/* <a href="/topics/{{.Content.Name}}/browse" class="btn btn-sm btn-primary float-right">Browse</a> */}}
+    <a href="/topics/{{.Content.Name}}/edit" class="btn btn-sm btn-primary float-right edit">Edit configuration</a>
+    {{/* <a href="/topics/{{.Content.Name}}/.........." class="btn btn-sm btn-primary float-right edit">Update replica assignments</a> */}}
   </div>
 </div>
 {{end}}
@@ -86,14 +87,23 @@
     </div>
   </div>
 </div>
-
-<div class="row mt-3">
-  <div class="col-4">
-    <h4>Partitions</h4>
-  </div>
-</div>
 <div class="row">
   <div class="col-md-12">
+    <div class="box">
+      <div class="box-header text-center">
+        <h2>Topic Input/Output</h2>
+      </div>
+      <div class="box-body input-output" data-throughput="/throughput?type=topic&topic={{.Content.Name}}" data-throughput-follow="/throughput/follow?type=topic&topic={{.Content.Name}}">
+        <div id="axis0" class="chart-y-axis"></div>
+        <div id="axis1" class="chart-y-axis"></div>
+        <div id="chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="box">
+    <h4>Partitions</h4>
     <table class="table mt-2">
       <thead>
         <tr>
@@ -120,13 +130,23 @@
         {{ end }}
       </tbody>
     </table>
+    <form action="/topics/{{.Content.Name}}/delete" method="post">
+      <div class="form-row">
+        <div class="col-md-4 mb-3">
+          <label for="name">Update partition count</label>
+          <input type="number" required  min="{{len .Content.Partitions}}" pattern="\d+" class="form-control">
+          <i>Insert the number of partitions that you would like</i>
+        </div>
+        <div class="col-md-4 mb-3">
+          <button type="submit" class="btn btn-lg btn-primary">Save</button>
+        </div>
 
-  </div>
+      </div>
+    </form>
 </div>
-
 <div class="row">
   <div class="col-12">
-    <form  method="post" action="/delete_topic/{{.Content.Name}}">
+    <form  method="post" action="/topics/{{.Content.Name}}/delete">
       <button class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right">
         <span class="icon"><img src="/static/assets/icons/trashcan.svg" /></span>
         <span>Delete topic</span>
@@ -138,7 +158,7 @@
 {{end}}
 
 {{define "js"}}
-<script src="/js/d3.v3.min.js"></script>
-<script src="/js/rickshaw.min.js"></script>
-<script src="/js/throughput-chart.js"></script>
+<script src="/static/js/d3.v3.min.js"></script>
+<script src="/static/js/rickshaw.min.js"></script>
+<script src="/static/js/throughput-chart.js"></script>
 {{end}}

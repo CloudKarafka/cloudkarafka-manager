@@ -45,11 +45,6 @@ type BrokerResponse struct {
 	Error  error
 }
 
-type BrokerRequest struct {
-	Ids     []int
-	Metrics []MetricRequest
-}
-
 func fetchBroker(ctx context.Context, id int) (Broker, error) {
 	var broker Broker
 	path := fmt.Sprintf("/brokers/ids/%d", id)
@@ -93,25 +88,25 @@ func fetchBrokerMetrics(ctx context.Context, metrics []MetricRequest) (map[int][
 	return res, nil
 }
 
-func FetchBrokers(ctx context.Context, req BrokerRequest) ([]BrokerResponse, error) {
+func FetchBrokers(ctx context.Context, brokerIds []int, metricReqs []MetricRequest) ([]BrokerResponse, error) {
 	var (
-		res     = make([]BrokerResponse, len(req.Ids))
+		res     = make([]BrokerResponse, len(brokerIds))
 		err     error
 		metrics map[int][]Metric
 	)
-	if len(req.Metrics) > 0 {
-		if metrics, err = fetchBrokerMetrics(ctx, req.Metrics); err != nil {
+	if len(metricReqs) > 0 {
+		if metrics, err = fetchBrokerMetrics(ctx, metricReqs); err != nil {
 			return nil, err
 		}
 	}
-	for i, id := range req.Ids {
+	for i, id := range brokerIds {
 		broker, err := fetchBroker(ctx, id)
 		res[i] = BrokerResponse{}
 		if err != nil {
 			res[i].Error = fmt.Errorf("Failed to fetch info for broker %d from Zookeeper: %s", id, err)
 		} else {
 			res[i].Broker = broker
-			if len(req.Metrics) > 0 {
+			if len(metricReqs) > 0 {
 				for _, metric := range metrics[broker.Id] {
 					value := int(metric.Value)
 					switch metric.Type {
@@ -123,9 +118,18 @@ func FetchBrokers(ctx context.Context, req BrokerRequest) ([]BrokerResponse, err
 					}
 				}
 			}
-			fmt.Println(broker.Metrics)
 		}
 	}
-
 	return res, nil
+}
+
+func FetchBroker(ctx context.Context, brokerId int, metricReqs []MetricRequest) (BrokerResponse, error) {
+	res, err := FetchBrokers(ctx, []int{brokerId}, metricReqs)
+	if err != nil {
+		return BrokerResponse{}, err
+	}
+	if len(res) == 0 {
+		return BrokerResponse{}, fmt.Errorf("Broker %d not found", brokerId)
+	}
+	return res[0], nil
 }

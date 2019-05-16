@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"net/http"
+	"sort"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
@@ -30,13 +31,27 @@ type ConsumerGroup struct {
 	Members []store.ConsumerGroupMember
 }
 
+func (cg ConsumerGroup) SortedMembers() []store.ConsumerGroupMember {
+	sort.Slice(cg.Members, func(i, j int) bool {
+		var (
+			a = cg.Members[i]
+			b = cg.Members[j]
+		)
+		if a.Topic == b.Topic {
+			return a.Partition < b.Partition
+		}
+		return a.Topic < b.Topic
+	})
+	return cg.Members
+}
+
 func ViewConsumerGroup(w http.ResponseWriter, r *http.Request) templates.Result {
 	group := pat.Param(r, "name")
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
 	g, err := store.FetchConsumerGroups(ctx)
 	if err != nil {
-		log.Error("list_consumergroups", log.ErrorEntry{err})
+		log.Error("view_consumergroups", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
 	res := ConsumerGroup{

@@ -1,6 +1,6 @@
 {{define "menu"}}
 <div class="sidebar-info">
-  <h2 class="host">{{.Hostname}}</h2>
+  <h2 class="host">{{.Cluster.Hostname}}</h2>
   <p>{{.User.Username}}</p>
 </div>
 <nav class="sidebar-nav">
@@ -30,13 +30,13 @@
       </a>
     </li>
     <li class="">
-      <a href="/admin">
+      <a href="/users">
         <span class="icon"><img src="/static/assets/icons/organization.svg" /></span>
         <span>Users</span>
       </a>
     </li>
     <li class="">
-      <a href="/admin/acl">
+      <a href="/acl">
         <span class="icon"><img src="/static/assets/icons/repo.svg" /></span>
         <span>ACL</span>
       </a>

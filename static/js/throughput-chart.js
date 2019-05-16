@@ -9,7 +9,7 @@
         else if (abs_y >= 1048576)      { return Math.round(y / 1048576, r) + "Mb/s" }
         else if (abs_y >= 1024)         { return Math.round(y / 1024, r) + "Kb/s" }
         else if (abs_y < 1 && abs_y > 0)    { return Math.round(y.toFixed(2), r) + "b/s" }
-        else if (abs_y === 0)           { return '' }
+        else if (abs_y === 0)           { return "0b/s" }
         else                        { return y }
     }
     function renderThroughputChart(id, data) {
@@ -42,8 +42,7 @@
         var hd = new g.Rickshaw.Graph.HoverDetail({
             graph: graph,
             formatter: (serie, x, y) => {
-                var parts = serie.name.split("/")
-                return parts[0] + " " + parts[2].toLowerCase() + ": " + formatSize(y)
+                return serie.name + ": " + formatSize(y)
 
             }
         })
@@ -74,7 +73,7 @@
                     return renderThroughputChart("chart", r)    
                 }
             }).then(graph => {
-                if (followUrl) {
+                if (graph && followUrl) {
                     var evtSource = new EventSource(followUrl, { withCredentials: true } )
                     evtSource.onmessage = function(e) {
                         var data = JSON.parse(e.data);
@@ -85,7 +84,14 @@
                         console.error("EventSource failed.", e);
                     };
                 }
-
+                if(!graph) {
+                    var parent = el.parentNode;
+                    parent.removeChild(el);
+                    var i = document.createElement("i")
+                    i.innerText = "No chart data available";
+                    parent.appendChild(i);
+                    
+                }
             })
     })
 }(window))

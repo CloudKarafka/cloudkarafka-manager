@@ -91,6 +91,36 @@ func (p Permissions) DeleteTopic(resource string) bool {
 	}
 	return allow
 }
+func (p Permissions) ListUsers() bool {
+	return true
+}
+
+func (p Permissions) CreateUser() bool {
+	allow := false
+	r := "kafka-cluster"
+	for _, p := range p.Cluster {
+		if p.Write(r) && p.Deny(r) {
+			return false
+		}
+		if p.Write(r) && p.Allow(r) {
+			allow = true
+		}
+	}
+	return allow
+}
+func (p Permissions) DeleteUser() bool {
+	allow := false
+	r := "kafka-cluster"
+	for _, p := range p.Cluster {
+		if p.Delete(r) && p.Deny(r) {
+			return false
+		}
+		if p.Delete(r) && p.Allow(r) {
+			allow = true
+		}
+	}
+	return allow
+}
 
 var AllowAll = []Permission{Permission{"ALL", "ALLOW", "LITERAL", "*"}}
 var AdminPermissions = Permissions{

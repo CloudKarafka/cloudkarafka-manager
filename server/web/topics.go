@@ -22,12 +22,31 @@ import (
 	"goji.io/pat"
 )
 
+func filterTopics(topics []string, query string) []string {
+	if query == "" {
+		return topics
+	}
+	res := make([]string, len(topics))
+	i := 0
+	for _, topic := range topics {
+		if strings.Contains(topic, query) {
+			res[i] = topic
+			i += 1
+		}
+	}
+	return res[:i]
+}
+
 func ListTopics(w http.ResponseWriter, r *http.Request) templates.Result {
 	user := r.Context().Value("user").(mw.SessionUser)
+	queryParams := r.URL.Query()
 	topicNames, err := zookeeper.Topics(user.Permissions)
 	if err != nil {
 		log.Error("list_topics", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
+	}
+	if len(queryParams["s"]) > 0 {
+		topicNames = filterTopics(topicNames, queryParams["s"][0])
 	}
 	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*3)
 	i := 0
@@ -262,6 +281,55 @@ func EditTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 	return templates.DefaultRenderer("edit_topic", TopicForm{topicConf, []string{}, values})
 }
 
-func UpdateTopic(w http.ResponseWriter, r *http.Request) templates.Result {
+func UpdateTopicConfig(w http.ResponseWriter, r *http.Request) templates.Result {
+	name := pat.Param(r, "name")
+	r.ParseForm()
+	formValues := r.Form
+	topicForm := TopicForm{
+		ConfigOptions: topicConf,
+		Errors:        make([]string, 0)}
+	topicForm.LoadValues(formValues)
+	changes := make([]kafka.ConfigEntry, 0)
+	for k, _ := range formValues {
+		v := formValues.Get(k)
+		if v != "" {
+			changes = append(changes, kafka.ConfigEntry{
+				Name:      k,
+				Value:     v,
+				Operation: kafka.AlterOperationSet})
+		}
+	}
+
+	adminConfig := &kafka.ConfigMap{"bootstrap.servers": strings.Join(config.BrokerUrls.List(), ",")}
+	a, err := kafka.NewAdminClient(adminConfig)
+	if err != nil {
+		log.Error("update_topic_config", log.ErrorEntry{err})
+		return templates.ErrorRenderer(err)
+	}
+	configResource := kafka.ConfigResource{
+		Type:   kafka.ResourceTopic,
+		Name:   name,
+		Config: changes,
+	}
+	timeout := 30 * time.Second
+	ctx, cancel := context.WithTimeout(r.Context(), timeout)
+	defer cancel()
+	results, err := a.AlterConfigs(ctx,
+		[]kafka.ConfigResource{configResource},
+		kafka.SetAdminRequestTimeout(timeout))
+	if err != nil {
+		log.Error("update_topic_config", log.ErrorEntry{err})
+		return templates.ErrorRenderer(err)
+	}
+	for _, r := range results {
+		if r.Error.Code() != kafka.ErrNoError {
+			log.Error("update_topic_config", log.ErrorEntry{r.Error})
+			return templates.ErrorRenderer(r.Error)
+		}
+	}
+	http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 	return nil
+}
+
+func AddTopicPartitions(w http.ResponseWriter, r *http.Request) {
 }

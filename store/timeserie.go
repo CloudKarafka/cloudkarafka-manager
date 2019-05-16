@@ -209,10 +209,11 @@ func StartCollect() {
 	for v := range ch {
 		tr := make([]MetricRequest, 0)
 		for id, _ := range v {
-			tr = append(tr, MetricRequest{id, BeanAllTopicsBytesInPerSec, "Count"})
-			tr = append(tr, MetricRequest{id, BeanAllTopicsBytesOutPerSec, "Count"})
-			tr = append(tr, MetricRequest{id, BeanBrokerBytesInPerSec, "Count"})
-			tr = append(tr, MetricRequest{id, BeanBrokerBytesOutPerSec, "Count"})
+			tr = append(tr,
+				MetricRequest{id, BeanAllTopicsBytesInPerSec, "Count"},
+				MetricRequest{id, BeanAllTopicsBytesOutPerSec, "Count"},
+				MetricRequest{id, BeanBrokerBytesInPerSec, "Count"},
+				MetricRequest{id, BeanBrokerBytesOutPerSec, "Count"})
 		}
 		reqs = tr
 	}

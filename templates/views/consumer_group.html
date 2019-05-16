@@ -30,7 +30,7 @@
         </tr>
       </thead>
       <tbody>
-        {{range .Content.Members}}
+        {{range .Content.SortedMembers}}
         <tr>
           <td>{{.Topic}}-{{.Partition}}</td>
           <td>{{number .CurrentOffset}}</td>

@@ -2,44 +2,50 @@ package api
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
 )
 
-func Consumers(w http.ResponseWriter, r *http.Request) {
+func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	res, err := m.FetchConsumerGroups(ctx)
+	res, err := store.FetchConsumerGroups(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[WARN] api.Consumers: %s\n", err)
-		http.Error(w, "Could not fetch consumers", http.StatusInternalServerError)
+		log.Error("api.list_consumers", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	writeAsJson(w, res)
 }
 
-func Consumer(w http.ResponseWriter, r *http.Request) {
+type ConsumerGroup struct {
+	Name    string                      `json:"name"`
+	Topics  []string                    `json:"topics"`
+	Lag     int                         `json:"lag"`
+	Clients int                         `json:"consumers"`
+	Members []store.ConsumerGroupMember `json:"members"`
+}
+
+func ViewConsumerGroup(w http.ResponseWriter, r *http.Request) {
 	group := pat.Param(r, "name")
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	g, err := m.FetchConsumerGroups(ctx)
+	g, err := store.FetchConsumerGroups(ctx)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "[WARN] api.Consumer: %s\n", err)
-		http.Error(w, "Could not fetch consumer "+group, http.StatusInternalServerError)
+		log.Error("api.view_consumergroups", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	res := map[string]interface{}{
-		"details": map[string]interface{}{
-			"topics":  g.Topics(group),
-			"lag":     g.Lag(group),
-			"clients": g.NumberConsumers(group),
-		},
-		"members": g[group],
+	res := ConsumerGroup{
+		Name:    group,
+		Topics:  g.Topics(group),
+		Lag:     g.Lag(group),
+		Clients: g.NumberConsumers(group),
+		Members: g[group],
 	}
 	writeAsJson(w, res)
 }

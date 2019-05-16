@@ -202,7 +202,7 @@ func FetchTopics(ctx context.Context, topicNames []string, config bool, metricRe
 func FetchTopic(ctx context.Context, topicName string, config bool, metricReqs []MetricRequest) (TopicResponse, error) {
 	r, err := FetchTopics(ctx, []string{topicName}, config, metricReqs)
 	if err != nil {
-
+		return TopicResponse{}, err
 	}
 	if len(r) == 0 {
 		return TopicResponse{}, fmt.Errorf("Topic %s not found", topicName)

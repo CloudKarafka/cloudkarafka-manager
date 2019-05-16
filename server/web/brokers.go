@@ -22,13 +22,9 @@ func Brokers(w http.ResponseWriter, r *http.Request) templates.Result {
 		metricRequests[i+2] = store.MetricRequest{id, store.BeanBrokerMessagesInPerSec, "OneMinuteRate"}
 		i = i + 3
 	}
-	req := store.BrokerRequest{
-		Ids:     config.BrokerUrls.IDs(),
-		Metrics: metricRequests,
-	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	brokers, err := store.FetchBrokers(ctx, req)
+	brokers, err := store.FetchBrokers(ctx, config.BrokerUrls.IDs(), metricRequests)
 	if err != nil {
 		log.Error("brokers", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
@@ -58,23 +54,16 @@ func Broker(w http.ResponseWriter, r *http.Request) templates.Result {
 		metricRequests[i+8] = store.MetricRequest{id, store.BeanBrokerConnections, "connection-count"}
 		i = i + 9
 	}
-	req := store.BrokerRequest{
-		Ids:     []int{id},
-		Metrics: metricRequests,
-	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	brokers, err := store.FetchBrokers(ctx, req)
+	broker, err := store.FetchBroker(ctx, id, metricRequests)
 	if err != nil {
 		log.Error("broker", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	if len(brokers) != 1 {
-		return templates.DefaultRenderer("not_found", nil)
+	if broker.Error != nil {
+		log.Error("broker", log.ErrorEntry{broker.Error})
+		return templates.ErrorRenderer(broker.Error)
 	}
-	if brokers[0].Error != nil {
-		log.Error("broker", log.ErrorEntry{brokers[0].Error})
-		return templates.ErrorRenderer(brokers[0].Error)
-	}
-	return templates.DefaultRenderer("broker", brokers[0])
+	return templates.DefaultRenderer("broker", broker)
 }

@@ -3,22 +3,12 @@
 {{define "content_menu"}}
 <div class="row">
   <div class="col-sm-4 col-12">
-    <h1>Admin</h1>
-  </div>
-  <div class="col-sm-8 col-12 text-sm-right">
-    <p>
-      <a href="/users/add.html" class="btn btn-primary float-sm-none float-right ml-2">+ Add User</a>
-    </p>
+    <h1>Users</h1>
   </div>
 </div>
 {{end}}
 
 {{define "content"}}
-<div class="row">
-  <div class="col-md-12">
-    <h4>Users</h4>
-  </div>
-</div>
 <div class="row">
   <div class="col-md-12">
     <table class="table">
@@ -36,14 +26,47 @@
             <a href="/users/{{toLower .Type}}/{{.Name}}">{{ .Name }}</a></td>
           <td class="text-center">{{ .Type}}</td>
           <td class="text-center">
-            <form action="/users/{{toLower .Type}}/{{.Name}}/delete" method="POST">
-              <button type="submit" title="Delete user" href="/users/{{toLower .Type}}/{{.Name}}" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right"><img src="/assets/icons/trashcan.svg" /></button>
-              </form>
+            <form action="/users/{{.Name}}/delete?type={{toLower .Type}}" method="POST">
+              <button type="submit" title="Delete user" class="btn btn-outline-secondary danger btn-w-icon float-sm-none float-right">
+                <img src="/assets/icons/trashcan.svg" />
+              </button>
+            </form>
           </td>
         </tr>
+        {{ else}}
+        <tr>
+          <td colspan="3">
+            <i>No users on this cluster</i>
+            </td>
         {{end}}
       </tbody>
     </table>
   </div>
 </div>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <h2>Add user</h2>
+      </div>
+      <div class="box-body">
+        <form method="post" action="/users/create">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="name" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn btn-lg btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 {{end}}

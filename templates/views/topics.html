@@ -16,14 +16,13 @@
 {{end}}
 
 {{define "content"}}
-{{/* Search not ready
 <div class="form-row">
   <div class="col-md-3 mb-3">
     <form action="">
-      <input type="text" class="form-control" autocomplete="off" name="s" placeholder="Search">
-      </form>
+      <input type="text" class="form-control" autocomplete="off" name="s" value="{{index .QueryParams "s" }}" placeholder="Search">
+    </form>
   </div>
-</div>*/}}
+</div>
 <div class="row">
   <div class="col-md-12">
     <table class="table" id="topics">

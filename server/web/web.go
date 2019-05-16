@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/gob"
-	"errors"
 	"net/http"
 
 	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
@@ -13,7 +12,6 @@ import (
 )
 
 var (
-	badRequest  = errors.New("Bad request")
 	Cookiestore *sessions.CookieStore
 )
 
@@ -41,17 +39,21 @@ func Router() *goji.Mux {
 	secureMux.Handle(pat.Get("/topics/:name"), templates.TemplateHandler(ViewTopic))
 	secureMux.Handle(pat.Get("/create_topic"), templates.TemplateHandler(CreateTopic))
 	secureMux.Handle(pat.Post("/create_topic"), templates.TemplateHandler(SaveTopic))
-	secureMux.Handle(pat.Get("/edit_topic/:name"), templates.TemplateHandler(EditTopic))
-	secureMux.Handle(pat.Post("/edit_topic/:name"), templates.TemplateHandler(UpdateTopic))
-	secureMux.Handle(pat.Post("/delete_topic/:name"), http.HandlerFunc(DeleteTopic))
+	secureMux.Handle(pat.Get("/topics/:name/edit"), templates.TemplateHandler(EditTopic))
+	secureMux.Handle(pat.Post("/topcs/:name/edit"), templates.TemplateHandler(UpdateTopicConfig))
+	secureMux.Handle(pat.Post("/topics/:name/add_partitions"), http.HandlerFunc(AddTopicPartitions))
+	secureMux.Handle(pat.Post("/topics/:name/delete"), http.HandlerFunc(DeleteTopic))
 
 	secureMux.Handle(pat.Get("/consumer_groups"), templates.TemplateHandler(ListConsumerGroups))
 	secureMux.Handle(pat.Get("/consumer_groups/:name"), templates.TemplateHandler(ViewConsumerGroup))
 
-	secureMux.Handle(pat.Get("/admin"), templates.TemplateHandler(ListUsers))
-	secureMux.Handle(pat.Get("/admin/users"), templates.TemplateHandler(ListUsers))
-	secureMux.Handle(pat.Get("/admin/acl"), http.RedirectHandler("/admin/acl/topic", 301))
-	secureMux.Handle(pat.Get("/admin/acl/:type"), templates.TemplateHandler(ListACLs))
+	secureMux.Handle(pat.Get("/users"), templates.TemplateHandler(ListUsers))
+	secureMux.Handle(pat.Post("/users"), templates.TemplateHandler(CreateUser))
+	secureMux.Handle(pat.Post("/users/:name/delete"), templates.TemplateHandler(DeleteUser))
+
+	secureMux.Handle(pat.Get("/acl"), http.RedirectHandler("/acl/topic", 301))
+	secureMux.Handle(pat.Get("/acl/:type"), templates.TemplateHandler(ListACLs))
+	secureMux.Handle(pat.Post("/acl/:type"), templates.TemplateHandler(AddACL))
 
 	secureMux.Handle(pat.Get("/throughput"), templates.JsonHandler(Throughput))
 	secureMux.Handle(pat.Get("/throughput/follow"), templates.SseHandler(ThroughputFollow))
@@ -62,6 +64,9 @@ func Router() *goji.Mux {
 	mux.Use(m.Logger)
 	mux.Handle(pat.Get("/login"), templates.TemplateHandler(GetLogin))
 	mux.Handle(pat.Post("/login"), templates.TemplateHandler(PostLogin))
+
+	mux.Handle(pat.Get("/th_test"), templates.JsonHandler(Throughput))
+
 	mux.Handle(pat.New("/*"), secureMux)
 	return mux
 }

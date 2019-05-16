@@ -3,31 +3,17 @@
 {{define "content_menu"}}
 <div class="row">
   <div class="col-sm-4 col-12">
-    <h1>Topics / Edit {{index .Content.Values "name" }}</h1>
+    <h1>
+      <a href="/topics">Topics</a> /
+      <a href="/topics/{{urlquery (index .Content.Values "name")}}">{{index .Content.Values "name" }}</a> /
+      Edit</h1>
   </div>
 </div>
 {{end}}
 
 {{define "content"}}
-<form action="" method="post">
-  <div class="form-row box">
-    <div class="col-md-4 mb-3">
-      <label for="name">Name</label>
-      <input type="text" id="name" readonly class="form-control" value="{{index .Content.Values "name" }}">
-    </div>
-    <div class="col-md-4 mb-3">
-      <label for="partitions">Partitions</label>
-      <input type="number" id="partitions" name="partitions" value="{{index .Content.Values "partitions" }}" required pattern="[0-9]+" min="{{index .Content.Values "partitions" }}" class="form-control">
-    </div>
-    <div class="col-md-4 mb-3">
-      <label for="replication">Replication Factor</label>
-      <input type="number" id="replication" name="replication_factor" value="{{index .Content.Values "replication_factor" }}" required pattern="[0-9]+" min="1" class="form-control">
-    </div>
-  </div>
-  <div class="box">
-    <div class="box-header">
-      <h2>Configuration</h2>
-    </div>
+<div class="box">
+  <form action="" method="post">
     <table>
       <tr>
         <th>Option</th>
@@ -35,10 +21,8 @@
         <th>Default value</th>
         <th>Value</th>
       </tr>
-
       {{ $top := .Content }}
       {{range .Content.ConfigOptions}}
-
       {{ $o := .}}
       <tr>
         <td><label for="{{.Key}}">{{.Key}}</label></td>
@@ -76,11 +60,10 @@
       </tr>
       {{ end }}
     </table>
-  </div>
-
-  <div class="form-group">
-    <button type="submit" class="btn btn-lg btn-primary">Save</button>
-  </div>
-</form>
+    <div class="form-group">
+      <button type="submit" class="btn btn-lg btn-primary">Save</button>
+    </div>
+  </form>
+</div>
 
 {{end}}

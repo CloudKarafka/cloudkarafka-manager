@@ -5,131 +5,67 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sort"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/db"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
-	bolt "go.etcd.io/bbolt"
 	"goji.io/pat"
 )
 
 func Topics(w http.ResponseWriter, r *http.Request) {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
+	user := r.Context().Value("user").(mw.SessionUser)
+	topicNames, err := zookeeper.Topics(user.Permissions)
+	if err != nil {
+		log.Error("api.list_topics", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
-	topicNames, err := zookeeper.Topics(p)
+	topics, err := store.FetchTopics(ctx, topicNames, false, nil)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		log.Error("api.list_topics", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*2)
-	i := 0
-	for id, _ := range config.BrokerUrls {
-		//metricRequests[i] = store.PartitionLogStartOffset(id, "*")
-		//metricRequests[i+1] = store.PartitionLogEndOffset(id, "*")
-		//metricRequests[i+2] = store.PartitionSize(id, "*")
-		metricRequests[i] = store.MetricRequest{id, store.BeanAllTopicsBytesInPerSec, "OneMinuteRate"}
-		metricRequests[i+2] = store.MetricRequest{id, store.BeanAllTopicsLogSize, "Value"}
-		//metricRequests[i] = store.TopicBytesOutPerSec(id)
-		i = i + 1
-	}
-	topics, err := store.FetchTopics(ctx, topicNames, false, metricRequests)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-	}
-	sort.Slice(topics, func(i, j int) bool {
-		return topics[i].Topic.Name < topics[j].Topic.Name
-	})
 	ts := make([]interface{}, len(topics))
-	for i, t := range topics {
+	i := 0
+	for _, t := range topics {
 		if t.Error != nil {
-			ts[i] = t.Error
+			log.Error("api.list_topics", log.ErrorEntry{err})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
 		} else {
 			ts[i] = t.Topic
+			i += 1
 		}
 	}
-	fmt.Println(ts)
-	writeAsJson(w, ts)
+	writeAsJson(w, ts[:i])
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
 	topicName := pat.Param(r, "name")
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	zkPath := fmt.Sprintf("/brokers/topics/%s", topicName)
-	if !zookeeper.Exists(zkPath) {
+	if !zookeeper.Exists(fmt.Sprintf("/brokers/topics/%s", topicName)) {
 		http.NotFound(w, r)
 		return
 	}
-	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*3)
-	i := 0
-	//metricNames := []string{"MessagesInPerSec", "BytesRejectedPerSec", "BytesOutPerSec", "BytesInPerSec"}
-	for id, _ := range config.BrokerUrls {
-		metricRequests[i] = store.MetricRequest{id, store.BeanTopicBytesInPerSec(topicName), "OneMinuteRate"}
-		metricRequests[i+1] = store.MetricRequest{id, store.BeanTopicBytesOutPerSec(topicName), "OneMinuteRate"}
-		metricRequests[i+2] = store.MetricRequest{id, store.BeanTopicLogSize(topicName), "Value"}
-		i = i + 3
-	}
-	topic, err := store.FetchTopic(ctx, topicName, true, metricRequests)
+	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
+	defer cancel()
+	topic, err := store.FetchTopic(ctx, topicName, true, nil)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+		log.Error("api.topic", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	if topic.Error != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(topic.Error.Error()))
+		log.Error("api.topic", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	writeAsJson(w, topic.Topic)
-}
-
-func TopicThroughput(w http.ResponseWriter, r *http.Request) {
-	topicName := pat.Param(r, "name")
-	back := time.Duration(2)
-	if keys, ok := r.URL.Query()["from"]; ok {
-		from, err := strconv.Atoi(keys[0])
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("Param 'from' must a an integer"))
-			return
-		}
-		back = time.Duration(from)
-	}
-	from := time.Now().Add(time.Hour * back * -1)
-	metrics := map[string]string{
-		"messages_MessagesInPerSec": "Messages in",
-		"bytes_BytesInPerSec":       "Bytes in",
-		"bytes_BytesOutPerSec":      "Bytes out",
-		"bytes_BytesRejectedPerSec": "Bytes rejected",
-	}
-	db.View(func(tx *bolt.Tx) error {
-		var res []*db.Serie
-		for k, name := range metrics {
-			key_split := strings.Split(k, "_")
-			s := &db.Serie{
-				Name: name,
-				Type: key_split[0],
-				Data: make([]db.DataPoint, 0),
-			}
-			for brokerId, _ := range config.BrokerUrls {
-				path := fmt.Sprintf("topic_metrics/%s/%s/%d", topicName, key_split[1], brokerId)
-				s.Add(db.TimeSerie(tx, path, from))
-			}
-			if len(s.Data) > 0 {
-				res = append(res, s)
-			}
-		}
-		if len(res) == 0 {
-			w.WriteHeader(http.StatusNoContent)
-		}
-		writeAsJson(w, res)
-		return nil
-	})
 }
 
 func CreateTopic(w http.ResponseWriter, r *http.Request) {
