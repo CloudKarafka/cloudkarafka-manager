@@ -60,12 +60,7 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if topic.Error != nil {
-		log.Error("api.topic", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeAsJson(w, topic.Topic)
+	writeAsJson(w, topic)
 }
 
 func CreateTopic(w http.ResponseWriter, r *http.Request) {

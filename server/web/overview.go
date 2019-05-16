@@ -6,9 +6,9 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	n "github.com/cloudkarafka/cloudkarafka-manager/notifications"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	humanize "github.com/dustin/go-humanize"
@@ -43,9 +43,9 @@ func topicOverview(ctx context.Context, p zookeeper.Permissions) []OverviewItem 
 		return nil
 	}
 
-	topics := make([]m.Topic, len(topicNames))
+	topics := make([]store.Topic, len(topicNames))
 	for i, topicName := range topicNames {
-		topics[i], err = m.FetchTopic(ctx, topicName)
+		topics[i], err = store.FetchTopic(ctx, topicName, false, nil)
 		if err != nil {
 			log.Info("web.topicOverview", log.ErrorEntry{err})
 			return nil

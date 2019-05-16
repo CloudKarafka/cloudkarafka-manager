@@ -92,10 +92,7 @@ func ViewTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 		log.Error("view_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	if topic.Error != nil {
-		return templates.ErrorRenderer(topic.Error)
-	}
-	return templates.DefaultRenderer("topic", topic.Topic)
+	return templates.DefaultRenderer("topic", topic)
 }
 
 var topicConf = []TopicSetting{
@@ -268,14 +265,11 @@ func EditTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 		log.Error("edit_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	if topic.Error != nil {
-		return templates.ErrorRenderer(topic.Error)
-	}
 	values := make(map[string]interface{})
-	values["name"] = topic.Topic.Name
-	values["partitions"] = len(topic.Topic.Partitions)
-	values["replication_factor"] = len(topic.Topic.Partitions[0].Replicas)
-	for k, v := range topic.Topic.Config.Data {
+	values["name"] = topic.Name
+	values["partitions"] = len(topic.Partitions)
+	values["replication_factor"] = len(topic.Partitions[0].Replicas)
+	for k, v := range topic.Config.Data {
 		values[k] = v.(string)
 	}
 	return templates.DefaultRenderer("edit_topic", TopicForm{topicConf, []string{}, values})

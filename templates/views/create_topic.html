@@ -52,7 +52,7 @@
           <select name="{{.Key}}">
             <option value="">Use default value</option>
             {{range .Options}}
-            <option value="{{.}}" {{if eq . (index $top.Values $o.Key ) }}selected {{end}}>{{.}}</option>
+            <option value="{{.}}" {{if eq (toS .) (toS (index $top.Values $o.Key )) }}selected {{end}}>{{.}}</option>
             {{end}}
           </select>
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/url"
 
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 )
 
 type User struct {
@@ -13,7 +13,7 @@ type User struct {
 }
 
 type Topic struct {
-	m.Topic
+	store.Topic
 	Config   TopicConfig
 	BytesIn  int
 	BytesOut int

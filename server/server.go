@@ -18,7 +18,6 @@ func Start() {
 	root := goji.NewMux()
 	root.Handle(pat.New("/api/*"), api.Router())
 	root.Handle(pat.New("/debug/*"), debug.Router())
-	root.Handle(pat.New("/metrics"), http.HandlerFunc(api.Prometheus))
 	root.Handle(pat.Get("/static/*"), http.StripPrefix("/static", http.FileServer(http.Dir("static/"))))
 
 	root.Handle(pat.New("/*"), web.Router())

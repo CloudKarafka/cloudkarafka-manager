@@ -12,8 +12,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
-	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
-	"github.com/cloudkarafka/cloudkarafka-manager/processes"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
 )
 
@@ -30,7 +29,10 @@ func serverError(w http.ResponseWriter, err error, fn, msg string) {
 func checkBrokerURP(brokerId int) {
 	sleep := 5
 	for i := 0; i < sleep*20; i++ {
-		r, err := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions", "Value", "")
+		r, err := store.GetMetrics(store.MetricRequest{
+			brokerId,
+			store.BeanBrokerUnderReplicatedPartitions,
+			"Value"})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
 		} else if len(r) > 0 { // Got a response
@@ -185,10 +187,6 @@ func UpdateKafkaConfig(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if restartKafka {
-		// We only stop kafka here since the systemd config will restart it automatically
-		if err = processes.StopKafka(); err != nil {
-			serverError(w, err, "UpdateKafkaConfig",
-				"Couldn't restart kafka, only dynamic changes were applied")
-		}
+		// Notify user that kafka needs to be restarted.
 	}
 }

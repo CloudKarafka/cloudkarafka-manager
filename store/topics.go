@@ -199,13 +199,16 @@ func FetchTopics(ctx context.Context, topicNames []string, config bool, metricRe
 	return res, nil
 }
 
-func FetchTopic(ctx context.Context, topicName string, config bool, metricReqs []MetricRequest) (TopicResponse, error) {
+func FetchTopic(ctx context.Context, topicName string, config bool, metricReqs []MetricRequest) (Topic, error) {
 	r, err := FetchTopics(ctx, []string{topicName}, config, metricReqs)
 	if err != nil {
-		return TopicResponse{}, err
+		return Topic{}, err
 	}
 	if len(r) == 0 {
-		return TopicResponse{}, fmt.Errorf("Topic %s not found", topicName)
+		return Topic{}, fmt.Errorf("Topic %s not found", topicName)
 	}
-	return r[0], err
+	if r[0].Error != nil {
+		return Topic{}, r[0].Error
+	}
+	return r[0].Topic, nil
 }

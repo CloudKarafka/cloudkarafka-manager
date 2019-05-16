@@ -53,7 +53,6 @@ func Router() *goji.Mux {
 
 	secureMux.Handle(pat.Get("/acl"), http.RedirectHandler("/acl/topic", 301))
 	secureMux.Handle(pat.Get("/acl/:type"), templates.TemplateHandler(ListACLs))
-	secureMux.Handle(pat.Post("/acl/:type"), templates.TemplateHandler(AddACL))
 
 	secureMux.Handle(pat.Get("/throughput"), templates.JsonHandler(Throughput))
 	secureMux.Handle(pat.Get("/throughput/follow"), templates.SseHandler(ThroughputFollow))
