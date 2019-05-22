@@ -54,12 +54,6 @@ func Users(p zookeeper.Permissions) ([]KafkaUser, error) {
 	if err != nil {
 		return noKafkaUsers, err
 	}
-	certUsers, err = getCertUsers()
-	/*
-		if err != nil {
-			return noKafkaUsers, err
-
-		}
-	*/
+	certUsers, _ = getCertUsers()
 	return append(saslUsers, certUsers...), nil
 }

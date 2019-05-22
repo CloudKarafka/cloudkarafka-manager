@@ -18,7 +18,6 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"goji.io/pat"
 )
 
@@ -186,31 +185,11 @@ func SaveTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 		return templates.DefaultRenderer("create_topic", topicForm)
 	}
 
-	adminConfig := &kafka.ConfigMap{"bootstrap.servers": strings.Join(config.BrokerUrls.List(), ",")}
-	a, err := kafka.NewAdminClient(adminConfig)
-	if err != nil {
-		log.Error("create_topic", log.ErrorEntry{err})
-		return templates.ErrorRenderer(err)
-	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
-	results, err := a.CreateTopics(
-		ctx,
-		[]kafka.TopicSpecification{{
-			Topic:             name,
-			NumPartitions:     numParts,
-			ReplicationFactor: replicationFactor,
-			Config:            conf}},
-		kafka.SetAdminOperationTimeout(5*time.Second))
+	err = store.CreateTopic(ctx, name, numParts, replicationFactor, conf)
 	if err != nil {
-		log.Error("create_topic", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
-	}
-	for _, r := range results {
-		if r.Error.Code() != kafka.ErrNoError {
-			log.Error("create_topic", log.ErrorEntry{r.Error})
-			return templates.ErrorRenderer(r.Error)
-		}
 	}
 	http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 	return nil
@@ -223,31 +202,6 @@ func DeleteTopic(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 		return
 
-	}
-	adminConfig := &kafka.ConfigMap{"bootstrap.servers": strings.Join(config.BrokerUrls.List(), ",")}
-	a, err := kafka.NewAdminClient(adminConfig)
-	if err != nil {
-		log.Error("delete_topic", log.ErrorEntry{err})
-		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
-	defer cancel()
-	results, err := a.DeleteTopics(
-		ctx,
-		[]string{name},
-		kafka.SetAdminOperationTimeout(15*time.Second))
-	if err != nil {
-		log.Error("delete_topic", log.ErrorEntry{err})
-		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
-		return
-	}
-	for _, result := range results {
-		if result.Error.Code() != kafka.ErrNoError {
-			log.Error("delete_topic", log.ErrorEntry{result.Error})
-			http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
-			return
-		}
 	}
 	http.Redirect(w, r, "/topics", 302)
 }
@@ -283,43 +237,18 @@ func UpdateTopicConfig(w http.ResponseWriter, r *http.Request) templates.Result 
 		ConfigOptions: topicConf,
 		Errors:        make([]string, 0)}
 	topicForm.LoadValues(formValues)
-	changes := make([]kafka.ConfigEntry, 0)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	topicConfig := make(map[string]interface{})
 	for k, _ := range formValues {
 		v := formValues.Get(k)
 		if v != "" {
-			changes = append(changes, kafka.ConfigEntry{
-				Name:      k,
-				Value:     v,
-				Operation: kafka.AlterOperationSet})
+			topicConfig[k] = v
 		}
 	}
-
-	adminConfig := &kafka.ConfigMap{"bootstrap.servers": strings.Join(config.BrokerUrls.List(), ",")}
-	a, err := kafka.NewAdminClient(adminConfig)
+	err := store.UpdateTopicConfig(ctx, name, topicConfig)
 	if err != nil {
-		log.Error("update_topic_config", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
-	}
-	configResource := kafka.ConfigResource{
-		Type:   kafka.ResourceTopic,
-		Name:   name,
-		Config: changes,
-	}
-	timeout := 30 * time.Second
-	ctx, cancel := context.WithTimeout(r.Context(), timeout)
-	defer cancel()
-	results, err := a.AlterConfigs(ctx,
-		[]kafka.ConfigResource{configResource},
-		kafka.SetAdminRequestTimeout(timeout))
-	if err != nil {
-		log.Error("update_topic_config", log.ErrorEntry{err})
-		return templates.ErrorRenderer(err)
-	}
-	for _, r := range results {
-		if r.Error.Code() != kafka.ErrNoError {
-			log.Error("update_topic_config", log.ErrorEntry{r.Error})
-			return templates.ErrorRenderer(r.Error)
-		}
 	}
 	http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 	return nil

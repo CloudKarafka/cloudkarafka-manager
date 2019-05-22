@@ -1,8 +1,13 @@
 package api
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
+	"strings"
 
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
@@ -16,72 +21,100 @@ type aclVM struct {
 }
 
 func Acl(w http.ResponseWriter, r *http.Request) {
-	/*
-		topics := zookeeper.AllAcls(zookeeper.TopicsAcls, zookeeper.TopicAcl)
-		groups := zookeeper.AllAcls(zookeeper.GroupsAcls, zookeeper.GroupAcl)
-		cluster := zookeeper.AllAcls(zookeeper.ClusterAcls, zookeeper.ClusterAcl)
-		resp := map[string]interface{}{
-			"topics":  topics,
-			"groups":  groups,
-			"cluster": cluster,
+	user := r.Context().Value("user").(mw.SessionUser)
+	p := user.Permissions
+	res := make(map[string]interface{})
+	v, err := zookeeper.ClusterAcls(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res["cluster"] = v
+	v, err = zookeeper.GroupAcls(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res["group"] = v
+
+	v, err = zookeeper.TopicAcls(p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	res["topic"] = v
+	writeAsJson(w, res)
+}
+
+func aclRequestFromHttpRequest(r *http.Request, checkKeys bool) (zookeeper.AclRequest, error) {
+	var acl map[string]string
+	err := parseRequestBody(r, &acl)
+	e := zookeeper.AclRequest{}
+	if err != nil {
+		return e, errors.New("Cannot parse request body")
+	}
+	resource, err := zookeeper.AclResourceFromString(acl["resource"])
+	if err != nil {
+		return e, err
+	}
+	pattern, err := zookeeper.AclPatternTypeFromString(acl["pattern"])
+	if err != nil {
+		return e, err
+	}
+	if checkKeys {
+		for _, k := range []string{"name", "principal", "permission", "permission_type"} {
+			if acl[k] == "" {
+				return e, fmt.Errorf("Missing parameter %s", k)
+			}
 		}
-		writeAsJson(w, resp)
-	*/
+	}
+	req := zookeeper.AclRequest{
+		ResourceType:   resource,
+		PatternType:    pattern,
+		Name:           acl["name"],
+		Principal:      acl["principal"],
+		Permission:     strings.ToUpper(acl["permission"]),
+		PermissionType: strings.ToUpper(acl["permission_type"]),
+	}
+	return req, nil
 }
 
 func CreateAcl(w http.ResponseWriter, r *http.Request) {
-	/*
-		p := r.Context().Value("permissions").(zookeeper.Permissions)
-		if !p.ClusterRead() {
-			http.NotFound(w, r)
-			return
-		}
-		var acl aclVM
-		err := parseRequestBody(r, &acl)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] api.CreateAcl: %s", err)
-			http.Error(w, "Cannot parse request body", http.StatusBadRequest)
-			return
-		}
-		fmt.Printf("[INFO] action=create-acl user=%s acl=[resource=%s,name=%s,principal=%s]\n",
-			p.Username, acl.Resource, acl.Name, acl.Principal)
-		err = zookeeper.CreateAcl(acl.Principal,
-			acl.Name,
-			acl.Resource,
-			acl.Type,
-			acl.Host,
-			acl.Permission.String(),
-		)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] api.CreateAcl: %s\n", err)
-			http.Error(w, "Could not save ACL rule", http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	*/
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.CreateAcl() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	req, err := aclRequestFromHttpRequest(r, true)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	err = zookeeper.CreateAcl(req)
+	if err != nil {
+		log.Error("create_acl", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func DeleteAcl(w http.ResponseWriter, r *http.Request) {
-	/*
-		p := r.Context().Value("permissions").(zookeeper.Permissions)
-		resource := pat.Param(r, "resource")
-		name := pat.Param(r, "name")
-		principal := pat.Param(r, "principal")
-		if !strings.HasPrefix(principal, "User:") {
-			principal = "User:" + principal
-		}
-		if !p.ClusterWrite() {
-			http.NotFound(w, r)
-			return
-		}
-		fmt.Fprintf(os.Stderr, "[INFO] action=delete-acl user=%s acl=[resource=%s,name=%s,principal=%s]\n",
-			p.Username, resource, name, principal)
-		err := zookeeper.DeleteAcl(principal, name, resource)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[ERROR] api.DeleteAcl: %s", err)
-			http.Error(w, "Could not delete ACL rule", http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusNoContent)
-	*/
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.DeleteAcl() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	req, err := aclRequestFromHttpRequest(r, false)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
+	}
+	err = zookeeper.DeleteAcl(req)
+	if err != nil {
+		log.Error("delete_acl", log.ErrorEntry{err})
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }

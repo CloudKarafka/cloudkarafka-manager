@@ -61,9 +61,5 @@ func Broker(w http.ResponseWriter, r *http.Request) templates.Result {
 		log.Error("broker", log.ErrorEntry{err})
 		return templates.ErrorRenderer(err)
 	}
-	if broker.Error != nil {
-		log.Error("broker", log.ErrorEntry{broker.Error})
-		return templates.ErrorRenderer(broker.Error)
-	}
 	return templates.DefaultRenderer("broker", broker)
 }

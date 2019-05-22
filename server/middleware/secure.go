@@ -29,17 +29,17 @@ func SecureApi(h http.Handler) http.Handler {
 			return
 		}
 		var (
-			user *SessionUser
+			user SessionUser
 		)
 		switch config.AuthType {
 		case "dev":
-			user = &SessionUser{
+			user = SessionUser{
 				Username:    "dev",
 				Permissions: zookeeper.AdminPermissions,
 			}
 		case "admin":
 			if username == "admin" && password == os.Getenv("ADMIN_PASSWORD") {
-				user = &SessionUser{
+				user = SessionUser{
 					Username:    "admin",
 					Permissions: zookeeper.AdminPermissions,
 				}
@@ -56,7 +56,7 @@ func SecureApi(h http.Handler) http.Handler {
 					http.Error(w, "Couldn't get user info from Zookeeper", http.StatusInternalServerError)
 					return
 				}
-				user = &SessionUser{
+				user = SessionUser{
 					Username:    username,
 					Permissions: p,
 				}

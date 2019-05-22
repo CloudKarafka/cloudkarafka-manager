@@ -1,15 +1,15 @@
-{{define "title"}}Broker {{.Content.Broker.Id}}{{end}}
+{{define "title"}}Broker {{.Content.Id}}{{end}}
 
 {{define "content_menu"}}
 <div class="row">
   <div class="col-sm-4 col-12">
-    <h1><a href="/brokers">Brokers</a> / {{.Content.Broker.Id}} </h1>
+    <h1><a href="/brokers">Brokers</a> / {{.Content.Id}} </h1>
   </div>
 </div>
 {{end}}
 
 {{define "content"}}
-{{with .Content.Broker}}
+{{with .Content}}
 <div class="row">
   <div class="col-md-6 col-lg-4">
     <div class="box box-w-header">

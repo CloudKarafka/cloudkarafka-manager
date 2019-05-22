@@ -13,8 +13,8 @@ import (
 )
 
 type Broker struct {
-	Version      int            `json:"version"`
-	JmxPort      int            `json:"jmx_port"`
+	Version      int            `json:"-"`
+	JmxPort      int            `json:"-"`
 	Timestamp    string         `json:"timestamp"`
 	Endpoints    []string       `json:"endpoints"`
 	Host         string         `json:"host"`
@@ -123,13 +123,16 @@ func FetchBrokers(ctx context.Context, brokerIds []int, metricReqs []MetricReque
 	return res, nil
 }
 
-func FetchBroker(ctx context.Context, brokerId int, metricReqs []MetricRequest) (BrokerResponse, error) {
+func FetchBroker(ctx context.Context, brokerId int, metricReqs []MetricRequest) (Broker, error) {
 	res, err := FetchBrokers(ctx, []int{brokerId}, metricReqs)
 	if err != nil {
-		return BrokerResponse{}, err
+		return Broker{}, err
 	}
 	if len(res) == 0 {
-		return BrokerResponse{}, fmt.Errorf("Broker %d not found", brokerId)
+		return Broker{}, fmt.Errorf("Broker %d not found", brokerId)
 	}
-	return res[0], nil
+	if res[0].Error != nil {
+		return Broker{}, res[0].Error
+	}
+	return res[0].Broker, nil
 }

@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type Partition struct {
@@ -54,18 +57,15 @@ func (t Topic) Messages() int {
 
 func (t Topic) MarshalJSON() ([]byte, error) {
 	res := map[string]interface{}{
-		"name":               t.Name,
-		"deleted":            t.Deleted,
-		"partitions":         t.Partitions,
-		"metrics":            t.Metrics,
-		"partition_count":    len(t.Partitions),
-		"replication_factor": 0,
+		"name":       t.Name,
+		"deleted":    t.Deleted,
+		"partitions": t.Partitions,
+	}
+	if len(t.Metrics) > 0 {
+		res["metrics"] = t.Metrics
 	}
 	if len(t.Config.Data) > 0 {
 		res["config"] = t.Config
-	}
-	if len(t.Partitions) > 0 {
-		res["replication_factor"] = len(t.Partitions[0].Replicas)
 	}
 	if v := t.Size(); v != 0 {
 		res["size"] = v
@@ -211,4 +211,107 @@ func FetchTopic(ctx context.Context, topicName string, config bool, metricReqs [
 		return Topic{}, r[0].Error
 	}
 	return r[0].Topic, nil
+}
+
+func CreateTopic(ctx context.Context, name string, partitions, replicationFactor int, topicConfig map[string]string) error {
+	a, err := adminClient()
+	if err != nil {
+		log.Error("create_topic", log.ErrorEntry{err})
+		return err
+	}
+	results, err := a.CreateTopics(
+		ctx,
+		[]kafka.TopicSpecification{{
+			Topic:             name,
+			NumPartitions:     partitions,
+			ReplicationFactor: replicationFactor,
+			Config:            topicConfig}},
+		kafka.SetAdminOperationTimeout(15*time.Second))
+	if err != nil {
+		log.Error("create_topic", log.ErrorEntry{err})
+		return err
+	}
+	for _, r := range results {
+		if r.Error.Code() != kafka.ErrNoError {
+			log.Error("create_topic", log.ErrorEntry{r.Error})
+			return r.Error
+		}
+	}
+	return nil
+}
+
+func UpdateTopicConfig(ctx context.Context, name string, topicConfig map[string]interface{}) error {
+	changes := make([]kafka.ConfigEntry, 0)
+	for k, v := range topicConfig {
+		changes = append(changes, kafka.ConfigEntry{
+			Name:      k,
+			Value:     v.(string),
+			Operation: kafka.AlterOperationSet})
+	}
+	a, err := adminClient()
+	if err != nil {
+		log.Error("update_topic_config", log.ErrorEntry{err})
+		return err
+	}
+	configResource := kafka.ConfigResource{
+		Type:   kafka.ResourceTopic,
+		Name:   name,
+		Config: changes,
+	}
+	results, err := a.AlterConfigs(ctx,
+		[]kafka.ConfigResource{configResource},
+		kafka.SetAdminRequestTimeout(30*time.Second))
+	if err != nil {
+		log.Error("update_topic_config", log.ErrorEntry{err})
+		return err
+	}
+	for _, r := range results {
+		if r.Error.Code() != kafka.ErrNoError {
+			log.Error("update_topic_config", log.ErrorEntry{r.Error})
+			return r.Error
+		}
+	}
+	return nil
+}
+
+func AddParitions(ctx context.Context, name string, increaseTo int) error {
+	a, err := adminClient()
+	if err != nil {
+		log.Error("update_topic_config", log.ErrorEntry{err})
+		return err
+	}
+	spec := kafka.PartitionsSpecification{
+		Topic:      name,
+		IncreaseTo: increaseTo}
+	results, err := a.CreatePartitions(ctx,
+		[]kafka.PartitionsSpecification{spec},
+		kafka.SetAdminRequestTimeout(15*time.Second))
+	if err != nil {
+		log.Error("add_partitions", log.ErrorEntry{err})
+		return err
+	}
+	for _, r := range results {
+		if r.Error.Code() != kafka.ErrNoError {
+			log.Error("add_partitions", log.ErrorEntry{r.Error})
+			return r.Error
+		}
+	}
+	return nil
+}
+
+func DeleteTopic(ctx context.Context, name string) error {
+	a, err := adminClient()
+	results, err := a.DeleteTopics(ctx, []string{name},
+		kafka.SetAdminOperationTimeout(15*time.Second))
+	if err != nil {
+		log.Error("delete_topic", log.ErrorEntry{err})
+		return err
+	}
+	for _, result := range results {
+		if result.Error.Code() != kafka.ErrNoError {
+			log.Error("delete_topic", log.ErrorEntry{result.Error})
+			return result.Error
+		}
+	}
+	return nil
 }

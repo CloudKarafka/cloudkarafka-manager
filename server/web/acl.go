@@ -12,16 +12,14 @@ import (
 func ListACLs(w http.ResponseWriter, r *http.Request) templates.Result {
 	aclType := pat.Param(r, "type")
 	var (
-		data  []zookeeper.ACLRule
-		cData zookeeper.ACLRule
-		err   error
+		data []zookeeper.ACLRule
+		err  error
 	)
 	user := r.Context().Value("user").(mw.SessionUser)
 	p := user.Permissions
 	switch aclType {
 	case "cluster":
-		cData, err = zookeeper.ClusterAcls(p)
-		data = []zookeeper.ACLRule{cData}
+		data, err = zookeeper.ClusterAcls(p)
 	case "group":
 		data, err = zookeeper.GroupAcls(p)
 	default:

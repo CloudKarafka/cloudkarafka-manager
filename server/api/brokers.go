@@ -21,10 +21,22 @@ func Brokers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	sort.Slice(brokers, func(i, j int) bool {
-		return brokers[i].Broker.Id < brokers[j].Broker.Id
+	ts := make([]store.Broker, len(brokers))
+	i := 0
+	for _, t := range brokers {
+		if t.Error != nil {
+			log.Error("api.list_brokers", log.ErrorEntry{err})
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		} else {
+			ts[i] = t.Broker
+			i += 1
+		}
+	}
+	sort.Slice(ts, func(i, j int) bool {
+		return ts[i].Id < ts[j].Id
 	})
-	writeAsJson(w, brokers)
+	writeAsJson(w, ts)
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {

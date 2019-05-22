@@ -62,7 +62,7 @@ func PermissionsFor(username string) (Permissions, error) {
 		return Permissions{}, err
 	}
 	return Permissions{
-		Cluster: permissionsMap(username, []ACLRule{cAcls}),
+		Cluster: permissionsMap(username, cAcls),
 		Topic:   permissionsMap(username, tAcls),
 		Group:   permissionsMap(username, gAcls)}, nil
 }
