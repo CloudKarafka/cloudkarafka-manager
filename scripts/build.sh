@@ -17,6 +17,6 @@ popd
 mkdir -p /root/bin
 curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
 dep ensure -update
-go build -ldflags "-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$COMMIT -X github.com/cloudkarafka/cloudkarafka-manager/config.Version=$VERSION" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
+go build -ldflags "-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$COMMIT -X github.com/cloudkarafka/cloudkarafka-manager/config.BuildDate=$(date)" -tags static -a -installsuffix cgo -o cloudkarafka-mgmt.linux
 go test -v ./...
 

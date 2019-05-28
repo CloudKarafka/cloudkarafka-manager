@@ -11,9 +11,20 @@
       g.location.hash = ''
       g.kafkaHelper.redirect('/')
     }
+    setBuildDate()
     return g.kafkaHelper.get('/api/whoami').then(d => {
       setUsername()
       setClusterName()
+      return d
+    })
+  }
+
+  function setBuildDate() {
+    g.kafkaHelper.get('/api/build-date').then(bd => {
+      var el = document.querySelector('#build-date')
+      if (el) {
+        el.innerText = bd.build_date
+      }
       return d
     })
   }

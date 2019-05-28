@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	goji "goji.io"
 	"goji.io/pat"
@@ -18,6 +19,10 @@ func WhoAmI(w http.ResponseWriter, r *http.Request) {
 	writeAsJson(w, r.Context().Value("permissions"))
 }
 
+func BuildDate(w http.ResponseWriter, r *http.Request) {
+	writeAsJson(w, map[string]string{"build_date": config.BuildDate})
+}
+
 func Router() *goji.Mux {
 	mux := goji.SubMux()
 	mux.Use(m.RequestId)
@@ -25,6 +30,7 @@ func Router() *goji.Mux {
 	mux.Use(m.HostnameToResponse)
 	mux.Use(m.Secure)
 
+	mux.Handle(pat.Get("/build-date"), http.HandlerFunc(BuildDate))
 	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
 	mux.Handle(pat.Get("/notifications"), http.HandlerFunc(Notifications))
 	mux.Handle(pat.Get("/overview"), http.HandlerFunc(Overview))
