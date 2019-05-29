@@ -136,13 +136,20 @@
               <script id='tmpl-consumed-partitions' type='text/x-handlebars-template'>
                 {{#each members }}
                 <tr>
+                  {{#if topic }}
                   <td> {{ topic }}-{{ partition }} </td>
                   <td> {{toLocaleString current_offset "" }} </td>
                   <td> {{toLocaleString log_end_offset "" }} </td>
                   <td> {{consumerLag current_offset log_end_offset }}</td>
-									<td> {{ clientid }} @ {{ host }} <br /> {{ consumerid }}</td>
+                    {{ else }}
+                  <td> Unassigned </td>
+                  <td> - </td>
+                  <td> - </td>
+                  <td> - </td>
+                    {{/if}}
+				  <td> {{ clientid }} @ {{ host }} <br /> {{ consumerid }}</td>
                 </tr>
-								{{/each}}
+				{{/each}}
               </script>
             </div>
           </div>
