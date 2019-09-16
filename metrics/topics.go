@@ -175,7 +175,7 @@ func FetchTopicList(ctx context.Context, p zookeeper.Permissions) ([]Topic, erro
 
 	res := make([]Topic, len(topics))
 	for i, topicName := range topics {
-		topic, err := fetchTopic(ctx, topicName)
+		topic, err := FetchTopic(ctx, topicName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] TopicList: %s", err)
 			res[i] = EmptyTopic
