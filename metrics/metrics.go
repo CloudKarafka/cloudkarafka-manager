@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -15,6 +16,20 @@ import (
 var (
 	TimeRequests       = false
 	RequestTimedOutErr = errors.New("Request timed out")
+	transport          = &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   15 * time.Second,
+			KeepAlive: 15 * time.Second,
+			DualStack: true,
+		}).DialContext,
+		ForceAttemptHTTP2:     false,
+		MaxIdleConns:          10,
+		IdleConnTimeout:       30 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+	client = &http.Client{Transport: transport}
 )
 
 type Metric struct {
@@ -45,18 +60,18 @@ func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 	}
 	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", config.BrokerUrls.HttpUrl(brokerId), bean, attr)
 	start := time.Now()
-	r, err = http.Get(url)
+	r, err = client.Get(url)
 	if TimeRequests {
 		fmt.Fprintf(os.Stderr, "Request GET %s took %.4fs\n", url, time.Since(start).Seconds())
 	}
 	if err != nil {
 		return v, err
 	}
+	defer r.Body.Close()
 	if r.StatusCode != 200 {
 		fmt.Fprintf(os.Stderr, "[INFO] GET %s returned %s\n", url, r.Status)
 		return nil, nil
 	}
-	defer r.Body.Close()
 	err = json.NewDecoder(r.Body).Decode(&v)
 	if err == nil {
 		for i, _ := range v {
@@ -78,10 +93,11 @@ func QueryBrokerAsync(brokerId int, query, attribute string, ch chan<- []Metric)
 
 func getSimpleValue(url string) (string, error) {
 	start := time.Now()
-	r, err := http.Get(url)
+	r, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
+	defer r.Body.Close()
 	if r.StatusCode != 200 {
 		return "", nil
 	}
