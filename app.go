@@ -39,7 +39,7 @@ func getBrokerUrls() (map[int]config.HostPort, error) {
 		if err != nil {
 			return res, err
 		}
-		res[id] = config.HostPort{broker.Host, broker.Port}
+		res[id] = config.HostPort{Host: broker.Host, Port: broker.Port}
 	}
 	return res, nil
 }
@@ -66,10 +66,9 @@ func watchBrokers() {
 	for _, id := range ids {
 		broker, err := zookeeper.Broker(id)
 		if err != nil {
-			res[id] = config.HostPort{"", -1}
-		} else {
-			res[id] = config.HostPort{broker.Host, broker.Port}
+			broker = zookeeper.B{Host: "", Port: -1}
 		}
+		res[id] = config.HostPort{Host: broker.Host, Port: broker.Port}
 	}
 	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", res)
 	config.BrokerUrls = res
