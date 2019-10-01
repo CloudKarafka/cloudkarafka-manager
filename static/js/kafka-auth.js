@@ -25,7 +25,7 @@
       if (el) {
         el.innerText = bd.build_date
       }
-      return d
+      return bd
     })
   }
 
