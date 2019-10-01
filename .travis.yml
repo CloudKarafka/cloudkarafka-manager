@@ -1,17 +1,14 @@
 language: go
 go:
-- 1.10.3
-env:
-- CGO_ENABLED=1 GOOS=linux
+- "1.13"
 before_deploy: if ! [[ $TRAVIS_TAG ]]; then export LAST_TAG=$(git tag --list | tail
   -1); export VERSION=$LAST_TAG-$(git rev-list $LAST_TAG..HEAD --count); else export
   VERSION=$TRAVIS_TAG; fi
-install: bash ./scripts/install.sh
 script:
 - go test -v ./...
 - go build -ldflags "-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$TRAVIS_COMMIT
   -X github.com/cloudkarafka/cloudkarafka-manager/config.Version=$VERSION" -tags static -a
-  -installsuffix cgo -o cloudkarafka-mgmt.linux
+  -o cloudkarafka-mgmt.linux
 after_success: bash ./scripts/package.sh
 addons:
   artifacts:
