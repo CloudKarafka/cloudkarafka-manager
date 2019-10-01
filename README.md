@@ -10,7 +10,7 @@
 ## Development
 
 * Clone this repo into $GOPATH/src/github.com/CloudKarafka/cloudkarafka-manager
-* Run `dep ensure -update`
+* Run `go get -u` to get latest dependencies
 * Install the metrics reporter [Kafka HTTP Reporter](https://github.com/CloudKarafka/KafkaHttpReporter) on your local kafka broker
 * Run Management interface with `go run app.go --authentication=none-with-write`
 
