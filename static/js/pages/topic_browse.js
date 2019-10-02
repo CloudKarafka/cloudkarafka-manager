@@ -63,9 +63,9 @@
 
   var evSource
   function start () {
+    close()
     browserStartBtn.textContent = 'Connecting...'
     browserStartBtn.disabled = true
-    close()
     var url = `/api/topics/${name}/browse?_a=${g.kafkaAuth.authHeader()}&kf=${conf.keyFormatter}&vf=${conf.valueFormatter}`
     evSource = new g.EventSource(url)
     window.addEventListener('beforeunload', function (e) {
