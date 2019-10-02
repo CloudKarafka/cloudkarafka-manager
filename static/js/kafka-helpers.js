@@ -50,7 +50,7 @@
 
   function get (path, callback) {
     return g
-      .fetch(path, {
+      .fetch(g.location.origin + path, {
         headers: {
           Accept: 'application/json',
           'X-Request-ID': requestId(),
@@ -69,7 +69,7 @@
   }
 
   function del (path, callback) {
-    return g.fetch(path, {
+    return g.fetch(g.location.origin + path, {
       method: 'DELETE',
       headers: {
         Authorization: 'Basic ' + g.kafkaAuth.authHeader(),
@@ -79,7 +79,7 @@
   }
 
   function post (path, data, callback) {
-    return g.fetch(path, {
+    return g.fetch(g.location.origin + path, {
       method: 'POST',
       headers: {
         Authorization: 'Basic ' + g.kafkaAuth.authHeader(),
@@ -91,7 +91,7 @@
   }
 
   function put (path, data, callback) {
-    return g.fetch(path, {
+    return g.fetch(g.location.origin + path, {
       method: 'PUT',
       headers: {
         Authorization: 'Basic ' + g.kafkaAuth.authHeader(),

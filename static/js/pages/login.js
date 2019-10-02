@@ -5,7 +5,7 @@
     evt.preventDefault()
     var user = document.getElementById('kafka-username').value
     var pass = document.getElementById('kafka-password').value
-    return g.fetch('/api/whoami', {
+    return g.fetch(g.location.origin + '/api/whoami', {
       headers: {
         Accept: 'application/json',
         'X-Request-ID': g.kafkaHelper.requestId(),
