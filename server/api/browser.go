@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 
 	"github.com/segmentio/kafka-go"
@@ -35,7 +36,7 @@ func formatter(f string, b []byte) interface{} {
 
 func reader(ctx context.Context, topic string, partition int, fanIn chan interface{}) {
 	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     []string{"localhost:9092"},
+		Brokers:     config.BrokerUrls.List(),
 		Topic:       topic,
 		StartOffset: kafka.LastOffset,
 		Partition:   partition,
