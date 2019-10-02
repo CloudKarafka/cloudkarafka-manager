@@ -25,6 +25,7 @@ func SSEHeaders(rw http.ResponseWriter) {
 	rw.Header().Set("Cache-Control", "no-cache")
 	rw.Header().Set("Connection", "keep-alive")
 	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	rw.Header().Set("X-Accel-Buffering", "no")
 }
 
 func SetupSSE(retry int, rw http.ResponseWriter) {
