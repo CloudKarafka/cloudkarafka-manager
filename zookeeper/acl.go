@@ -15,7 +15,8 @@ const (
 )
 
 var (
-	UnknownResourceType error = fmt.Errorf("[ERROR] unknown resource type; known types are [User, Topic, Cluster]")
+	UnknownResourceType   error = fmt.Errorf("[ERROR] unknown resource type; known types are [User, Topic, Cluster]")
+	UnknownPermissionType error = fmt.Errorf("[ERROR] unknown permission type; known types are [Allow, Deny]")
 )
 
 type acl struct {
@@ -111,6 +112,12 @@ func CreateAcl(principal, name, resource, permissionType, host, perm string) err
 		path = cPath
 	default:
 		return UnknownResourceType
+	}
+	switch permissionType {
+	case "Allow":
+	case "Deny":
+	default:
+		return UnknownPermissionType
 	}
 	if err != nil && err != zk.ErrNoNode {
 		return err
