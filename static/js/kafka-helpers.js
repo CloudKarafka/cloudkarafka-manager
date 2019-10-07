@@ -239,6 +239,7 @@
     var c = document.querySelector('.app-container')
     var t = document.querySelector('.kafka-toggle-menu')
     var b = document.querySelector('.sidebar-backdrop')
+    var s = document.querySelector('#signout-link')
     if (t) {
       t.onclick = function (e) {
         e.preventDefault()
@@ -250,6 +251,9 @@
         e.preventDefault()
         c.classList.remove('sidebar-open')
       }
+    }
+    if (s) {
+      s.onclick = g.signout
     }
   })
   g.kafkaHelper = {
