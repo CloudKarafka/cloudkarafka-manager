@@ -11,5 +11,6 @@ require (
 	go.etcd.io/bbolt v1.3.3
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7
+	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
 	golang.org/x/sys v0.0.0-20190916165910-8a69140bde95 // indirect
 )

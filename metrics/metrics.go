@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,11 +12,13 @@ import (
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"golang.org/x/sync/semaphore"
 )
 
 var (
 	TimeRequests       = false
 	RequestTimedOutErr = errors.New("Request timed out")
+	requestSemaphore   = semaphore.NewWeighted(250)
 	transport          = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -58,6 +61,11 @@ func QueryBroker(brokerId int, bean, attr, group string) ([]Metric, error) {
 	if host == "" {
 		return v, nil //fmt.Errorf("No URL found to broker %d", brokerId)
 	}
+	if err := requestSemaphore.Acquire(context.Background(), 1); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to acquir semaphore: %v", err)
+		return v, nil
+	}
+	defer requestSemaphore.Release(1)
 	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", config.BrokerUrls.HttpUrl(brokerId), bean, attr)
 	start := time.Now()
 	r, err = client.Get(url)
