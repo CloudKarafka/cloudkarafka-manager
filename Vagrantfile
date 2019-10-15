@@ -5,7 +5,6 @@ GO_BOOSTRAP_SCRIPT = <<-SCRIPT
 sudo apt-get update
 sudo apt-get install --yes openjdk-8-jre-headless
 sudo snap install --classic --channel=1.13/stable go
-(cd /vagrant; go get)
 SCRIPT
 
 Vagrant.configure("2") do |config|
