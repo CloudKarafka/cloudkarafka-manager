@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/db"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
 	"github.com/cloudkarafka/cloudkarafka-manager/server"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
@@ -25,6 +25,7 @@ var (
 	printJMXQueries = flag.Bool("print-jmx-queries", false, "Print all JMX requests to the broker")
 	zk              = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
 	kafkaDir        = flag.String("kafkadir", "/opt/kafka", "The directory where kafka lives")
+	certsDir        = flag.String("certsdir", "/opt/certs", "The directory where the certificate for kafka is")
 )
 
 // TODO: Handle brokers going offline.....
@@ -62,15 +63,20 @@ func watchBrokers() {
 			ids = append(ids, id)
 		}
 	}
-	fmt.Fprintf(os.Stderr, "[INFO] Number of brokers changed: previous=%d, now=%d\n", current, new)
+	le := make(log.MapEntry)
 	for _, id := range ids {
 		broker, err := zookeeper.Broker(id)
 		if err != nil {
-			broker = zookeeper.B{Host: "", Port: -1}
+			res[id] = config.HostPort{"", -1}
+		} else {
+			res[id] = config.HostPort{broker.Host, broker.Port}
+			le[fmt.Sprintf("%d", id)] = config.HostPort{broker.Host, broker.Port}
 		}
 		res[id] = config.HostPort{Host: broker.Host, Port: broker.Port}
 	}
-	fmt.Fprintf(os.Stderr, "[INFO] Using brokers: %v\n", res)
+	if len(le) > 0 {
+		log.Info("broker_change", le)
+	}
 	config.BrokerUrls = res
 	_, ok := <-events
 	if ok {
@@ -89,6 +95,7 @@ func main() {
 	config.AuthType = *auth
 	config.JMXRequestTimeout = time.Duration(*requestTimeout) * time.Millisecond
 	config.KafkaDir = *kafkaDir
+	config.CertsDir = *certsDir
 	config.ZookeeperURL = strings.Split(*zk, ",")
 	config.PrintConfig()
 
@@ -98,9 +105,11 @@ func main() {
 	metrics.TimeRequests = *printJMXQueries
 	go watchBrokers()
 
-	if err := db.Connect(); err != nil {
-		log.Fatalf("[ERROR] Could not connect to DB: %s\n", err)
-		os.Exit(1)
+	if config.Retention > 0 {
+		if err := db.Connect(); err != nil {
+			log.Error("db_connect", log.MapEntry{"err": err})
+			os.Exit(1)
+		}
 	}
 	hourly := time.NewTicker(time.Hour)
 	metricsTicker := time.NewTicker(60 * time.Second)
@@ -121,7 +130,9 @@ func main() {
 					})
 				}
 			case <-hourly.C:
-				db.Cleaner(time.Now().Add(time.Hour * time.Duration(config.Retention) * -1))
+				if config.Retention > 0 {
+					db.Cleaner(time.Now().Add(time.Hour * time.Duration(config.Retention) * -1))
+				}
 			}
 		}
 	}()
@@ -130,13 +141,9 @@ func main() {
 	go server.Start()
 	//Wait for term
 	<-signals
-	fmt.Println("[INFO] Closing down...")
 	quit <- true
-	time.AfterFunc(2*time.Second, func() {
-		log.Fatal("[ERROR] could not exit in reasonable time")
-	})
 	zookeeper.Stop()
-	db.Close()
-	fmt.Println("[INFO] Stopped successfully")
-	return
+	if config.Retention > 0 {
+		db.Close()
+	}
 }

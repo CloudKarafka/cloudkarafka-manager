@@ -79,7 +79,7 @@ func randString(n int) string {
 
 func getKeystore(storetype string) (certs.JKS, error) {
 	if storetype == "truststore" {
-		kafkaConfig, err := config.GetKafkaConfig()
+		kafkaConfig, err := config.GetLocalKafkaConfig()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[ERROR] Could not get kafka config: %s\n", err.Error())
 			return certs.JKS{}, errors.New("Could not get kafka config")
@@ -198,11 +198,27 @@ func CreateSSLCert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to store the certificate in the truststore", http.StatusInternalServerError)
 		return
 	}
+	if err := truststore.Distribute(); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert: %s", err)
+		http.Error(w,
+			fmt.Sprintf("Failed to distribute certificate to other brokers: %s", err),
+			http.StatusInternalServerError)
+		return
+	}
+
 	if err = keystore.ImportPrivateKey(pair, form["alias"]); err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert Import private key failed: %s\n", err)
 		http.Error(w, "Failed to store the key in the keystore", http.StatusInternalServerError)
 		return
 	}
+	if err := keystore.Distribute(); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.CreateSSLCert: %s", err)
+		http.Error(w,
+			fmt.Sprintf("Failed to distribute client private key to other brokers: %s", err),
+			http.StatusInternalServerError)
+		return
+	}
+
 	changes := map[string]string{"listener.name.ssl.ssl.truststore.location": truststore.Path}
 	if err := config.ReloadConfigValueAllBrokers(changes); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -251,6 +267,13 @@ func ImportSSLCert(w http.ResponseWriter, r *http.Request) {
 	if err = truststore.ImportCert(cert, alias); err != nil {
 		fmt.Fprintf(os.Stderr, "[ERROR] api.ImportSSLCert: %s", err)
 		http.Error(w, "Failed to import certificate", http.StatusInternalServerError)
+		return
+	}
+	if err := truststore.Distribute(); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.ImportSSLCert: %s", err)
+		http.Error(w,
+			fmt.Sprintf("Failed to distribute certificate to other brokers: %s", err),
+			http.StatusInternalServerError)
 		return
 	}
 	changes := map[string]string{"listener.name.ssl.ssl.truststore.location": truststore.Path}
@@ -320,6 +343,14 @@ func RenewSSLCert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to import renewed certificate", http.StatusInternalServerError)
 		return
 	}
+	if err := truststore.Distribute(); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.RenewSSLCert: %s", err)
+		http.Error(w,
+			fmt.Sprintf("Failed to distribute certificate to other brokers: %s", err),
+			http.StatusInternalServerError)
+		return
+	}
+
 	changes := map[string]string{"listener.name.ssl.ssl.truststore.location": truststore.Path}
 	if err := config.ReloadConfigValueAllBrokers(changes); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -343,6 +374,14 @@ func RevokeSSLCert(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to revoke certificate", http.StatusInternalServerError)
 		return
 	}
+	if err := truststore.Distribute(); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.RevokeSSLCert: %s", err)
+		http.Error(w,
+			fmt.Sprintf("Failed to distribute new truststore to other brokers: %s", err),
+			http.StatusInternalServerError)
+		return
+	}
+
 	changes := map[string]string{"listener.name.ssl.ssl.truststore.location": truststore.Path}
 	if err := config.ReloadConfigValueAllBrokers(changes); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -364,5 +403,53 @@ func RemoveSSLKey(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to remove private key from keystore", http.StatusInternalServerError)
 		return
 	}
+	if err := store.Distribute(); err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.RemoveSSLCert: %s", err)
+		http.Error(w,
+			fmt.Sprintf("Failed to distribute keystore to other brokers: %s", err),
+			http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
+}
+
+func SignCert(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.SignCert: %s", err)
+		http.Error(w, "Cannot parse request body", http.StatusBadRequest)
+		return
+	}
+	q := r.URL.Query()
+	var validity string
+	if q["validity"] == nil {
+		validity = "365"
+	} else {
+		validity = q["validity"][0]
+	}
+	signedCert, err := certs.SignCert(string(bytes), validity)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.SignCert: %s\n", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Disposition", "attachment; filename=signed_cert.pem")
+	w.Header().Set("Content-Type", "text/plain")
+	w.Write([]byte(signedCert))
+}
+
+func UpdateKafkaKeystore(w http.ResponseWriter, r *http.Request) {
+	name := pat.Param(r, "name")
+	defer r.Body.Close()
+	bytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[ERROR] api.UpdateKafkakeystore: %s\n", err)
+		http.Error(w, "Cannot parse request body", http.StatusBadRequest)
+		return
+	}
+	path := fmt.Sprintf("%s/config/%s", config.KafkaDir, name)
+	fmt.Fprintf(os.Stderr, "[INFO] Writing file %s (%d bytes)\n", path, len(bytes))
+
 }
