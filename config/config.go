@@ -3,8 +3,28 @@ package config
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
+
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
+
+func init() {
+	ch := make(chan map[int]HostPort)
+	BrokerChangeListeners = append(BrokerChangeListeners, ch)
+	go func() {
+		for v := range ch {
+			le := make(log.MapEntry)
+			for id, hostport := range v {
+				le[strconv.Itoa(id)] = hostport
+			}
+			if len(le) > 0 {
+				log.Info("broker_change", le)
+			}
+			BrokerUrls = v
+		}
+	}()
+}
 
 type HostPort struct {
 	Host string
@@ -23,6 +43,8 @@ var (
 	KafkaDir          string
 	CertsDir          string
 	ZookeeperURL      []string
+	WebRequestTimeout time.Duration = 5 * time.Second
+	DevMode           bool          = false
 )
 
 func PrintConfig() {
@@ -30,6 +52,16 @@ func PrintConfig() {
 	fmt.Printf("Runtime\n HTTP Port:\t%s\n Auth type:\t%s\n Retention:\t%d hours\n",
 		Port, AuthType, Retention)
 
+}
+
+func (b BrokerURLs) IDs() []int {
+	brokerIds := make([]int, len(b))
+	i := 0
+	for id, _ := range b {
+		brokerIds[i] = id
+		i += 1
+	}
+	return brokerIds
 }
 
 func (b BrokerURLs) KafkaUrl(k int) string {

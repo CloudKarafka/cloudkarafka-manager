@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 )
 
 func buildNotification(brokerId int, level Level, key, title, message string) Notification {
@@ -17,11 +18,11 @@ func buildNotification(brokerId int, level Level, key, title, message string) No
 		Message:   message,
 		Timestamp: time.Now(),
 		Link: NotificationLink{
-			fmt.Sprintf("broker/details.html?id=%d", brokerId),
+			fmt.Sprintf("broker/%d", brokerId),
 			"Go to broker"},
 	}
 }
-func buildURPNotification(m metrics.Metric) Notification {
+func buildURPNotification(m store.Metric) Notification {
 	return buildNotification(
 		m.Broker,
 		WARNING,
@@ -33,7 +34,12 @@ func buildURPNotification(m metrics.Metric) Notification {
 func CheckURP(out chan []Notification) {
 	res := make([]Notification, 0)
 	for brokerId, _ := range config.BrokerUrls {
-		r, err := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=UnderReplicatedPartitions", "Value", "")
+		req := store.MetricRequest{
+			brokerId,
+			store.BeanBrokerUnderReplicatedPartitions,
+			"Value",
+		}
+		r, err := store.GetMetrics(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckURP: %s\n", err)
 		} else {
@@ -54,7 +60,12 @@ func CheckBalancedLeaders(out chan []Notification) {
 		return
 	}
 	for brokerId, _ := range config.BrokerUrls {
-		r, err := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=LeaderCount", "Value", "")
+		req := store.MetricRequest{
+			brokerId,
+			store.BeanBrokerLeaderCount,
+			"Value",
+		}
+		r, err := store.GetMetrics(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckBalancedLeader: %s\n", err)
 		} else {
@@ -76,28 +87,60 @@ func CheckBalancedLeaders(out chan []Notification) {
 	out <- res
 }
 
+type IsrStat struct {
+	Shrink int
+	Expand int
+}
+
+func (me IsrStat) Diff() int {
+	return me.Expand - me.Shrink
+}
+
 func CheckISRDelta(out chan []Notification) {
 	res := make([]Notification, 0)
-	stat := make(map[int]int)
+	stat := make(map[int]IsrStat)
+	metrics := make([]store.MetricRequest, 0)
+	beans := []store.JMXBean{store.BeanBrokerIsrExpands, store.BeanBrokerIsrShrinks}
+	l := 0
 	for brokerId, _ := range config.BrokerUrls {
-		r1, err1 := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=IsrShrinksPerSec", "OneMinuteRate", "")
-		r2, err2 := metrics.QueryBroker(brokerId, "kafka.server:type=ReplicaManager,name=IsrExpandsPerSec", "OneMinuteRate", "")
-		if err1 != nil {
-			fmt.Fprintf(os.Stderr, "[INFO] CheckISRDelta: %s\n", err1)
-		} else if err1 != nil {
-			fmt.Fprintf(os.Stderr, "[INFO] CheckISRDelta: %s\n", err2)
-		} else {
-			stat[brokerId] = int(r2[0].Value) - int(r1[0].Value)
+		for _, bean := range beans {
+			metrics[l] = store.MetricRequest{brokerId, bean, "OneMinuteRate"}
+			l += 1
 		}
 	}
+	ch := store.GetMetricsAsync(metrics)
+	for i := 0; i < l; i++ {
+		select {
+		case response := <-ch:
+			if response.Error != nil {
+				log.Error("CheckISRDelta", log.ErrorEntry{response.Error})
+			} else {
+				for _, metric := range response.Metrics {
+					if _, ok := stat[metric.Broker]; !ok {
+						stat[metric.Broker] = IsrStat{}
+					}
+					a := stat[metric.Broker]
+					if metric.Name == "IsrExpandsPerSec" {
+						a.Expand = int(metric.Value)
+					} else {
+						a.Shrink = int(metric.Value)
+					}
+					stat[metric.Broker] = a
+				}
+			}
+			//case <-ctx.Done():
+			//return res, fmt.Errorf("Fetching broker metrics failed: %s", ctx.Err())
+		}
+
+	}
 	for b, s := range stat {
-		if s > 0 {
+		if s.Diff() > 0 {
 			res = append(res, buildNotification(
 				b,
 				WARNING,
 				"ISR_DELTA",
 				"ISR Delta",
-				fmt.Sprintf("Broker %d is expanding and shrinking the in sync replicas frequently", b)))
+				fmt.Sprintf("Broker %d is expanding and shrinking the ISR frequently", b)))
 		}
 	}
 	out <- res

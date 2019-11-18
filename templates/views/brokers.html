@@ -1,0 +1,56 @@
+{{define "title"}}Brokers{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>Brokers</h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="row">
+  <div class="col-md-12">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Id</th>
+          <th scope="col" class="text-center">Version</th>
+          <th scope="col" class="text-center">End Points</th>
+          <th scope="col" class="text-center">Uptime</th>
+          <th scope="col" class="text-center">Messages in/s</th>
+          <th scope="col" class="text-center">Bytes in/s</th>
+          <th scope="col" class="text-center">Bytes out/s</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Content }}
+        {{if .Error }}
+        <tr>
+          <td colspan="7">
+            <i>Error: {{ .Error }}</i>
+            </td>
+          </tr>
+        {{else }}
+        <tr>
+          <td>
+            <a href="/brokers/{{.Broker.Id}}">{{ .Broker.Id }}</a>
+          </td>
+          <td class="text-center">{{ .Broker.KafkaVersion}}</td>
+          <td class="text-center">
+            {{range  .Broker.Endpoints}}
+            {{.}}<br />
+            {{end}}
+          </td>
+          <td class="text-center">{{ .Broker.Uptime}}</td>
+          <td class="text-center">{{throughput (index .Broker.Metrics "MessagesInPerSec") }}</td>
+          <td class="text-center">{{throughput (index .Broker.Metrics "BytesInPerSec") }}</td>
+          <td class="text-center">{{throughput (index .Broker.Metrics "BytesOutPerSec") }}</td>
+        </tr>
+        {{end}}
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}

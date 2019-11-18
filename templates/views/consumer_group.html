@@ -1,0 +1,50 @@
+{{define "title"}}Consumer group {{.Content.Name}}{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>
+      <a href="/consumer_groups">Consumer groups</a>
+      / {{.Content.Name}}
+    </h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="row mt-3">
+  <div class="col-12">
+    <h4>Consumed Partitions</h4>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Topic</th>
+          <th scope="col">Group offset</th>
+          <th scope="col">Log end offset</th>
+          <th scope="col" class="text-center">Lag</th>
+          <th scope="col">Client</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Content.SortedMembers}}
+        <tr>
+          <td>{{.Topic}}-{{.Partition}}</td>
+          <td>{{number .CurrentOffset}}</td>
+          <td>{{number .LogEndOffset}}</td>
+          <td>{{number .Lag}}</td>
+          <td>
+            {{ .ClientId }} @ {{ .Host }}
+            <br /> {{ .ConsumerId }}
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{end}}

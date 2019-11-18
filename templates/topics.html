@@ -1,0 +1,64 @@
+
+{{define "content"}}
+{{template "header"}}
+
+<div class="sidebar-backdrop"></div>
+<main class="main-container">
+  <div class="main-heading">
+    <div class="row">
+      <div class="col-sm-4 col-12">
+        <h1>Topics</h1>
+      </div>
+      <div class="col-sm-8 col-12 text-sm-right">
+        <p>
+          <a href="/topic/edit.html" class="btn btn-primary float-sm-none float-right ml-2">
+            + Add Topic
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="container-fluid">
+    <div class="form-row">
+      <div class="col-md-3 mb-3">
+        <input type="text" class="form-control" autocomplete="off" id="filterTable" placeholder="Search">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-12">
+        <table class="table" id="topics">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col" class="text-center">Messages</th>
+              <th scope="col" class="text-center">Size</th>
+              <th scope="col" class="text-center">Partitions</th>
+              <th scope="col" class="text-center">Replication Factor</th>
+            </tr>
+          </thead>
+          <tbody>
+          {{range .}}
+          <tr>
+            <td data-search="{{ .Name }}">
+              <a href="/topic/details.html?name={{.Name}}">{{ .Name }}</a>
+            </td>
+            <td class="text-center">{{ .Messages }}</td>
+            <td class="text-center">{{ .Size }}</td>
+            <td class="text-center">{{len .Partitions }}</td>
+            <td class="text-center">{{len .Partitions }}</td>
+          </tr>
+          {{else}}
+          <tr>
+            <td colspan="5" class="text-center">
+              <strong>No Topics</strong>
+            </td>
+          </tr>
+          {{end}}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {{template "footer"}}
+  {{end}}

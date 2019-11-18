@@ -1,0 +1,54 @@
+{{define "menu"}}
+<div class="sidebar-info">
+  <h2 class="host">{{.Cluster.Hostname}}</h2>
+  <p>{{.User.Username}}</p>
+</div>
+<nav class="sidebar-nav">
+  <ul>
+    <li class="">
+      <a href="/">
+        <span class="icon"><img src="/static/assets/icons/dashboard.svg" /></span>
+        <span>Overview</span>
+      </a>
+    </li>
+    <li class="">
+      <a href="/topics">
+        <span class="icon"><img src="/static/assets/icons/three-bars.svg" /></span>
+        <span>Topics</span>
+      </a>
+    </li>
+    <li class="">
+      <a href="/consumer_groups">
+        <span class="icon"><img src="/static/assets/icons/pacman.svg" /></span>
+        <span>Consumers</span>
+      </a>
+    </li>
+    <li class="">
+      <a href="/brokers">
+        <span class="icon"><img src="/static/assets/icons/pulse.svg" /></span>
+        <span>Brokers</span>
+      </a>
+    </li>
+    <li class="">
+      <a href="/users">
+        <span class="icon"><img src="/static/assets/icons/organization.svg" /></span>
+        <span>Users</span>
+      </a>
+    </li>
+    <li class="">
+      <a href="/acl">
+        <span class="icon"><img src="/static/assets/icons/repo.svg" /></span>
+        <span>ACL</span>
+      </a>
+    </li>
+    {{/*
+    <li class="">
+      <a href="/config">
+        <span class="icon"><img src="/static/assets/icons/tools.svg" /></span>
+        <span>Configuration</span>
+      </a>
+    </li>
+    */}}
+  </ul>
+</nav>
+{{end}}

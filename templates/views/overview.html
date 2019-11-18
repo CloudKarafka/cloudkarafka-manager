@@ -1,0 +1,81 @@
+{{define "title"}}Overview{{end}}
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>Overview</h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+{{if len .Content.Notifications}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="box">
+      <div class="box-header">
+        <h2 class="mb-0">Notifications</h2>
+      </div>
+      <div id="notifications">
+        {{range .Content.Notifications }}
+        <div class="notification">
+          <span class="icon float-left {{ .Level }}">
+          </span>
+          <div class="message">
+            <h2>{{ .Title }}</h2>
+            <p>
+              {{ .Message }}
+            </p>
+            {{if .Link}}
+            <a href="{{.Link.url}}">{{.Link.text}}</a>
+            {{end}}
+          </div>
+        </div>
+        {{end}}
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+<div class="row">
+  <div class="col-md-12">
+    <div class="box">
+      <div class="box-header text-center">
+        <h2>Total Input/Output</h2>
+      </div>
+      <div class="box-body input-output" data-throughput="/throughput?type=total" data-throughput-follow="/throughput/follow?type=total">
+        <div id="axis0" class="chart-y-axis"></div>
+        <div id="axis1" class="chart-y-axis"></div>
+        <div id="chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row">
+  {{range .Content.Boxes}}
+  <div class="col-md-6 col-lg-4">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <span class="icon float-right">
+          <img src="/static/assets/icons/{{.Icon}}.svg">
+        </span>
+        <h2>{{.Title}}</h2>
+      </div>
+      <div class="box-body">
+        <div class="clearfix">
+          <div class="float-left box-data">
+            <p class="metric">{{.Format}}<small></small></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{end}}
+</div>
+{{end}}
+
+{{define "js"}}
+<script src="/static/js/d3.v3.min.js"></script>
+<script src="/static/js/rickshaw.min.js"></script>
+<script src="/static/js/throughput-chart.js"></script>
+{{end}}

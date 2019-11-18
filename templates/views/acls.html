@@ -1,0 +1,124 @@
+{{define "title"}}Topic ACL{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>ACL / Topics </h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="box">
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <a href="/acl/topic">Topic ACL</a> | 
+    <a href="/acl/group">Consumer Group ACL</a> |
+    <a href="/acl/cluster">Cluster ACL</a>
+  </div>
+</div>
+</div>
+
+{{range .Content }}
+<h2>{{.Resource.PatternType}}: {{.Resource.Name}}</h2>
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Name</th>
+      <th scope="col" class="text-center">Permissions</th>
+      <th scope="col" class="text-center">Host</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Users}}
+    <tr class="row_link">
+      <td>{{ .Principal }}</td>
+      <td class="text-center">{{ .PermissionType}} {{.Operation}}</td>
+      <td class="text-center">{{.Host}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<div class="box">
+  <div class="box-body">
+    No topic rules configured on this cluster
+  </div>
+</div>
+{{end}}
+<div class="box box-w-header">
+  <div class="box-header">
+    <h2>New Topic Rule</h2>
+  </div>
+  <div class="box-body">
+    <form  method="post" action="/api/acls">
+      <div class="form-group col-md-6 mb-3">
+        <label for="principal">Principal</label>
+        <input type="text" id="principal" name="principal" class="form-control" placeholder="E.g. User:username">
+      </div>
+      <div class="form-group col-md-6 mb-3">
+        <label for="topic">Pattern</label>
+        <div class="input-group">
+          <div class="input-group-prepend">
+            <div class="input-group-text">
+              <select name="pattern_type">
+                <option value="literal">Literal</option>
+                <option value="prefixed">Prefixed</option>
+              </select>
+            </div>
+          </div>
+          <input type="text" id="pattern" name="pattern" class="form-control">
+        </div>
+        <p>
+          <i>
+            Use Literal when you set a rule for a specific topic or all topics (*),
+            Prefixed will set the rule for all topics that start with the value that you enter.
+          </i>
+        </p>
+      </div>
+
+      <div class="form-group col-md-6 mb-3">
+        <table class="table">
+          <tr>
+            <th>Permission</th>
+            <th>Allow</th>
+            <th>Deny</th>
+          </tr>
+          <tr>
+            <td>ALTER</td>
+            <td><input type="radio" name="alter" value="ALLOW" class="form-control"></td>
+            <td><input type="radio" name="alter" value="DENY" checked class="form-control"></td>
+          </tr>
+          <tr>
+            <td>ALTER_CONFIGS</td>
+            <td><input type="radio" name="alter_configs" value="ALLOW" class="form-control"></td>
+            <td><input type="radio" name="alter_configs" value="DENY" checked class="form-control"></td>
+          </tr>
+          <tr>
+            <td>CREATE</td>
+            <td><input type="radio" name="create" value="ALLOW" class="form-control"></td>
+            <td><input type="radio" name="create" value="DENY" checked class="form-control"></td>
+          </tr>
+          <tr>
+            <td>DELETE</td>
+            <td><input type="radio" name="delete" value="ALLOW" class="form-control"></td>
+            <td><input type="radio" name="delete" value="DENY" checked class="form-control"></td>
+          </tr>
+          <tr>
+            <td>DESCRIBE</td>
+            <td><input type="radio" name="describe" value="ALLOW" class="form-control"></td>
+            <td><input type="radio" name="describe" value="DENY" checked class="form-control"></td>
+          </tr>
+          <tr>
+            <td>READ</td>
+            <td><input type="radio" name="read" value="ALLOW" class="form-control"></td>
+            <td><input type="radio" name="read" value="DENY" checked class="form-control"></td>
+          </tr>
+        </table>
+      </div>
+      <div class="form-group col-md-4 mb-3">
+        <button type="submit" class="btn btn-lg btn-primary">Add ACL</button>
+      </div>
+    </form>
+  </div>
+  {{end}}

@@ -1,0 +1,140 @@
+{{define "title"}}Broker {{.Content.Id}}{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1><a href="/brokers">Brokers</a> / {{.Content.Id}} </h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+{{with .Content}}
+<div class="row">
+  <div class="col-md-6 col-lg-4">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <h2>Overview</h2>
+      </div>
+      <div class="box-body p-0">
+        <div class="clearfix">
+          <table class="table">
+            <tbody>
+              <tr>
+                <td>Broker Id</td> <td class="text-right">{{.Id}}</td>
+              </tr>
+              <tr>
+                <td>Kafka version</td> <td class="text-right">{{.KafkaVersion}}</td>
+              </tr>
+              <tr>
+                <td>Partition count</td> <td class="text-right">{{number (index .Metrics "PartitionCount" )}}</td>
+              </tr>
+              <tr>
+                <td>Leader count</td> <td class="text-right">{{number (index .Metrics "LeaderCount" )}}</td>
+              </tr>
+              <tr>
+                <td>Under replicated partitions</td>
+                <td class="text-right"><strong>{{number (index .Metrics "underReplicatedPartitions" )}}</strong></td>
+              </tr>
+              <tr>
+                <td>Offline partitions</td>
+                <td class="text-right"><strong>{{number (index .Metrics "OfflinePartitionsCount" )}}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-4">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <h2>Metrics</h2>
+      </div>
+      <div class="box-body p-0">
+        <div class="clearfix">
+          <table class="table">
+            <tbody>
+              <tr>
+                <td>Uptime</td>
+                <td class="text-right"><strong>{{ .Uptime}}</strong></td>
+              </tr>
+              <tr>
+                <td>Messages in/s</td>
+                <td class="text-center">{{throughput (index .Metrics "BytesInPerSec") }}</td>
+              </tr>
+              <tr>
+                <td>Bytes in/s</td>
+                <td class="text-center">{{throughput (index .Metrics "BytesInPerSec") }}</td>
+              </tr>
+              <tr>
+                <td>Bytes out/s</td>
+                <td class="text-center">{{throughput (index .Metrics "BytesInPerSec") }}</td>
+              </tr>
+              <tr>
+                <td>Bytes rejected/s</td>
+                <td class="text-center">{{throughput (index .Metrics "BytesInPerSec") }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6 col-lg-4">
+    <div class="box box-w-header">
+      <div class="box-header">
+        <h2>Connections</h2>
+      </div>
+      <div class="box-body p-0">
+        <div class="clearfix">
+          <table class="table">
+            <tbody id="broker-connections">
+              <tr>
+                <td>Plaintext</td>
+                <td class="text-right">
+                  {{number (index .Metrics "ConnectionsPLAINTEXT") }}
+                </td>
+                </td>
+              </tr>
+              <tr>
+                <td>SSL</td>
+                <td class="text-right">
+                  {{number (index .Metrics "ConnectionsSSL") }}</td>
+                </td>
+              </tr>
+              <tr>
+                <td>SASL SCRAM</td>
+                <td class="text-right">
+                  {{number (index .Metrics "ConnectionsSCRAM") }}</td>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+<div class="row">
+  <div class="col-md-12">
+    <div class="box">
+      <div class="box-header text-center">
+        <h2>Topic Input/Output</h2>
+      </div>
+      <div class="box-body input-output" data-throughput="/throughput?type=broker&brokerid={{.Content.Broker.Id}}" data-throughput-follow="/throughput/follow?type=broker&brokerid={{.Content.Broker.Id}}">
+        <div id="axis0" class="chart-y-axis"></div>
+        <div id="axis1" class="chart-y-axis"></div>
+        <div id="chart"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{end}}
+{{define "js"}}
+<script src="/static/js/d3.v3.min.js"></script>
+<script src="/static/js/rickshaw.min.js"></script>
+<script src="/static/js/throughput-chart.js"></script>
+{{end}}

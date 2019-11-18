@@ -1,0 +1,73 @@
+{{ define "base" }}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{block "title" .}} {{end}} - CloudKarafka Manager</title>
+    <link rel="apple-touch-icon" href="/static/img/logo.png">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <meta property="og:title" content="The best management interface for Apache Kafka" />
+    <meta name="author" content="84codes Team" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="description" content="Open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:site_name" content="CloudKarafka Manager" />
+    <meta property="og:image" content="/static/assets/og-kafka-mgmt.png" />
+  </head>
+  <body>
+    <div class="app-container">
+      <nav class="navbar navbar-expand-lg navbar-dark bg-header">
+        <div class="container-fluid">
+          <div>
+            <button class="hamburger hamburger--squeeze kafka-toggle-menu d-block d-lg-none" type="button">
+              <span class="hamburger-box">
+                <span class="hamburger-inner"></span>
+              </span>
+            </button>
+          </div>
+          <div class="text-right">
+            <p class="my-2 my-md-0 text-right">
+              <a href="/logout">
+                <span class="icon"><img src="/static/assets/icons/sign-out.svg" /></span>
+                <span class="link">Sign Out</span></a>
+            </p>
+          </div>
+        </div>
+      </nav>
+      <aside class="sidebar-wrapper">
+        <div class="sidebar-header text-center">
+          <a href="/" class="app-logo">
+            <img src="/static/assets/mgmt-logo.svg"/>
+            <h1 class="logo-text">CloudKarafka Manager</h1>
+          </a>
+        </div>
+        <div class="sidebar-content">
+          {{block "menu" . }} {{end}}
+        </div>
+      </aside>
+      <div class="sidebar-backdrop"></div>
+      <main class="main-container">
+        <div class="main-heading">
+          {{ block "content_menu" . }}
+          {{end}}
+        </div>
+        <div class="container-fluid">
+          {{template "content" .}}
+        </div>
+        <footer>
+          <p>
+            CloudKarafka Manager is developed by
+            <a href="http://www.84codes.com?ref=kafka-mgmt" target="_blank" class="producer-link">
+              <img src="/static/assets/logo-84codes.svg" alt="Developed by 84codes" />
+            </a> and released under
+            <a href="https://opensource.org/licenses/Apache-2.0" class="footer-link" target="_blank">Apache 2.0 License</a>.
+          </p>
+        </footer>
+      </main>
+    </div>
+    {{block "js" .}}{{end}}
+  </body>
+</html>
+{{ end }}

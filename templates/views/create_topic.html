@@ -1,0 +1,89 @@
+{{define "title"}}Create topic{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>Topics / Create</h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+{{range .Content.Errors }}
+<h3>{{.}}</h3>
+{{end}}
+<form action="" method="post">
+  <div class="form-row box">
+    <div class="col-md-4 mb-3">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" class="form-control" placeholder="Enter a name of this topic">
+    </div>
+    <div class="col-md-4 mb-3">
+      <label for="partitions">Partitions</label>
+      <input type="number" id="partitions" name="partitions" required pattern="[0-9]+" min="1" class="form-control">
+    </div>
+    <div class="col-md-4 mb-3">
+      <label for="replication">Replication Factor</label>
+      <input type="number" id="replication" name="replication_factor" required pattern="[0-9]+" min="1" class="form-control">
+    </div>
+  </div>
+  <div class="box">
+    <div class="box-header">
+      <h2>Configuration</h2>
+    </div>
+    <table>
+      <tr>
+        <th>Option</th>
+        <th>Type</th>
+        <th>Default value</th>
+        <th>Value</th>
+      </tr>
+
+      {{ $top := .Content }}
+      {{range .Content.ConfigOptions}}
+
+      {{ $o := .}}
+      <tr>
+        <td><label for="{{.Key}}">{{.Key}}</label></td>
+        <td>{{.ValueType}}</td>
+        <td>{{.Default}}</td>
+        <td>
+          {{if and (eq .ValueType "string") (len .Options) }}
+          <select name="{{.Key}}">
+            <option value="">Use default value</option>
+            {{range .Options}}
+            <option value="{{.}}" {{if eq (toS .) (toS (index $top.Values $o.Key )) }}selected {{end}}>{{.}}</option>
+            {{end}}
+          </select>
+
+          {{else if eq .ValueType "string"}}
+          <input type="text" id="{{.Key}}" name="{{.Key}}" value="{{index $.Content.Values .Key}}" class="form-control">
+
+          {{else if eq .ValueType "list"}}
+          {{range .Options}}
+          {{.}} <input type="checkbox" name="{{$o.Key}}" value="{{.}}" /> <br/>
+          {{end}}
+
+          {{else if eq .ValueType "boolean"}}
+          True <input type="radio" name="{{.Key}}" value="true" /> <br/>
+          False <input type="radio" name="{{.Key}}" value="false" /> <br/>
+
+
+          {{else if eq .ValueType "long"}}
+          <input type="number" id="{{.Key}}" name="{{.Key}}" value="{{index $.Content.Values .Key}}" class="form-control">
+
+          {{else if eq .ValueType "int"}}
+          <input type="number" id="{{.Key}}" name="{{.Key}}" value="{{index $.Content.Values .Key}}" class="form-control">
+          {{end}}
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+  </div>
+
+  <div class="form-group">
+    <button type="submit" class="btn btn-lg btn-primary">Save</button>
+  </div>
+</form>
+
+{{end}}

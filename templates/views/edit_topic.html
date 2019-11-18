@@ -1,0 +1,69 @@
+{{define "title"}}Edit topic {{index .Content.Values "name" }}{{end}}
+
+{{define "content_menu"}}
+<div class="row">
+  <div class="col-sm-4 col-12">
+    <h1>
+      <a href="/topics">Topics</a> /
+      <a href="/topics/{{urlquery (index .Content.Values "name")}}">{{index .Content.Values "name" }}</a> /
+      Edit</h1>
+  </div>
+</div>
+{{end}}
+
+{{define "content"}}
+<div class="box">
+  <form action="" method="post">
+    <table>
+      <tr>
+        <th>Option</th>
+        <th>Type</th>
+        <th>Default value</th>
+        <th>Value</th>
+      </tr>
+      {{ $top := .Content }}
+      {{range .Content.ConfigOptions}}
+      {{ $o := .}}
+      <tr>
+        <td><label for="{{.Key}}">{{.Key}}</label></td>
+        <td>{{.ValueType}}</td>
+        <td>{{.Default}}</td>
+        <td>
+          {{if and (eq .ValueType "string") (len .Options) }}
+          <select name="{{.Key}}">
+            <option value="">Use default value</option>
+            {{range .Options}}
+            <option value="{{.}}" {{if eq (toS .) (toS (index $top.Values $o.Key )) }}selected {{end}}>{{.}}</option>
+            {{end}}
+          </select>
+
+          {{else if eq .ValueType "string"}}
+          <input type="text" id="{{.Key}}" name="{{.Key}}" value="{{index $.Content.Values .Key}}" class="form-control">
+
+          {{else if eq .ValueType "list"}}
+          {{range .Options}}
+          {{.}} <input type="checkbox" name="{{$o.Key}}" value="{{.}}" /> <br/>
+          {{end}}
+
+          {{else if eq .ValueType "boolean"}}
+          True <input type="radio" name="{{.Key}}" value="true" /> <br/>
+          False <input type="radio" name="{{.Key}}" value="false" /> <br/>
+
+
+          {{else if eq .ValueType "long"}}
+          <input type="number" id="{{.Key}}" name="{{.Key}}" value="{{index $.Content.Values .Key}}" class="form-control">
+
+          {{else if eq .ValueType "int"}}
+          <input type="number" id="{{.Key}}" name="{{.Key}}" value="{{index $.Content.Values .Key}}" class="form-control">
+          {{end}}
+        </td>
+      </tr>
+      {{ end }}
+    </table>
+    <div class="form-group">
+      <button type="submit" class="btn btn-lg btn-primary">Save</button>
+    </div>
+  </form>
+</div>
+
+{{end}}

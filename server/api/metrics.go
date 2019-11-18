@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
@@ -15,21 +15,32 @@ func KafkaMetrics(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 	if err := decoder.Decode(&wanted); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Could not parse request body: " + err.Error()))
+		http.Error(w, "Could not parse request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	ch := make(chan []metrics.Metric)
+	brokers := config.BrokerUrls
+	l := len(wanted) * len(brokers)
+	metricReqs := make([]store.MetricRequest, l)
+	i := 0
 	for _, m := range wanted {
-		for brokerId, _ := range config.BrokerUrls {
-			go metrics.QueryBrokerAsync(brokerId, m[0], m[1], ch)
+		for brokerId, _ := range brokers {
+			metricReqs[i] = store.MetricRequest{
+				brokerId,
+				store.BeanFromString(m[0]),
+				m[1],
+			}
 		}
 	}
-	all := make([]metrics.Metric, 0)
-	for i := 0; i < len(wanted)*len(config.BrokerUrls); i++ {
-		all = append(all, <-ch...)
+	ch := store.GetMetricsAsync(metricReqs)
+	all := make([]store.Metric, 0)
+	for i := 0; i < l; i++ {
+		r := <-ch
+		if r.Error != nil {
+			http.Error(w, r.Error.Error(), http.StatusInternalServerError)
+			return
+		}
+		all = append(all, r.Metrics...)
 	}
-	close(ch)
 	writeAsJson(w, all)
 }
 
