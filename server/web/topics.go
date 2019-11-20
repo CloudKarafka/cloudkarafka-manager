@@ -14,6 +14,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/server/cookie"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
@@ -201,9 +202,21 @@ func DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	if !user.Permissions.DeleteTopic(name) {
 		http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
 		return
-
 	}
-	http.Redirect(w, r, "/topics", 302)
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	var redirUrl string
+	session, _ := cookie.Cookiestore.Get(r, "session")
+	err := store.DeleteTopic(ctx, name)
+	if err != nil {
+		redirUrl = fmt.Sprintf("/topics/%s", url.QueryEscape(name))
+		session.AddFlash(err.Error(), "flash_danger")
+	} else {
+		redirUrl = "/topics"
+		session.AddFlash(fmt.Sprintf("Topic %s marked for deletion", name), "flash_info")
+	}
+	session.Save(r, w)
+	http.Redirect(w, r, redirUrl, 302)
 }
 
 func EditTopic(w http.ResponseWriter, r *http.Request) templates.Result {
@@ -254,5 +267,19 @@ func UpdateTopicConfig(w http.ResponseWriter, r *http.Request) templates.Result 
 	return nil
 }
 
-func AddTopicPartitions(w http.ResponseWriter, r *http.Request) {
+func AddTopicPartitions(w http.ResponseWriter, r *http.Request) templates.Result {
+	name := pat.Param(r, "name")
+	r.ParseForm()
+	count, err := strconv.Atoi(r.FormValue("count"))
+	if err != nil {
+		return templates.ErrorRenderer(err)
+	}
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+	err = store.AddParitions(ctx, name, count)
+	if err != nil {
+		return templates.ErrorRenderer(err)
+	}
+	http.Redirect(w, r, fmt.Sprintf("/topics/%s", url.QueryEscape(name)), 302)
+	return nil
 }

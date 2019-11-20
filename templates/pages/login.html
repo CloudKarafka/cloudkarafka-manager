@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
@@ -25,10 +25,20 @@
           </div>
         </div>
         <div class="box-body">
+          {{range (index .Flashes "flash_error") }}
+          <div class="notification">
+            <span class="icon float-left danger">
+            </span>
+            <div class="message">
+              <p>
+                {{.}}
+              </p>
+            </div>
+          </div>
+          {{end}}
           <div class="login-info">
             <h2 class="host">{{.Cluster.Hostname}}</h2>
           </div>
-
           <form action="" method="post">
             <div class="form-group">
               <label for="kafka-username">Username</label>
@@ -60,4 +70,3 @@
     </main>
   </body>
 </html>
-

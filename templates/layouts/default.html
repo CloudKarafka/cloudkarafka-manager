@@ -54,6 +54,19 @@
           {{end}}
         </div>
         <div class="container-fluid">
+          
+          {{if len .Flashes}}
+          <div class="box">
+          {{range $type,$messages := .Flashes }}
+          {{range $messages}}
+          <div class="notification">
+            <span class="icon float-left {{$type}}"></span>
+            <div class="message"><p>{{.}}</p></div>
+          </div>
+          {{end}}
+          {{end}}
+          </div>
+          {{end}}
           {{template "content" .}}
         </div>
         <footer>

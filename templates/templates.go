@@ -12,6 +12,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/server/cookie"
 	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	humanize "github.com/dustin/go-humanize"
 )
@@ -165,6 +166,33 @@ type TemplateData struct {
 	Cluster     ClusterInfo
 	QueryParams map[string]string
 	Content     interface{}
+	Flashes     map[string][]string
+}
+
+func flashes(r *http.Request, w http.ResponseWriter) map[string][]string {
+	session, err := cookie.Cookiestore.Get(r, "session")
+	if err != nil {
+		log.Error("cookie_flashes", log.ErrorEntry{err})
+		return nil
+	}
+	res := make(map[string][]string)
+	for k, v := range session.Values {
+		strK := k.(string)
+		if strings.HasPrefix(strK, "flash_") {
+			strK = strK[6:] // strip "flash_" from key
+			if _, ok := res[strK]; !ok {
+				res[strK] = make([]string, 0)
+			}
+			for _, vv := range v.([]interface{}) {
+				res[strK] = append(res[strK], vv.(string))
+			}
+			delete(session.Values, k)
+		}
+	}
+	if err = session.Save(r, w); err != nil {
+		log.Error("cookie_flashes", log.ErrorEntry{err})
+	}
+	return res
 }
 
 func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) http.Handler {
@@ -190,6 +218,7 @@ func TemplateHandler(fn func(w http.ResponseWriter, r *http.Request) Result) htt
 				Cluster:     ClusterInfo{hostname},
 				QueryParams: qp,
 				Content:     res.Content(),
+				Flashes:     flashes(r, w),
 			}
 			err = RenderDefault(w, res.Standalone(), res.Template(), data)
 			if err != nil {

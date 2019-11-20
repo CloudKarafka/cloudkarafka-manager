@@ -7,6 +7,7 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/server/cookie"
 	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
@@ -23,7 +24,7 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 		user *m.SessionUser
 		err  error
 	)
-	session, err := Cookiestore.Get(r, "session")
+	session, err := cookie.Cookiestore.Get(r, "session")
 	if err != nil {
 		log.Error("post_login", log.ErrorEntry{err})
 		return templates.StandaloneRenderer("login", err)
@@ -66,23 +67,23 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 			Permissions: zookeeper.AdminPermissions,
 		}
 	}
-	if err != nil {
-		log.Error("post_login", log.ErrorEntry{err})
-		return templates.StandaloneRenderer("login", err)
-	} else if user != nil {
+	if user != nil {
 		session.Values["user"] = user
-		err = session.Save(r, w)
-		if err != nil {
-			log.Error("post_login", log.ErrorEntry{err})
-			return templates.StandaloneRenderer("login", err)
-		}
+		session.Save(r, w)
 		http.Redirect(w, r, "/", http.StatusFound)
+	} else {
+		log.Info("post_login", log.ErrorEntry{err})
+		session.AddFlash(err.Error(), "flash_error")
+		err = session.Save(r, w)
+		http.Redirect(w, r, "/login", 302)
+
 	}
+
 	return nil
 }
 
 func Logout(w http.ResponseWriter, r *http.Request) {
-	session, err := Cookiestore.Get(r, "session")
+	session, err := cookie.Cookiestore.Get(r, "session")
 	session.Values["user"] = nil
 	err = session.Save(r, w)
 	if err != nil {

@@ -1,33 +1,18 @@
 package web
 
 import (
-	"encoding/gob"
 	"net/http"
 
+	"github.com/cloudkarafka/cloudkarafka-manager/server/cookie"
 	m "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/templates"
-	"github.com/gorilla/sessions"
 	goji "goji.io"
 	"goji.io/pat"
 )
 
-var (
-	Cookiestore *sessions.CookieStore
-)
-
-func init() {
-	templates.Load()
-	Cookiestore = sessions.NewCookieStore([]byte("abc")) //os.Getenv("SESSION_KEY")))
-	Cookiestore.Options = &sessions.Options{
-		MaxAge:   60 * 15,
-		HttpOnly: true,
-	}
-	gob.Register(m.SessionUser{})
-}
-
 func Router() *goji.Mux {
 	secureMux := goji.SubMux()
-	secureMux.Use(m.SecureWeb(Cookiestore))
+	secureMux.Use(m.SecureWeb(cookie.Cookiestore))
 
 	//mux.Handle(pat.New("/topics"), http.HandlerFunc(Topics))
 	secureMux.Handle(pat.Get("/"), templates.TemplateHandler(Overview))
@@ -40,8 +25,8 @@ func Router() *goji.Mux {
 	secureMux.Handle(pat.Get("/create_topic"), templates.TemplateHandler(CreateTopic))
 	secureMux.Handle(pat.Post("/create_topic"), templates.TemplateHandler(SaveTopic))
 	secureMux.Handle(pat.Get("/topics/:name/edit"), templates.TemplateHandler(EditTopic))
-	secureMux.Handle(pat.Post("/topcs/:name/edit"), templates.TemplateHandler(UpdateTopicConfig))
-	secureMux.Handle(pat.Post("/topics/:name/add_partitions"), http.HandlerFunc(AddTopicPartitions))
+	secureMux.Handle(pat.Post("/topics/:name/edit"), templates.TemplateHandler(UpdateTopicConfig))
+	secureMux.Handle(pat.Post("/topics/:name/add_partitions"), templates.TemplateHandler(AddTopicPartitions))
 	secureMux.Handle(pat.Post("/topics/:name/delete"), http.HandlerFunc(DeleteTopic))
 
 	secureMux.Handle(pat.Get("/consumer_groups"), templates.TemplateHandler(ListConsumerGroups))

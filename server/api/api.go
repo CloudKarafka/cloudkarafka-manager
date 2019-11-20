@@ -46,15 +46,6 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Post("/users"), http.HandlerFunc(CreateUser))
 	mux.Handle(pat.Delete("/users/:name"), http.HandlerFunc(DeleteUser))
 
-	mux.Handle(pat.Get("/certificates"), http.HandlerFunc(ListSSLCerts))
-	mux.Handle(pat.Post("/certificates"), http.HandlerFunc(CreateSSLCert))
-	mux.Handle(pat.Post("/certificates/sign"), http.HandlerFunc(SignCert))
-	mux.Handle(pat.Post("/certificates/keystore/:name"), http.HandlerFunc(UpdateKafkaKeystore))
-	mux.Handle(pat.Post("/certificates/:alias"), http.HandlerFunc(ImportSSLCert))
-	mux.Handle(pat.Put("/certificates/:alias"), http.HandlerFunc(RenewSSLCert))
-	mux.Handle(pat.Delete("/certificates/:alias/trust"), http.HandlerFunc(RevokeSSLCert))
-	mux.Handle(pat.Delete("/certificates/:alias/key"), http.HandlerFunc(RemoveSSLKey))
-
 	mux.Handle(pat.Get("/acls"), http.HandlerFunc(Acl))
 	mux.Handle(pat.Post("/acls"), http.HandlerFunc(CreateAcl))
 	mux.Handle(pat.Delete("/acls/:resource/:name/:principal"), http.HandlerFunc(DeleteAcl))

@@ -102,8 +102,12 @@
   </div>
 </div>
 
-<div class="box">
+<div class="box box-w-header">
+  <div class="box-header">
     <h4>Partitions</h4>
+  </div>
+  <div class="box-body">
+
     <table class="table mt-2">
       <thead>
         <tr>
@@ -130,19 +134,19 @@
         {{ end }}
       </tbody>
     </table>
-    <form action="/topics/{{.Content.Name}}/delete" method="post">
-      <div class="form-row">
-        <div class="col-md-4 mb-3">
-          <label for="name">Update partition count</label>
-          <input type="number" required  min="{{len .Content.Partitions}}" pattern="\d+" class="form-control">
-          <i>Insert the number of partitions that you would like</i>
-        </div>
-        <div class="col-md-4 mb-3">
-          <button type="submit" class="btn btn-lg btn-primary">Save</button>
-        </div>
-
+    <hr />
+    <form action="/topics/{{.Content.Name}}/add_partitions" method="post">
+      <div class="col-md-2 mb-3">
+        <label for="par_count">
+          <h6>Increase partition count</h6>
+        </label>
+        <input id="par_count" name="count" type="number" required min="{{len .Content.Partitions}}" pattern="\d+" class="form-control">
+      </div>
+      <div class="col-md-2 mb-3">
+        <button type="submit" class="btn btn-lg btn-primary">Update</button>
       </div>
     </form>
+  </div>
 </div>
 <div class="row">
   <div class="col-12">
