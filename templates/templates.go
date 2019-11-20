@@ -83,6 +83,7 @@ func Load() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(includeFiles)
 	for _, file := range includeFiles {
 		fileName := filepath.Base(file)
 		extension := filepath.Ext(fileName)
@@ -98,6 +99,7 @@ func Load() error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(pageFiles)
 	for _, file := range pageFiles {
 		fileName := filepath.Base(file)
 		extension := filepath.Ext(fileName)
