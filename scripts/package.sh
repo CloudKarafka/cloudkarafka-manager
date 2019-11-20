@@ -9,16 +9,18 @@ md5name () {
     awk -v dir="$dir" -v base="$base" '{ printf("%s_%s\n", $1, base) }'
 }
 
-mkdir -p target
-cp cloudkarafka-mgmt.linux target/cloudkarafka-mgmt.linux
-cp -r static target/static
+TEMP_DIR=target
+mkdir -p "$TEMP_DIR"
+cp -r static "$TEMP_DIR/static"
+cp -r templates "$TEMP_DIR/templates"
+rm "$TEMP_DIR/templates/templates.go"
 
 while IFS= read -r -d '' pathname; do
     test -f "$pathname" || continue
     hashed=$(md5name "$pathname")
     cp "$pathname" "${pathname%/*}/$hashed"
-    find target/static -type f -name '*.html' | xargs \
+    find "$TEMP_DIR"/templates/{layouts,pages} -type f -name '*.html' | xargs \
       sed -i -e "s/${pathname##*/}/$hashed/g"
-done < <(find target/static/ -regextype sed -regex '.*\.\(css\|js\)$' -type f -print0)
+done < <(find "$TEMP_DIR/static" -regextype sed -regex '.*\.\(css\|js\)$' -type f -print0)
 
-tar -czf cloudkarafka-mgmt.tar.gz target
+
