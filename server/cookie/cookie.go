@@ -2,7 +2,6 @@ package cookie
 
 import (
 	"encoding/gob"
-	"fmt"
 	"os"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
@@ -15,7 +14,6 @@ var (
 )
 
 func Setup() {
-	fmt.Println("DEVMODE", config.DevMode)
 	if config.DevMode {
 		Cookiestore = sessions.NewCookieStore(
 			[]byte("xxx"),

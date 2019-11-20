@@ -70,20 +70,28 @@ func Load() error {
 	if err != nil {
 		return err
 	}
+	if config.DevMode {
+		log.Info("templates", log.MapEntry{"type": "layout", "files": layoutFiles})
+	}
 	includeFiles, err := filepath.Glob("templates/views/*.html")
 	if err != nil {
 		return err
 	}
+	if config.DevMode {
+		log.Info("templates", log.MapEntry{"type": "views", "files": includeFiles})
+	}
 	snippetFiles, err := filepath.Glob("templates/snippets/*.html")
 	if err != nil {
 		return err
+	}
+	if config.DevMode {
+		log.Info("templates", log.MapEntry{"type": "snippets", "files": snippetFiles})
 	}
 	defaultTemplate := template.New("default")
 	defaultTemplate, err = defaultTemplate.Parse(defaultTmpl)
 	if err != nil {
 		return err
 	}
-	fmt.Println(includeFiles)
 	for _, file := range includeFiles {
 		fileName := filepath.Base(file)
 		extension := filepath.Ext(fileName)
@@ -99,7 +107,9 @@ func Load() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(pageFiles)
+	if config.DevMode {
+		log.Info("templates", log.MapEntry{"type": "pages", "files": pageFiles})
+	}
 	for _, file := range pageFiles {
 		fileName := filepath.Base(file)
 		extension := filepath.Ext(fileName)
