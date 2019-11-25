@@ -2,6 +2,7 @@ package zookeeper
 
 import (
 	"fmt"
+	"strings"
 )
 
 type Permission struct {
@@ -20,35 +21,54 @@ func (p Permission) Deny(resource string) bool {
 func (p Permission) All(resource string) bool {
 	return p.Operation == "ALL"
 }
+
+// Check if rule matches resource on name
+func (p Permission) Resource(resource string) bool {
+	if p.Name == "*" {
+		return true
+	}
+	if p.Pattern == "LITERAL" && p.Name == resource {
+		return true
+	}
+	if p.Pattern == "PREFIXED" && strings.HasPrefix(resource, p.Name) {
+		return true
+	}
+	return false
+}
+func (p Permission) check(op, resource string) bool {
+	return (p.All(resource) || p.Operation == op) &&
+		p.Resource(resource)
+}
 func (p Permission) Alter(resource string) bool {
-	return p.All(resource) || p.Operation == "ALTER"
+	return p.check("ALTER", resource)
 }
 func (p Permission) AlterConfigs(resource string) bool {
-	return p.All(resource) || p.Operation == "ALTER_CONFIGS"
+	return p.check("ALTER_CONFIGS", resource)
 }
 func (p Permission) Create(resource string) bool {
-	return p.All(resource) || p.Operation == "CREATE"
+	return p.check("CREATE", resource)
 }
 func (p Permission) Read(resource string) bool {
-	return p.All(resource) || p.Operation == "READ"
+	return p.check("READ", resource)
 }
 func (p Permission) Write(resource string) bool {
-	return p.All(resource) || p.Operation == "WRITE"
+	return p.check("WRITE", resource)
 }
 func (p Permission) Delete(resource string) bool {
-	return p.All(resource) || p.Operation == "DELETE"
+	return p.check("DELETE", resource)
 }
 func (p Permission) Describe(resource string) bool {
-	return p.All(resource) || p.Operation == "DESCRIBE"
+	return p.check("DESCRIBE", resource)
 }
 func (p Permission) DescribeConfigs(resource string) bool {
-	return p.All(resource) || p.Operation == "DESCRIBE_CONFIGS"
+	return p.check("DESCRIBE_CONFIGS", resource)
 }
 func (p Permission) IdempotentWrite(resource string) bool {
-	return p.All(resource) || p.Operation == "IDEMPOTENT_WRITE"
+	return p.check("IDEMPOTENT_WRITE", resource)
 }
 
 func PermissionsFor(username string) (Permissions, error) {
+	// Using AdminPermissions here since we need permissions to see all rules
 	cAcls, err := ClusterAcls(AdminPermissions)
 	if err != nil {
 		return Permissions{}, err

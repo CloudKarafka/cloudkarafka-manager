@@ -1,5 +1,7 @@
 package zookeeper
 
+import "fmt"
+
 // Correct permission for each operation is here: https://docs.confluent.io/current/kafka/authorization.html#acl-format
 
 type permissionFunc func(string) bool
@@ -48,6 +50,7 @@ func (p Permissions) check(perm []Permission, resource string, action func(Permi
 	return allow
 }
 func (p Permissions) read(perm []Permission, resource string) bool {
+	fmt.Println(perm, resource)
 	return p.check(perm, resource, func(p Permission) bool {
 		return p.Read(resource)
 	})

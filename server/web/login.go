@@ -51,15 +51,16 @@ func PostLogin(w http.ResponseWriter, r *http.Request) templates.Result {
 	case "admin":
 		adminPwd := os.Getenv("ADMIN_PASSWORD")
 		if adminPwd == "" {
-			log.Error("login failed", log.MapEntry{"auth_type": "admin", "reason": "no pwd set"})
-		}
-		if username == "admin" && password == os.Getenv("ADMIN_PASSWORD") {
-			user = &m.SessionUser{
-				Username:    "admin",
-				Permissions: zookeeper.AdminPermissions,
-			}
+			err = errors.New("No ADMIN_PASSWORD set when using admin auth type")
 		} else {
-			err = invalidLogin
+			if username == "admin" && password == os.Getenv("ADMIN_PASSWORD") {
+				user = &m.SessionUser{
+					Username:    "admin",
+					Permissions: zookeeper.AdminPermissions,
+				}
+			} else {
+				err = invalidLogin
+			}
 		}
 	case "dev":
 		user = &m.SessionUser{

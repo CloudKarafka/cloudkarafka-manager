@@ -49,8 +49,6 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Get("/login"), templates.TemplateHandler(GetLogin))
 	mux.Handle(pat.Post("/login"), templates.TemplateHandler(PostLogin))
 
-	mux.Handle(pat.Get("/th_test"), templates.JsonHandler(Throughput))
-
 	mux.Handle(pat.New("/*"), secureMux)
 	return mux
 }
