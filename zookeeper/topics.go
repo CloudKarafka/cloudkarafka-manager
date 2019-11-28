@@ -21,7 +21,7 @@ type T struct {
 }
 
 func Topics(p Permissions) ([]string, error) {
-	return all("/brokers/topics", p.ReadTopic)
+	return all("/brokers/topics", p.DescribeTopic)
 }
 
 func fetchTopicInfo(name string, withConfig bool) (T, error) {

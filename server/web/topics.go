@@ -72,7 +72,8 @@ func ListTopics(w http.ResponseWriter, r *http.Request) templates.Result {
 func ViewTopic(w http.ResponseWriter, r *http.Request) templates.Result {
 	user := r.Context().Value("user").(mw.SessionUser)
 	name := pat.Param(r, "name")
-	if !user.Permissions.ReadTopic(name) {
+	fmt.Println(user)
+	if !user.Permissions.DescribeTopic(name) {
 		return templates.ErrorRenderer(errors.New("You don't have permissions to view this topic."))
 	}
 	metricRequests := make([]store.MetricRequest, len(config.BrokerUrls)*5)

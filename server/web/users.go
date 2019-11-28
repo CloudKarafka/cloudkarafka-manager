@@ -13,7 +13,7 @@ import (
 
 func ListUsers(w http.ResponseWriter, r *http.Request) templates.Result {
 	user := r.Context().Value("user").(mw.SessionUser)
-	if !user.Permissions.ListUsers() {
+	if !user.Permissions.DescribeConfigs() {
 		return templates.ErrorRenderer(insuffcientPermissionsError)
 	}
 	var (
