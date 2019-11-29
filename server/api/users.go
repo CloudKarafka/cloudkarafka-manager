@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"goji.io/pat"
 )
@@ -14,12 +15,15 @@ type user struct {
 }
 
 func Users(w http.ResponseWriter, r *http.Request) {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
-	username := r.Context().Value("username").(string)
-	users, err := zookeeper.Users(username, p)
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.ListUsers() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	users, err := zookeeper.Users(user.Username, user.Permissions)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "[INFO] api.Users: %s", err)
-		http.Error(w, "Could not retrive save user in ZooKeeper", http.StatusInternalServerError)
+		http.Error(w, "Could not retrive user in ZooKeeper", http.StatusInternalServerError)
 		return
 	}
 	/*

@@ -45,3 +45,17 @@ func TestCreateAcl(t *testing.T) {
 		}
 	}
 }
+
+// { Operation, Type, Patter, Name }
+func TestListAcls(t *testing.T) {
+	specs := []spec{
+		{Permissions{Cluster: []Permission{{"Describe", "Deny", "LITERAL", "kafka-cluster"}},
+			Topic: []Permission{{"Describe", "Allow", "LITERAL", "kafka-cluster"}}}, false},
+		{Permissions{Cluster: []Permission{{"Describe", "Allow", "LITERAL", "kafka-cluster"}}}, true},
+	}
+	for _, spec := range specs {
+		if spec.In.ListAcls() != spec.Expected {
+			t.Errorf("FAILED! expected %v for Permission %v", spec.Expected, spec.In)
+		}
+	}
+}
