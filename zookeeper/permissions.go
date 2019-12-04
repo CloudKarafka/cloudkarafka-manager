@@ -7,9 +7,8 @@ type Permissions struct {
 }
 
 func (p Permissions) DescribeAcls() bool {
-	r := "kafka-cluster"
 	return p.check(p.Cluster, func(p Permission) bool {
-		return p.Describe(r)
+		return p.Describe("kafka-cluster")
 	})
 }
 
@@ -68,10 +67,21 @@ func (p Permissions) ReadGroup(resource string) bool {
 func (p Permissions) ReadCluster(resource string) bool {
 	return p.read(p.Cluster, resource)
 }
+func (p Permissions) DescribeCluster(resource string) bool {
+	return p.describe(p.Cluster, resource)
+}
 func (p Permissions) DescribeTopic(resource string) bool {
 	return p.describe(p.Topic, resource) || p.create(p.Cluster, "kafka-cluster")
 }
+func (p Permissions) DescribeGroup(resource string) bool {
+	return p.describe(p.Group, resource)
+}
 
+func (p Permissions) AlterConfigsCluster() bool {
+	return p.check(p.Cluster, func(p Permission) bool {
+		return p.AlterConfigs("kafka-cluster")
+	})
+}
 func (p Permissions) DeleteTopic(resource string) bool {
 	return p.check(p.Topic, func(p Permission) bool {
 		return p.Delete(resource)
@@ -116,6 +126,14 @@ func (p Permissions) ListTopics() bool {
 
 func (p Permissions) ListUsers() bool {
 	return p.DescribeConfigs()
+}
+
+func (p Permissions) ListBrokers() bool {
+	return p.DescribeConfigs()
+}
+
+func (p Permissions) ListGroups() bool {
+	return p.DescribeCluster("kafka-cluster")
 }
 
 var AllowAll = []Permission{Permission{"ALL", "ALLOW", "LITERAL", "*"}}

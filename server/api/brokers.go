@@ -8,11 +8,17 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
 )
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.ListBrokers() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
 	defer cancel()
 	brokers, err := store.FetchBrokers(ctx, config.BrokerUrls.IDs(), nil)
@@ -40,6 +46,11 @@ func Brokers(w http.ResponseWriter, r *http.Request) {
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.ListBrokers() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	id, err := strconv.Atoi(pat.Param(r, "id"))
 	if err != nil {
 		http.Error(w, "Broker id must a an integer", http.StatusBadRequest)

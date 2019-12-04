@@ -36,6 +36,11 @@ func Users(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.AlterConfigsCluster() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	form := make(map[string]string)
 	err := parseRequestBody(r, &form)
 	if err != nil {
@@ -53,6 +58,11 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func User(w http.ResponseWriter, r *http.Request) {
+	u := r.Context().Value("user").(mw.SessionUser)
+	if !u.Permissions.AlterConfigsCluster() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	name := pat.Param(r, "name")
 	user, err := zookeeper.PermissionsFor(name)
 	if err != nil {
@@ -64,6 +74,11 @@ func User(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.AlterConfigsCluster() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 	name := pat.Param(r, "name")
 	if name != "admin" {
 		zookeeper.DeleteUser(name)

@@ -17,6 +17,7 @@ import (
 )
 
 func Topics(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("TOPICS!!!")
 	user := r.Context().Value("user").(mw.SessionUser)
 	if !user.Permissions.ListTopics() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)

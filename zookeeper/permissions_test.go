@@ -11,6 +11,8 @@ type spec struct {
 func TestDescribeTopic(t *testing.T) {
 	specs := []spec{
 		{Permissions{Topic: []Permission{{"Describe", "Allow", "LITERAL", "*"}, {"Describe", "Deny", "LITERAL", "test"}}}, false},
+		{Permissions{Topic: []Permission{{"Describe", "Allow", "LITERAL", "*"}, {"Describe", "Deny", "LITERAL", "test"}},
+			Cluster: []Permission{{"Create", "Allow", "LITERAL", "kafka-cluster"}}}, true},
 		{Permissions{Topic: []Permission{{"Describe", "Allow", "LITERAL", "test"}}}, true},
 		{Permissions{Topic: []Permission{{"Describe", "Allow", "PREFIXED", "t"}}}, true},
 		{Permissions{Topic: []Permission{{"Describe", "Allow", "LITERAL", "asdf"}}}, false},
