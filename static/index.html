@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Overview | CloudKarafka Manager</title>
+    <link href="/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>Overview</h2>
+    </header>
+    <aside></aside>
+    <main>
+      <table id="overview" class="stats-table card">
+        <tbody>
+          <tr>
+            <td class="broker-count"></td>
+            <td class="topic-count"></td>
+            <td class="partition-count"></td>
+            <td class="topic-size"></td>
+            <td class="topic-message-count"></td>
+            <td class="consumers"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th><a href="/topics">Topics</a></th>
+            <th>Consumers</th>
+            <th>Uptime</th>
+          </tr>
+        </tfoot>
+      </table>
+      <section class="card cols-4 cols-6-md">
+        <h3>Queued messages</h3>
+        <div class="chart-container" id="msgChart"></div>
+      </section>
+      <section class="card cols-4 cols-6-md">
+        <h3>Data rates</h3>
+        <div class="chart-container" id="dataChart"></div>
+      </section>
+      <section class="card cols-4 cols-6-md">
+        <h3>Message rates</h3>
+        <div class="chart-container" id="rateChart"></div>
+      </section>
+    </main>
+    <footer></footer>
+  </body>
+</html>
+<script src="/js/layout.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/http.js"></script>
+<script src="/js/helpers.js"></script>
+<script src="/js/overview.js"></script>
+<script src="/js/vhosts.js"></script>
+<script src="/js/table.js"></script>
+<script src="/js/lib/chart.js"></script>
+<script src="/js/chart.js"></script>
+<script>
+  /* globals CloudKarafka Manager */
+  const msgChart = ckm.chart.render('msgChart', 'msgs', { aspectRatio: 2 })
+  const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
+  const rateChart = ckm.chart.render('rateChart', 'msgs/s', { aspectRatio: 2 })
+
+  function updateCharts (response) {
+    ckm.chart.update(msgChart, response.queue_totals)
+    ckm.chart.update(rateChart, response.message_stats)
+    let dataStats = {
+      send_details: response.send_oct_details,
+      receive_details: response.recv_oct_details
+    }
+    ckm.chart.update(dataChart, dataStats)
+  }
+
+  ckm.overview.start(updateCharts)
+</script>

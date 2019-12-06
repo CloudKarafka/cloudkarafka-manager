@@ -30,6 +30,7 @@ func Router() *goji.Mux {
 	mux.Use(m.HostnameToResponse)
 	mux.Use(m.SecureApi)
 
+	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
 	mux.Handle(pat.Get("/brokers"), http.HandlerFunc(Brokers))
 	mux.Handle(pat.Get("/brokers/:id"), http.HandlerFunc(Broker))
 

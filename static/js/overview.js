@@ -1,0 +1,87 @@
+/* global CloudKarafka Manager */
+(function () {
+  window.ckm = window.ckm || {}
+
+  const url = '/api/overview'
+  const raw = window.sessionStorage.getItem(cacheKey())
+  let data = null
+  let updateTimer = null
+
+  if (raw) {
+    try {
+      data = JSON.parse(raw)
+      if (data) {
+        render(data)
+      }
+    } catch (e) {
+      window.sessionStorage.removeItem(cacheKey())
+      console.log('Error parsing data from sessionStorage')
+      console.error(e)
+    }
+  }
+
+  if (data === null) {
+    update(render)
+  }
+
+  function update (cb) {
+    const headers = new window.Headers()
+    ckm.http.request('GET', url, { headers }).then(function (response) {
+      data = response
+      try {
+        window.sessionStorage.setItem(cacheKey(), JSON.stringify(response))
+      } catch (e) {
+        console.error('Saving sessionStorage', e)
+      }
+      render(response)
+      if (cb) {
+        cb(response)
+      }
+    }).catch(ckm.http.standardErrorHandler).catch(stop)
+  }
+
+  function render (data) {
+    document.querySelector('#version').innerText = data.manager_verion
+    const table = document.querySelector('#overview')
+    if (table) {
+      Object.keys(data.object_totals).forEach(function (key) {
+        table.querySelector('.' + key).innerText = data.object_totals[key]
+      })
+      table.querySelector('.uptime').innerText = data.uptime
+    }
+  }
+
+  function start (cb) {
+    update(cb)
+    updateTimer = setInterval(() => update(cb), 5000)
+  }
+
+  // Show that we're offline in the UI
+  function stop () {
+    if (updateTimer) {
+      clearInterval(updateTimer)
+    }
+  }
+
+  function get (key) {
+    return new Promise(function (resolve, reject) {
+      try {
+        if (data) {
+          resolve(data[key])
+        } else {
+          update(data => {
+            resolve(data[key])
+          })
+        }
+      } catch (e) {
+        reject(e.message)
+      }
+    })
+  }
+
+  Object.assign(window.ckm, {
+    overview: {
+      update, start, stop, render, get
+    }
+  })
+})()
