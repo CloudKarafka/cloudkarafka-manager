@@ -1,7 +1,8 @@
 (function () {
   document.getElementsByTagName('aside')[0].innerHTML = `
     <h1>
-      <a href="/"><img id="ckm-logo" src="/static/assets/mgmt-logo.svg"></a>
+      <a href="/"><img id="ckm-logo" class="logo" src="/assets/mgmt-logo.svg"></a>
+      CloudKarafka Mgmt
       <small id="version"></small>
     </h1>
     <ul>
