@@ -62,9 +62,4 @@
       </li>
     </div>
   `)
-
-  document.getElementsByTagName('footer')[0].innerHTML = `
-    CloudKarafka Manager is open source and developed by
-    <a href="http://www.84codes.com" target="_blank"><img class="logo" src="/img/logo-84codes.svg"></a>
-  `
 })()

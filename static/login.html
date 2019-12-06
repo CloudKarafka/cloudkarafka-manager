@@ -16,26 +16,48 @@
     <meta property="og:site_name" content="CloudKarafka Manager" />
     <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
     <style>
+      main {
+        gap: 0;
+      }
+      .card-header {
+        text-align: center;
+        grid-row: 2 / span 1;
+        grid-column: 1 / span 12;
+        width: 60%;
+        height: 56px;
+        padding: 1.5rem;
+        background-color: #0a4580;
+        border-radius: 4px 4px 0 0;
+        box-shadow: 0 1px 15px 1px rgba(39,39,39,.1);
+        margin-left: 80px;
+      }
       .card {
+        border-radius: 0 0 4px 4px;
         width: 60%;
         min-width: 400px;
         max-width: 800px;
-        margin: 80px;
+        margin-left: 80px;
+        grid-row: 3 / span 1;
       }
 
-      footer,header {
+      h1 {
+        color: #fff;
+      }
+
+      footer {
         grid-column: 1 / span 2;
+          grid-row: 4 / span 1;
       }
     </style>
   </head>
   <body>
-    <header>
-      <h1 class="logo-text">
-        <img class="logo" alt="Logo" src="/assets/mgmt-logo.svg"/>
-        Cloudkarafka Mgmt
-      </h1>
-    </header>
     <main>
+      <div class="card-header">
+        <h1 class="text-center logo-text">
+          <img class="logo" alt="Logo" src="/assets/mgmt-logo.svg"/>
+          Cloudkarafka Manager
+        </h1>
+      </div>
       <section class="card">
         <form id="login" action="" class="form">
           <label for="kafka-username">
