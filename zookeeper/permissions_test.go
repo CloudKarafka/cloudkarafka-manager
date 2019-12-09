@@ -54,6 +54,7 @@ func TestListAcls(t *testing.T) {
 		{Permissions{Cluster: []Permission{{"Describe", "Deny", "LITERAL", "kafka-cluster"}},
 			Topic: []Permission{{"Describe", "Allow", "LITERAL", "kafka-cluster"}}}, false},
 		{Permissions{Cluster: []Permission{{"Describe", "Allow", "LITERAL", "kafka-cluster"}}}, true},
+		{AdminPermissions, true},
 	}
 	for _, spec := range specs {
 		if spec.In.ListAcls() != spec.Expected {

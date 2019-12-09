@@ -21,26 +21,27 @@
       <table id="overview" class="stats-table card">
         <tbody>
           <tr>
-            <td class="broker-count"></td>
-            <td class="topic-count"></td>
-            <td class="partition-count"></td>
-            <td class="topic-size"></td>
-            <td class="topic-message-count"></td>
+            <td class="brokers"></td>
+            <td class="topics"></td>
+            <td class="partitions"></td>
+            <td class="topic_size"></td>
+            <td class="messages"></td>
             <td class="consumers"></td>
+            <td class="uptime"></td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
+            <th>Brokers</th>
             <th><a href="/topics">Topics</a></th>
-            <th>Consumers</th>
+            <th>Partitions</th>
+            <th>Topic size</th>
+            <th>Messages</th>
+            <th><a href="/consumers">Consumers</a></th>
             <th>Uptime</th>
           </tr>
         </tfoot>
       </table>
-      <section class="card cols-4 cols-6-md">
-        <h3>Queued messages</h3>
-        <div class="chart-container" id="msgChart"></div>
-      </section>
       <section class="card cols-4 cols-6-md">
         <h3>Data rates</h3>
         <div class="chart-container" id="dataChart"></div>
@@ -51,33 +52,30 @@
       </section>
     </main>
     <footer></footer>
+  <script src="/js/layout.js"></script>
+  <script src="/js/footer.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/http.js"></script>
+  <script src="/js/helpers.js"></script>
+  <script src="/js/overview.js"></script>
+  <script src="/js/table.js"></script>
+  <script src="/js/lib/chart.js"></script>
+  <script src="/js/chart.js"></script>
+  <script>
+    /* globals CloudKarafka Manager */
+    const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
+    const rateChart = ckm.chart.render('rateChart', 'msgs/s', { aspectRatio: 2 })
+
+    function updateCharts (response) {
+      //ckm.chart.update(rateChart, response.messages_in)
+      let dataStats = {
+        send_details: response.bytes_out,
+        receive_details: response.bytes_in
+      }
+      ckm.chart.update(dataChart, dataStats)
+    }
+
+    ckm.overview.start(updateCharts)
+  </script>
   </body>
 </html>
-<script src="/js/layout.js"></script>
-<script src="/js/footer.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/http.js"></script>
-<script src="/js/helpers.js"></script>
-<script src="/js/overview.js"></script>
-<script src="/js/vhosts.js"></script>
-<script src="/js/table.js"></script>
-<script src="/js/lib/chart.js"></script>
-<script src="/js/chart.js"></script>
-<script>
-  /* globals CloudKarafka Manager */
-  const msgChart = ckm.chart.render('msgChart', 'msgs', { aspectRatio: 2 })
-  const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
-  const rateChart = ckm.chart.render('rateChart', 'msgs/s', { aspectRatio: 2 })
-
-  function updateCharts (response) {
-    ckm.chart.update(msgChart, response.queue_totals)
-    ckm.chart.update(rateChart, response.message_stats)
-    let dataStats = {
-      send_details: response.send_oct_details,
-      receive_details: response.recv_oct_details
-    }
-    ckm.chart.update(dataChart, dataStats)
-  }
-
-  ckm.overview.start(updateCharts)
-</script>

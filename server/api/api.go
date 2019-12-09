@@ -19,8 +19,8 @@ func WhoAmI(w http.ResponseWriter, r *http.Request) {
 	writeAsJson(w, r.Context().Value("permissions"))
 }
 
-func BuildDate(w http.ResponseWriter, r *http.Request) {
-	writeAsJson(w, map[string]string{"build_date": config.BuildDate})
+func Version(w http.ResponseWriter, r *http.Request) {
+	writeAsJson(w, map[string]string{"version": config.Version})
 }
 
 func Router() *goji.Mux {
@@ -31,6 +31,8 @@ func Router() *goji.Mux {
 	mux.Use(m.SecureApi)
 
 	mux.Handle(pat.Get("/whoami"), http.HandlerFunc(WhoAmI))
+	mux.Handle(pat.Get("/overview"), http.HandlerFunc(Overview))
+
 	mux.Handle(pat.Get("/brokers"), http.HandlerFunc(Brokers))
 	mux.Handle(pat.Get("/brokers/:id"), http.HandlerFunc(Broker))
 

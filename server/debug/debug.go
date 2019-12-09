@@ -46,7 +46,7 @@ func Router() *goji.Mux {
 
 	mux.Handle(pat.Get("/version"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		writeAsJson(w, map[string]string{
-			"build_date": config.BuildDate,
+			"version":    config.Version,
 			"git_commit": config.GitCommit,
 		})
 	}))

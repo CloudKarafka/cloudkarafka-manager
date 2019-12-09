@@ -24,6 +24,12 @@
     update(render)
   }
 
+  function cacheKey () {
+    const user = window.sessionStorage.getItem('username')
+    return url + '#' + user
+  }
+
+
   function update (cb) {
     const headers = new window.Headers()
     ckm.http.request('GET', url, { headers }).then(function (response) {
@@ -41,12 +47,15 @@
   }
 
   function render (data) {
-    document.querySelector('#version').innerText = data.manager_verion
+    document.querySelector('#version').innerText = data.version
     const table = document.querySelector('#overview')
     if (table) {
-      Object.keys(data.object_totals).forEach(function (key) {
-        table.querySelector('.' + key).innerText = data.object_totals[key]
-      })
+      table.querySelector('.brokers').innerText = data.brokers
+      table.querySelector('.topics').innerText = data.topics
+      table.querySelector('.partitions').innerText = data.partitions
+      table.querySelector('.topic_size').innerText = ckm.helpers.formatNumber(data.topic_size)
+      table.querySelector('.messages').innerText = ckm.helpers.formatNumber(data.messages)
+      table.querySelector('.consumers').innerText = data.consumers
       table.querySelector('.uptime').innerText = data.uptime
     }
   }

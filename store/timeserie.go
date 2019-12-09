@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
@@ -13,62 +12,51 @@ type TimeSerie interface {
 	Interval() int
 	All() []Point
 	Last() Point
+	Len() int
 }
 
-type Point struct {
-	X int `json:"x"`
-	Y int `json:"y"`
-}
+type Point int
 
 type SimpleTimeSerie struct {
 	interval int
 	Points   []Point
-	last     int
-	cursor   int
+	latest   int
 }
 
 func NewSimpleTimeSerie(interval, maxPoints int) *SimpleTimeSerie {
 	return &SimpleTimeSerie{
 		interval: interval,
 		Points:   make([]Point, maxPoints),
-		cursor:   0,
-		last:     -1,
+		latest:   -1,
 	}
 }
 
-func (me *SimpleTimeSerie) Add(x int, y int) {
-	if me.last != -1 {
-		v := (y - me.last) / me.interval
-		p := Point{x, v}
-		if me.cursor == len(me.Points)-1 {
-			me.cursor = 0
-		}
-		me.Points[me.cursor] = p
-		me.cursor += 1
+func (me *SimpleTimeSerie) Add(_x int, y int) {
+	fmt.Printf("Y=%v last=%v\n", y, me.latest)
+	if me.latest == -1 {
+		me.latest = y
+		return
 	}
-	me.last = y
+	v := (y - me.latest) / me.interval
+	me.latest = y
+	copy(me.Points, me.Points[1:])
+	me.Points[me.Len()-1] = Point(v)
 }
 func (me *SimpleTimeSerie) Interval() int {
 	return me.interval
 }
 func (me *SimpleTimeSerie) All() []Point {
-	res := make([]Point, 0)
-	l := len(me.Points)
-	c := me.cursor
-	for i := c; i < c+l; i++ {
-		p := me.Points[i%l]
-		if p.X != 0 {
-			res = append(res, p)
-		}
-	}
-	return res
+	return me.Points[:me.Len()]
 }
 func (me *SimpleTimeSerie) Last() Point {
-	if me.cursor == 0 {
-		return me.Points[len(me.Points)-1]
+	if len(me.Points) == 0 {
+		return 0
 	} else {
-		return me.Points[me.cursor-1]
+		return me.Points[me.Len()-1]
 	}
+}
+func (me *SimpleTimeSerie) Len() int {
+	return len(me.Points)
 }
 
 type SumTimeSerie struct {
@@ -82,40 +70,32 @@ func (me *SumTimeSerie) Interval() int {
 	return me.Series[0].Interval()
 }
 func (me *SumTimeSerie) All() []Point {
-	all := make([]Point, 0)
+	res := make([]Point, me.Len())
 	for _, serie := range me.Series {
-		all = append(all, serie.All()...)
-	}
-	sort.Slice(all, func(i, j int) bool {
-		return all[i].X < all[j].X
-	})
-	lastX := -1
-	index := -1
-	interval := me.Interval()
-	res := make([]Point, len(all))
-	for _, p := range all {
-		x := p.X / interval * interval
-		if x == lastX {
-			res[index].Y += p.Y
-		} else {
-			index += 1
-			res[index] = Point{x, p.Y}
-			lastX = x
+		for i, p := range serie.All() {
+			res[i] += p
 		}
 	}
-	if index == -1 {
-		return res
-	}
-	return res[:index]
+	return res
 }
 
 func (me *SumTimeSerie) Last() Point {
 	all := me.All()
 	l := len(all)
 	if l == 0 {
-		return Point{0, 0}
+		return Point(0)
 	}
 	return all[len(all)-1]
+}
+
+func (me *SumTimeSerie) Len() int {
+	l := 0
+	for _, serie := range me.Series {
+		if serie.Len() > l {
+			l = serie.Len()
+		}
+	}
+	return l
 }
 
 type SerieKey struct {

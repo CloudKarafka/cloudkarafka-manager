@@ -13,6 +13,8 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
+type topics map[string]Topic
+
 type Partition struct {
 	Leader          int            `json:"leader"`
 	Replicas        []int          `json:"replicas"`
@@ -88,6 +90,9 @@ type TopicRequest struct {
 }
 
 func fetchTopic(ctx context.Context, topicName string) (Topic, error) {
+	if topic, ok := store.Topics[topicName]; ok {
+		return topic, nil
+	}
 	topic, err := zookeeper.Topic(topicName)
 	if err != nil {
 		if err == zookeeper.PathDoesNotExistsErr {
@@ -112,6 +117,7 @@ func fetchTopic(ctx context.Context, topicName string) (Topic, error) {
 			t.Partitions[i] = par
 		}
 	}
+	store.Topics[topicName] = t
 	return t, nil
 }
 

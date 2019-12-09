@@ -37,8 +37,8 @@ var (
 	Port              string
 	Retention         int64
 	AuthType          string
-	BuildDate         string = time.Now().Format("2006-01-02")
-	GitCommit         string = "master"
+	Version           string = "0.2.0"
+	GitCommit         string = "HEAD"
 	JMXRequestTimeout time.Duration
 	KafkaDir          string
 	ZookeeperURL      []string
@@ -47,7 +47,7 @@ var (
 )
 
 func PrintConfig() {
-	fmt.Printf("Build info\n BuildDate:\t%s\n Git commit:\t%s\n", BuildDate, GitCommit)
+	fmt.Printf("Build info\n Version:\t%s\n Git commit:\t%s\n", Version, GitCommit)
 	fmt.Printf("Runtime\n HTTP Port:\t%s\n Auth type:\t%s\n Retention:\t%d hours\n",
 		Port, AuthType, Retention)
 

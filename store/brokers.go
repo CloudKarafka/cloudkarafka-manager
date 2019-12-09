@@ -12,6 +12,8 @@ import (
 	humanize "github.com/dustin/go-humanize"
 )
 
+type brokers map[string]Broker
+
 type Broker struct {
 	Version      int            `json:"-"`
 	JmxPort      int            `json:"-"`
@@ -47,6 +49,9 @@ type BrokerResponse struct {
 
 func fetchBroker(ctx context.Context, id int) (Broker, error) {
 	var broker Broker
+	if b, ok := store.Brokers[string(id)]; ok {
+		return b, nil
+	}
 	path := fmt.Sprintf("/brokers/ids/%d", id)
 	err := zookeeper.Get(path, &broker)
 	if err != nil {
@@ -64,6 +69,7 @@ func fetchBroker(ctx context.Context, id int) (Broker, error) {
 		return broker, err
 	}
 	broker.KafkaVersion = version
+	store.Brokers[string(id)] = broker
 	return broker, nil
 }
 

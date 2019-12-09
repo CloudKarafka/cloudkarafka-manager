@@ -82,7 +82,7 @@ func GetTimeSerieMetric(query MetricRequest) []Metric {
 		Topic:  query.Bean.Params["topic"],
 		Name:   query.Bean.Params["name"],
 		Type:   query.Bean.Params["type"],
-		Value:  float64(value.X),
+		Value:  float64(value),
 	}
 	return []Metric{metric}
 }

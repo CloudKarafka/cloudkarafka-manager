@@ -114,7 +114,6 @@ func (p Permissions) DeleteAcl() bool {
 		return p.Alter("kafka-cluster")
 	})
 }
-
 func (p Permissions) ListAcls() bool {
 	return p.check(p.Cluster, func(p Permission) bool {
 		return p.Describe("kafka-cluster")
@@ -136,7 +135,7 @@ func (p Permissions) ListGroups() bool {
 	return p.DescribeCluster("kafka-cluster")
 }
 
-var AllowAll = []Permission{Permission{"ALL", "ALLOW", "LITERAL", "*"}}
+var AllowAll = []Permission{Permission{"All", "Allow", "LITERAL", "*"}}
 var AdminPermissions = Permissions{
 	Cluster: AllowAll,
 	Topic:   AllowAll,

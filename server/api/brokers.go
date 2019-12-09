@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -15,6 +16,7 @@ import (
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(mw.SessionUser)
+	fmt.Println(user)
 	if !user.Permissions.ListBrokers() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
