@@ -61,3 +61,28 @@ func TopicsMarkedForDeletion() []string {
 	}
 	return data
 }
+
+var topicsListeners = make([]chan []T, 0, 10)
+
+func WatchTopics() chan []T {
+	ch := make(chan []T)
+	topicsListeners = append(topicsListeners, ch)
+	return ch
+}
+
+func watchTopics() {
+	data, _, events, _ := WatchChildren("/brokers/topics")
+	list := make([]T, len(data))
+	for i, name := range data {
+		topic, err := Topic(name)
+		if err != nil {
+			continue
+		}
+		list[i] = topic
+	}
+	fanoutCH <- list
+	_, ok := <-events
+	if ok {
+		watchTopics()
+	}
+}

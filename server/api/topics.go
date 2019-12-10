@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/server/validators"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
@@ -17,40 +15,13 @@ import (
 )
 
 func Topics(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("TOPICS!!!")
 	user := r.Context().Value("user").(mw.SessionUser)
 	if !user.Permissions.ListTopics() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	topicNames, err := zookeeper.Topics(user.Permissions)
-	if err != nil {
-		log.Error("api.list_topics", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	topics, err := store.FetchTopics(ctx, topicNames, false, nil)
-	if err != nil {
-		log.Error("api.list_topics", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	ts := make([]interface{}, len(topics))
-	i := 0
-	for _, t := range topics {
-		if t.Error != nil {
-			log.Error("api.list_topics", log.ErrorEntry{err})
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else {
-			ts[i] = t.Topic
-			i += 1
-		}
-	}
-	writeAsJson(w, ts[:i])
+	writeAsJson(w, store.Topics())
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
@@ -64,12 +35,10 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	topic, err := store.FetchTopic(ctx, topicName, true, nil)
-	if err != nil {
-		log.Error("api.topic", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+	topic, ok := store.Topic(topicName)
+	if !ok {
+		http.NotFound(w, r)
 		return
 	}
 	writeAsJson(w, topic)
@@ -160,10 +129,9 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if data["partitions"] != nil {
-		topic, err := store.FetchTopic(ctx, name, false, nil)
-		if err != nil {
-			log.Error("api.topic", log.ErrorEntry{err})
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		topic, ok := store.Topic(name)
+		if !ok {
+			http.NotFound(w, r)
 			return
 		}
 		var partitions_f float64

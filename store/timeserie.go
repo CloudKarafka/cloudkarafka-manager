@@ -124,7 +124,7 @@ func BrokerTotal(metricName string) TimeSerie {
 		}
 	}
 	if len(series) == 0 {
-		return nil
+		return &SumTimeSerie{}
 	}
 	return NewSumTimeSerie(series)
 }

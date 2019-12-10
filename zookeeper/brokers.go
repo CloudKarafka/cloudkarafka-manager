@@ -49,29 +49,18 @@ func Controller() (C, error) {
 	return c, err
 }
 
-var (
-	out                   = make(chan []HostPort)
-	brokerChangeListeners = make([]chan []HostPort, 0, 10)
-)
-
 type HostPort struct {
 	Id   int
 	Host string
 	Port int
 }
 
+var brokersListeners = make([]chan []HostPort, 0, 10)
+
 func WatchBrokers() chan []HostPort {
 	ch := make(chan []HostPort)
-	brokerChangeListeners = append(brokerChangeListeners, ch)
+	brokersListeners = append(brokersListeners, ch)
 	return ch
-}
-
-func fanout() {
-	for hp := range out {
-		for _, ch := range brokerChangeListeners {
-			ch <- hp
-		}
-	}
 }
 
 func watchBrokers() {
@@ -88,7 +77,7 @@ func watchBrokers() {
 		}
 		list[i] = HostPort{intId, broker.Host, broker.Port}
 	}
-	out <- list
+	fanoutCH <- list
 	_, ok := <-events
 	if ok {
 		watchBrokers()

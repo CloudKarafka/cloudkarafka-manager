@@ -29,7 +29,7 @@ func FetchMetrics(metrics chan Metric, reqs []MetricRequest) {
 
 func Start() {
 	brokerChanges := zookeeper.WatchBrokers()
-	//topicChanges := zookeeper.WatchTopics()
+	topicChanges := zookeeper.WatchTopics()
 	ticker := time.NewTicker(time.Duration(5) * time.Second)
 	defer ticker.Stop()
 	metrics := make(chan Metric)
@@ -46,6 +46,16 @@ func Start() {
 					MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
 					MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
 				})
+				broker, _ := fetchBroker(hp.Id)
+				store.UpdateBroker(broker)
+			}
+		case topics := <-topicChanges:
+			for _, topic := range topics {
+				topic, err := fetchTopic(topic.Name)
+				if err != nil {
+					continue
+				}
+				store.UpdateTopic(topic)
 			}
 		case metric := <-metrics:
 			var key SerieKey

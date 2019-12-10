@@ -1,14 +1,9 @@
 package api
 
 import (
-	"context"
 	"fmt"
 	"net/http"
-	"sort"
-	"strconv"
 
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
@@ -21,30 +16,7 @@ func Brokers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	brokers, err := store.FetchBrokers(ctx, config.BrokerUrls.IDs(), nil)
-	if err != nil {
-		log.Error("brokers", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	ts := make([]store.Broker, len(brokers))
-	i := 0
-	for _, t := range brokers {
-		if t.Error != nil {
-			log.Error("api.list_brokers", log.ErrorEntry{err})
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		} else {
-			ts[i] = t.Broker
-			i += 1
-		}
-	}
-	sort.Slice(ts, func(i, j int) bool {
-		return ts[i].Id < ts[j].Id
-	})
-	writeAsJson(w, ts)
+	writeAsJson(w, store.Brokers())
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {
@@ -53,17 +25,10 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	id, err := strconv.Atoi(pat.Param(r, "id"))
-	if err != nil {
-		http.Error(w, "Broker id must a an integer", http.StatusBadRequest)
-		return
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	broker, err := store.FetchBroker(ctx, id, nil)
-	if err != nil {
-		log.Error("brokers", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	id := pat.Param(r, "id")
+	broker, ok := store.Broker(id)
+	if !ok {
+		http.NotFound(w, r)
 		return
 	}
 	writeAsJson(w, broker)

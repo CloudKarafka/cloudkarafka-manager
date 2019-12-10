@@ -26,9 +26,9 @@ func Overview(w http.ResponseWriter, r *http.Request) {
 	writeAsJson(w, overviewVM{
 		Version:    config.Version,
 		Uptime:     store.Uptime(),
-		Brokers:    store.Brokers(),
-		Topics:     store.Topics(),
-		Consumers:  store.Consumers(),
+		Brokers:    len(store.Brokers()),
+		Topics:     len(store.Topics()),
+		Consumers:  len(store.Consumers()),
 		Partitions: store.Partitions(),
 		TopicSize:  store.TotalTopicSize(),
 		Messages:   store.TotalMessageCount(),

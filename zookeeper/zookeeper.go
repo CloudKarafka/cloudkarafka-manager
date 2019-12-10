@@ -6,6 +6,7 @@ import (
 	"github.com/samuel/go-zookeeper/zk"
 
 	"encoding/json"
+	"fmt"
 	"net"
 	"time"
 )
@@ -13,6 +14,8 @@ import (
 var (
 	conn                 *zk.Conn
 	PathDoesNotExistsErr = errors.New("Zookeeper: Path does not exists")
+
+	fanoutCH = make(chan interface{})
 )
 
 type AllFunc func(Permissions) ([]string, error)
@@ -36,6 +39,7 @@ func Connect(urls []string) error {
 		return err
 	}
 	go watchBrokers()
+	go watchTopics()
 	go fanout()
 	return nil
 }
@@ -117,4 +121,22 @@ func set(path string, data interface{}) error {
 	}
 	_, err = conn.Set(path, enc, stat.Version)
 	return err
+}
+
+func fanout() {
+	for msg := range fanoutCH {
+		switch v := msg.(type) {
+		case []HostPort:
+			for _, ch := range brokersListeners {
+				ch <- v
+			}
+		case []T:
+			for _, ch := range topicsListeners {
+				ch <- v
+			}
+		default:
+			fmt.Printf("zookeeper#fanout don't know about type %T!\n", v)
+
+		}
+	}
 }
