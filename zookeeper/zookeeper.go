@@ -35,6 +35,8 @@ func Connect(urls []string) error {
 	if err != nil {
 		return err
 	}
+	go watchBrokers()
+	go fanout()
 	return nil
 }
 

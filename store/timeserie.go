@@ -2,10 +2,6 @@ package store
 
 import (
 	"fmt"
-	"time"
-
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
 
 type TimeSerie interface {
@@ -31,8 +27,7 @@ func NewSimpleTimeSerie(interval, maxPoints int) *SimpleTimeSerie {
 	}
 }
 
-func (me *SimpleTimeSerie) Add(_x int, y int) {
-	fmt.Printf("Y=%v last=%v\n", y, me.latest)
+func (me *SimpleTimeSerie) Add(y int) {
 	if me.latest == -1 {
 		me.latest = y
 		return
@@ -117,41 +112,6 @@ var (
 	quitter = make(chan bool)
 )
 
-func Subscribe(interval, maxPoints int, requests *[]MetricRequest) {
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
-	defer ticker.Stop()
-	ch := make(chan Metric)
-	for {
-		select {
-		case <-ticker.C:
-			for _, request := range *requests {
-				go func(request MetricRequest) {
-					data, err := GetMetrics(request)
-					if err != nil {
-						log.Error("timeserie_getdata", log.ErrorEntry{err})
-					} else {
-						for _, metric := range data {
-							ch <- metric
-						}
-					}
-				}(request)
-			}
-		case metric := <-ch:
-			var key SerieKey
-			if metric.Topic == "" {
-				key = SerieKey{"broker", metric.Broker, "", metric.Name}
-			} else {
-				key = SerieKey{"topic", metric.Broker, metric.Topic, metric.Name}
-			}
-			if _, ok := Series[key]; !ok {
-				Series[key] = NewSimpleTimeSerie(interval, maxPoints)
-			}
-			timestamp := int(time.Now().UTC().Unix())
-			Series[key].(*SimpleTimeSerie).Add(timestamp, int(metric.Value))
-		}
-	}
-}
-
 func GetTimeserie(key SerieKey) TimeSerie {
 	return Series[key]
 }
@@ -179,23 +139,4 @@ func TopicTotal(topic, metricName string) TimeSerie {
 		return nil
 	}
 	return NewSumTimeSerie(series)
-}
-
-func StartCollect() {
-	ch := make(chan map[int]config.HostPort)
-	config.BrokerChangeListeners = append(config.BrokerChangeListeners, ch)
-	reqs := make([]MetricRequest, 0)
-	go Subscribe(5, 500, &reqs)
-	for v := range ch {
-		tr := make([]MetricRequest, 0)
-		for id, _ := range v {
-			tr = append(tr,
-				MetricRequest{id, BeanAllTopicsBytesInPerSec, "Count"},
-				MetricRequest{id, BeanAllTopicsBytesOutPerSec, "Count"},
-				MetricRequest{id, BeanBrokerBytesInPerSec, "Count"},
-				MetricRequest{id, BeanBrokerBytesOutPerSec, "Count"})
-		}
-		reqs = tr
-	}
-
 }

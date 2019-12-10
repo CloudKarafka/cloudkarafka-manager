@@ -22,8 +22,7 @@ func main() {
 		os.Exit(1)
 		return
 	}
-	go store.StartCollect()
-	go config.WatchBrokers()
+	go store.Start()
 	go server.Start()
 	<-signals
 	zookeeper.Stop()

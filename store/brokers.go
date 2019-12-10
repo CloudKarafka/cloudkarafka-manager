@@ -49,9 +49,6 @@ type BrokerResponse struct {
 
 func fetchBroker(ctx context.Context, id int) (Broker, error) {
 	var broker Broker
-	if b, ok := store.Brokers[string(id)]; ok {
-		return b, nil
-	}
 	path := fmt.Sprintf("/brokers/ids/%d", id)
 	err := zookeeper.Get(path, &broker)
 	if err != nil {

@@ -3,37 +3,36 @@ package config
 import (
 	"fmt"
 	"math/rand"
-	"strconv"
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 func init() {
-	ch := make(chan map[int]HostPort)
-	BrokerChangeListeners = append(BrokerChangeListeners, ch)
-	go func() {
-		for v := range ch {
+	go handleBrokerChanges()
+}
+
+func handleBrokerChanges() {
+	brokerChanges := zookeeper.WatchBrokers()
+	for hps := range brokerChanges {
+		hash := make(map[int]zookeeper.HostPort)
+		for _, hp := range hps {
 			le := make(log.MapEntry)
-			for id, hostport := range v {
-				le[strconv.Itoa(id)] = hostport
-			}
+			le[string(hp.Id)] = hp
 			if len(le) > 0 {
 				log.Info("broker_change", le)
 			}
-			BrokerUrls = v
+			hash[hp.Id] = hp
 		}
-	}()
+		BrokerUrls = hash
+	}
 }
 
-type HostPort struct {
-	Host string
-	Port int
-}
-type BrokerURLs map[int]HostPort
+type BrokerURLs map[int]zookeeper.HostPort
 
 var (
-	BrokerUrls        BrokerURLs
+	BrokerUrls        = make(BrokerURLs)
 	Port              string
 	Retention         int64
 	AuthType          string

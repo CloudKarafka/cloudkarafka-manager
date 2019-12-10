@@ -32,7 +32,7 @@
         </tbody>
         <tfoot>
           <tr>
-            <th>Brokers</th>
+            <th><a href="/brokers">Brokers</a></th>
             <th><a href="/topics">Topics</a></th>
             <th>Partitions</th>
             <th>Topic size</th>
@@ -42,13 +42,9 @@
           </tr>
         </tfoot>
       </table>
-      <section class="card cols-4 cols-6-md">
+      <section class="card cols-12 cols-6-md">
         <h3>Data rates</h3>
         <div class="chart-container" id="dataChart"></div>
-      </section>
-      <section class="card cols-4 cols-6-md">
-        <h3>Message rates</h3>
-        <div class="chart-container" id="rateChart"></div>
       </section>
     </main>
     <footer></footer>
@@ -64,10 +60,8 @@
   <script>
     /* globals CloudKarafka Manager */
     const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
-    const rateChart = ckm.chart.render('rateChart', 'msgs/s', { aspectRatio: 2 })
 
     function updateCharts (response) {
-      //ckm.chart.update(rateChart, response.messages_in)
       let dataStats = {
         send_details: response.bytes_out,
         receive_details: response.bytes_in

@@ -23,7 +23,7 @@ type overviewVM struct {
 }
 
 func Overview(w http.ResponseWriter, r *http.Request) {
-	vm := overviewVM{
+	writeAsJson(w, overviewVM{
 		Version:    config.Version,
 		Uptime:     store.Uptime(),
 		Brokers:    store.Brokers(),
@@ -34,6 +34,5 @@ func Overview(w http.ResponseWriter, r *http.Request) {
 		Messages:   store.TotalMessageCount(),
 		BytesOut:   store.BrokerTotal("BytesOutPerSec").All(),
 		BytesIn:    store.BrokerTotal("BytesInPerSec").All(),
-	}
-	writeAsJson(w, vm)
+	})
 }

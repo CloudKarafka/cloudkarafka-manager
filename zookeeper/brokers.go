@@ -48,3 +48,49 @@ func Controller() (C, error) {
 	err := get("/controller", &c)
 	return c, err
 }
+
+var (
+	out                   = make(chan []HostPort)
+	brokerChangeListeners = make([]chan []HostPort, 0, 10)
+)
+
+type HostPort struct {
+	Id   int
+	Host string
+	Port int
+}
+
+func WatchBrokers() chan []HostPort {
+	ch := make(chan []HostPort)
+	brokerChangeListeners = append(brokerChangeListeners, ch)
+	return ch
+}
+
+func fanout() {
+	for hp := range out {
+		for _, ch := range brokerChangeListeners {
+			ch <- hp
+		}
+	}
+}
+
+func watchBrokers() {
+	data, _, events, _ := WatchChildren("/brokers/ids")
+	list := make([]HostPort, len(data))
+	for i, id := range data {
+		intId, err := strconv.Atoi(id)
+		if err != nil {
+			continue
+		}
+		broker, err := Broker(intId)
+		if err != nil {
+			continue
+		}
+		list[i] = HostPort{intId, broker.Host, broker.Port}
+	}
+	out <- list
+	_, ok := <-events
+	if ok {
+		watchBrokers()
+	}
+}
