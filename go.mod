@@ -6,7 +6,7 @@ require (
 	github.com/dustin/go-humanize v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/samuel/go-zookeeper v0.0.0-20190810000440-0ceca61e4d75
-	github.com/segmentio/kafka-go v0.3.3
+	github.com/segmentio/kafka-go v0.3.4
 	github.com/zenazn/goji v0.9.1-0.20160507202103-64eb34159fe5
 	go.etcd.io/bbolt v1.3.3
 	goji.io v2.0.2+incompatible
