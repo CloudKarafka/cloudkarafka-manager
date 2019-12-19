@@ -1,28 +1,22 @@
 package store
 
-import (
-	"fmt"
-)
-
 type TimeSerie interface {
 	Interval() int
-	All() []Point
-	Last() Point
+	All() []int
+	Last() int
 	Len() int
 }
 
-type Point int
-
 type SimpleTimeSerie struct {
 	interval int
-	Points   []Point `json:"points"`
+	Points   []int `json:"points"`
 	latest   int
 }
 
 func NewSimpleTimeSerie(interval, maxPoints int) *SimpleTimeSerie {
 	return &SimpleTimeSerie{
 		interval: interval,
-		Points:   make([]Point, maxPoints),
+		Points:   make([]int, maxPoints),
 		latest:   -1,
 	}
 }
@@ -35,15 +29,15 @@ func (me *SimpleTimeSerie) Add(y int) {
 	v := (y - me.latest) / me.interval
 	me.latest = y
 	copy(me.Points, me.Points[1:])
-	me.Points[me.Len()-1] = Point(v)
+	me.Points[me.Len()-1] = v
 }
 func (me *SimpleTimeSerie) Interval() int {
 	return me.interval
 }
-func (me *SimpleTimeSerie) All() []Point {
+func (me *SimpleTimeSerie) All() []int {
 	return me.Points[:me.Len()]
 }
-func (me *SimpleTimeSerie) Last() Point {
+func (me *SimpleTimeSerie) Last() int {
 	if len(me.Points) == 0 {
 		return 0
 	} else {
@@ -64,8 +58,8 @@ func NewSumTimeSerie(series []TimeSerie) TimeSerie {
 func (me *SumTimeSerie) Interval() int {
 	return me.Series[0].Interval()
 }
-func (me *SumTimeSerie) All() []Point {
-	res := make([]Point, me.Len())
+func (me *SumTimeSerie) All() []int {
+	res := make([]int, me.Len())
 	for _, serie := range me.Series {
 		for i, p := range serie.All() {
 			res[i] += p
@@ -74,11 +68,11 @@ func (me *SumTimeSerie) All() []Point {
 	return res
 }
 
-func (me *SumTimeSerie) Last() Point {
+func (me *SumTimeSerie) Last() int {
 	all := me.All()
 	l := len(all)
 	if l == 0 {
-		return Point(0)
+		return 0
 	}
 	return all[len(all)-1]
 }
@@ -91,52 +85,4 @@ func (me *SumTimeSerie) Len() int {
 		}
 	}
 	return l
-}
-
-type SerieKey struct {
-	Type      string
-	BrokerId  int
-	TopicName string
-	Metric    string
-}
-
-func (sk SerieKey) String() string {
-	if sk.Type == "broker" {
-		return fmt.Sprintf("broker[%d] %s", sk.BrokerId, sk.Metric)
-	}
-	return fmt.Sprintf("broker[%d] topic=%s %s", sk.BrokerId, sk.TopicName, sk.Metric)
-}
-
-var (
-	Series  = make(map[SerieKey]TimeSerie)
-	quitter = make(chan bool)
-)
-
-func GetTimeserie(key SerieKey) TimeSerie {
-	return Series[key]
-}
-
-func BrokerTotal(metricName string) TimeSerie {
-	series := make([]TimeSerie, 0)
-	for k, v := range Series {
-		if k.Type == "broker" && k.Metric == metricName {
-			series = append(series, v)
-		}
-	}
-	if len(series) == 0 {
-		return &SumTimeSerie{}
-	}
-	return NewSumTimeSerie(series)
-}
-func TopicTotal(topic, metricName string) TimeSerie {
-	series := make([]TimeSerie, 0)
-	for k, v := range Series {
-		if k.Type == "topic" && k.TopicName == topic && k.Metric == metricName {
-			series = append(series, v)
-		}
-	}
-	if len(series) == 0 {
-		return nil
-	}
-	return NewSumTimeSerie(series)
 }

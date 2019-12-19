@@ -8,18 +8,18 @@ import (
 )
 
 type overviewVM struct {
-	Version      string        `json:"version"`
-	Uptime       string        `json:"uptime"`
-	Brokers      int           `json:"brokers"`
-	Topics       int           `json:"topics"`
-	Partitions   int           `json:"partitions"`
-	TopicSize    int           `json:"topic_size"`
-	Messages     int           `json:"messages"`
-	Consumers    int           `json:"consumers"`
-	DataRates    []int         `json:"data_rates"`
-	MessageRates []int         `json:"message_rates"`
-	BytesOut     []store.Point `json:"bytes_out"`
-	BytesIn      []store.Point `json:"bytes_in"`
+	Version      string `json:"version"`
+	Uptime       string `json:"uptime"`
+	Brokers      int    `json:"brokers"`
+	Topics       int    `json:"topics"`
+	Partitions   int    `json:"partitions"`
+	TopicSize    int    `json:"topic_size"`
+	Messages     int    `json:"messages"`
+	Consumers    int    `json:"consumers"`
+	DataRates    []int  `json:"data_rates"`
+	MessageRates []int  `json:"message_rates"`
+	BytesOut     []int  `json:"bytes_out"`
+	BytesIn      []int  `json:"bytes_in"`
 }
 
 func Overview(w http.ResponseWriter, r *http.Request) {
@@ -32,7 +32,7 @@ func Overview(w http.ResponseWriter, r *http.Request) {
 		Partitions: store.Partitions(),
 		TopicSize:  store.TotalTopicSize(),
 		Messages:   store.TotalMessageCount(),
-		BytesOut:   store.BrokerTotal("BytesOutPerSec").All(),
-		BytesIn:    store.BrokerTotal("BytesInPerSec").All(),
+		BytesOut:   store.SumBrokerSeries("bytes_out").All(),
+		BytesIn:    store.SumBrokerSeries("bytes_in").All(),
 	})
 }

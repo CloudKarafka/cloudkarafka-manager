@@ -65,36 +65,7 @@ func doRequest(url string) ([]Metric, error) {
 	return v, nil
 }
 
-func GetTimeSerieMetric(query MetricRequest) []Metric {
-	var key SerieKey
-	if query.Bean.Params["topic"] != "" {
-		key = SerieKey{"topic", query.BrokerId, query.Bean.Params["topic"], query.Bean.Params["name"]}
-	} else {
-		key = SerieKey{"broker", query.BrokerId, "", query.Bean.Params["name"]}
-	}
-	serie := Series[key]
-	if serie == nil {
-		return nil
-	}
-	value := serie.Last()
-	metric := Metric{
-		Broker: query.BrokerId,
-		Topic:  query.Bean.Params["topic"],
-		Name:   query.Bean.Params["name"],
-		Type:   query.Bean.Params["type"],
-		Value:  float64(value),
-	}
-	return []Metric{metric}
-}
-
 func GetMetrics(query MetricRequest) ([]Metric, error) {
-	if query.Attr == "TimeSerie" {
-		if r := GetTimeSerieMetric(query); r != nil {
-			return r, nil
-		} else {
-			return nil, fmt.Errorf("Could not get timeseries data for %s, no serie", query)
-		}
-	}
 	switch query.Attr {
 	case "OneMinuteRate":
 		if r, found := jmxCache1Min.Get(query.String()); found {

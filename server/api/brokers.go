@@ -8,13 +8,33 @@ import (
 	"goji.io/pat"
 )
 
+type brokerVM struct {
+	Id           int    `json:"id"`
+	KafkaVersion string `json:"kafka_version"`
+	Host         string `json:"host"`
+	Controller   bool   `json:"controller"`
+	Uptime       string `json:"uptime"`
+	BytesIn      []int  `json:"bytes_in,omitempty"`
+	BytesOut     []int  `json:"bytes_out,omitempty"`
+}
+
 func Brokers(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(mw.SessionUser)
 	if !user.Permissions.ListBrokers() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	writeAsJson(w, store.Brokers())
+	brokers := make([]brokerVM, len(store.Brokers()))
+	for _, b := range store.Brokers() {
+		brokers[b.Id] = brokerVM{
+			Id:           b.Id,
+			KafkaVersion: b.KafkaVersion,
+			Host:         b.Host,
+			Controller:   b.Controller,
+			Uptime:       b.Uptime(),
+		}
+	}
+	writeAsJson(w, brokers)
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {
@@ -24,10 +44,18 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := pat.Param(r, "id")
-	broker, ok := store.Broker(id)
+	b, ok := store.Broker(id)
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	writeAsJson(w, broker)
+	writeAsJson(w, brokerVM{
+		Id:           b.Id,
+		KafkaVersion: b.KafkaVersion,
+		Host:         b.Host,
+		Controller:   b.Controller,
+		Uptime:       b.Uptime(),
+		BytesIn:      b.BytesIn.Points,
+		BytesOut:     b.BytesOut.Points,
+	})
 }

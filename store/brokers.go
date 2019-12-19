@@ -24,6 +24,8 @@ type broker struct {
 	KafkaVersion string         `json:"kafka_version"`
 	Controller   bool           `json:"controller"`
 	Metrics      map[string]int `json:"metrics"`
+	BytesIn      *SimpleTimeSerie
+	BytesOut     *SimpleTimeSerie
 }
 
 func (b broker) Online() bool {
@@ -34,6 +36,9 @@ func (b broker) Online() bool {
 	}
 	return false
 }
+func NewBroker() broker {
+	return broker{BytesIn: NewSimpleTimeSerie(5, MaxPoints), BytesOut: NewSimpleTimeSerie(5, MaxPoints)}
+}
 func (b broker) Uptime() string {
 	if ts, err := strconv.ParseInt(b.Timestamp, 10, 64); err == nil {
 		return strings.TrimSpace(humanize.RelTime(time.Now(), time.Unix(ts/1000, 0), "", ""))
@@ -42,7 +47,7 @@ func (b broker) Uptime() string {
 }
 
 func fetchBroker(id int) (broker, error) {
-	var b broker
+	b := NewBroker()
 	path := fmt.Sprintf("/brokers/ids/%d", id)
 	err := zookeeper.Get(path, &b)
 	if err != nil {

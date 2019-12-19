@@ -28,14 +28,10 @@ func (me storage) UpdateBroker(b broker) {
 	me.brokers[string(b.Id)] = b
 }
 
-func (me storage) Brokers() []broker {
+func (me storage) Brokers() brokers {
 	me.RLock()
 	defer me.RUnlock()
-	brokers := make([]broker, len(me.brokers))
-	for _, b := range me.brokers {
-		brokers[b.Id] = b
-	}
-	return brokers
+	return me.brokers
 }
 
 func (me storage) Broker(id string) (broker, bool) {
@@ -87,18 +83,50 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 	} else {
 		switch m.Name {
 		case "BytesInPerSec":
-			if t.BytesIn == nil {
-				t.BytesIn = NewSimpleTimeSerie(5, MaxPoints)
-			}
 			t.BytesIn.Add(int(m.Value))
 		case "BytesOutPerSec":
-			if t.BytesOut == nil {
-				t.BytesOut = NewSimpleTimeSerie(5, MaxPoints)
-			}
 			t.BytesOut.Add(int(m.Value))
 		}
 	}
 	me.topics[m.Topic] = t
+}
+
+func (me *storage) UpdateBrokerMetrics(m Metric) {
+	me.Lock()
+	defer me.Unlock()
+	b, ok := me.brokers[string(m.Broker)]
+	if !ok {
+		return
+	}
+	switch m.Name {
+	case "BytesInPerSec":
+		b.BytesIn.Add(int(m.Value))
+	case "BytesOutPerSec":
+		b.BytesOut.Add(int(m.Value))
+	}
+}
+func (me storage) SumBrokerSeries(metric string) TimeSerie {
+	me.RLock()
+	defer me.RUnlock()
+	var (
+		series = make([]TimeSerie, len(me.brokers))
+		i      = 0
+	)
+	for _, b := range me.brokers {
+		var s TimeSerie
+		switch metric {
+		case "bytes_in":
+			s = b.BytesIn
+		case "bytes_out":
+			s = b.BytesOut
+		}
+		series[i] = s
+		i += 1
+	}
+	if len(series) == 0 {
+		return &SumTimeSerie{}
+	}
+	return NewSumTimeSerie(series)
 }
 
 func (me storage) Consumers() ConsumerGroups {
@@ -124,7 +152,7 @@ func Uptime() string {
 	return strings.TrimSpace(humanize.RelTime(time.Now(), time.Unix(ts/1000, 0), "", ""))
 }
 
-func Brokers() []broker {
+func Brokers() brokers {
 	return store.Brokers()
 }
 func Topics() []topic {
@@ -160,4 +188,8 @@ func Broker(id string) (broker, bool) {
 }
 func Topic(name string) (topic, bool) {
 	return store.Topic(name)
+}
+
+func SumBrokerSeries(m string) TimeSerie {
+	return store.SumBrokerSeries(m)
 }

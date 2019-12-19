@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Broker | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Broker
+        <small id="id"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <table id="broker" class="stats-table card">
+        <tbody>
+          <tr>
+            <td id="leader_count"></td>
+            <td id="partition_count"></td>
+            <td id="size"></td>
+            <td id="uptime"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th class="cols-3">Leader</th>
+            <th class="cols-3">Partitions</th>
+            <th class="cols-3">size</th>
+            <th class="cols-3">Uptime</th>
+          </tr>
+        </tfoot>
+      </table>
+      <section class="card cols-6">
+        <h3>Data rates</h3>
+        <div class="chart-container" id="dataChart"></div>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/lib/chart.js"></script>
+    <script src="/js/chart.js"></script>
+    <script src="/js/broker.js"></script>
+    <script type="application/javascript">
+      const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
+      function updateView (response) {
+        let dataStats = {
+          send_details: response.bytes_out,
+          receive_details: response.bytes_in
+        }
+        ckm.chart.update(dataChart, dataStats)
+
+        var tBody = document.querySelector('#partitions tbody')
+        ckm.dom.removeChildren(tBody);
+        response.partitions.forEach(p => {
+          console.log(p)
+          var tr = document.createElement('tr')
+          ckm.table.renderCell(tr, 0, p.number)
+          ckm.table.renderCell(tr, 1, p.leader, 'center')
+          ckm.table.renderCell(tr, 2, p.isr, 'center')
+          ckm.table.renderCell(tr, 3, p.replicas, 'center')
+          ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
+          ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
+          ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
+          tBody.appendChild(tr)
+        })
+      }
+
+      ckm.broker.start(updateView)
+    </script>
+  </body>
+</html>

@@ -79,11 +79,7 @@ func Start() {
 		case topics := <-topicChanges:
 			topicRequests = handleTopicChanges(topics)
 		case metric := <-bMetrics:
-			key := SerieKey{"broker", metric.Broker, "", metric.Name}
-			if _, ok := Series[key]; !ok {
-				Series[key] = NewSimpleTimeSerie(5, MaxPoints)
-			}
-			Series[key].(*SimpleTimeSerie).Add(int(metric.Value))
+			store.UpdateBrokerMetrics(metric)
 		case metric := <-tMetrics:
 			store.UpdateTopicMetric(metric)
 		}
