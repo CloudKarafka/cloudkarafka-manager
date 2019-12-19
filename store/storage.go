@@ -28,10 +28,14 @@ func (me storage) UpdateBroker(b broker) {
 	me.brokers[string(b.Id)] = b
 }
 
-func (me storage) Brokers() brokers {
+func (me storage) Brokers() []broker {
 	me.RLock()
 	defer me.RUnlock()
-	return me.brokers
+	brokers := make([]broker, len(me.brokers))
+	for _, b := range me.brokers {
+		brokers[b.Id] = b
+	}
+	return brokers
 }
 
 func (me storage) Broker(id string) (broker, bool) {
@@ -120,7 +124,7 @@ func Uptime() string {
 	return strings.TrimSpace(humanize.RelTime(time.Now(), time.Unix(ts/1000, 0), "", ""))
 }
 
-func Brokers() brokers {
+func Brokers() []broker {
 	return store.Brokers()
 }
 func Topics() []topic {

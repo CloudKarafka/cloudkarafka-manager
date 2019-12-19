@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
 
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
@@ -11,7 +10,6 @@ import (
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(mw.SessionUser)
-	fmt.Println(user)
 	if !user.Permissions.ListBrokers() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
