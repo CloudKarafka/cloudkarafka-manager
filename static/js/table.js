@@ -1,6 +1,6 @@
-/* global avalanchemq */
+/* global  */
 (function () {
-  window.avalanchemq = window.avalanchemq || {}
+  window.ckm = window.ckm || {}
 
   function getQueryVariable (variable) {
     var query = window.location.search.substring(1)
@@ -105,7 +105,7 @@
     function fetchAndUpdate () {
       const fullUrl = `${url}?${buildQuery(currentPage)}`
       const tableError = document.getElementById(id + '-error')
-      return avalanchemq.http.request('GET', fullUrl).then(function (response) {
+      return ckm.http.request('GET', fullUrl).then(function (response) {
         tableError.textContent = ''
         try {
           window.sessionStorage.setItem(fullUrl, JSON.stringify(response))
@@ -378,7 +378,7 @@
     window.history.replaceState(null, '', newurl)
   }
 
-  Object.assign(window.avalanchemq, {
+  Object.assign(window.ckm, {
     table: { renderCell, renderTable, renderHtmlCell }
   })
 })()

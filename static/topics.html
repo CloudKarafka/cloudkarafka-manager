@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Topics | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Topics
+        <small id="topics-count"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <section class="card">
+        <div id="topics-error"></div>
+        <div class="table-wrapper">
+          <table id="topics" class="table">
+            <thead>
+              <tr>
+                <th data-sort-key="name">Name</th>
+                <th data-sort-key="partitions">Partitions</th>
+                <th data-sort-key="message_count">Messages</th>
+                <th data-sort-key="size">Size</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script type="application/javascript">
+      const tableOptions = {
+        url: "/api/topics",
+        keyColumns: ['name'],
+        interval: 5000,
+        pagination: false,
+        columnSelector: true,
+        search: true
+      }
+      const queuesTable = ckm.table.renderTable('topics', tableOptions, function (tr, item, all) {
+        if (all) {
+          const queueLink = document.createElement('a')
+          queueLink.href = '/topic?name=' + encodeURIComponent(item.name)
+          queueLink.textContent = item.name
+          ckm.table.renderCell(tr, 0, queueLink)
+        }
+
+        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.partitions.length), 'right')
+        ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.message_count || 0), 'right')
+        ckm.table.renderCell(tr, 3, ckm.helpers.formatNumber(item.size || 0), 'right')
+      })
+    </script>
+  </body>
+</html>

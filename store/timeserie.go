@@ -15,7 +15,7 @@ type Point int
 
 type SimpleTimeSerie struct {
 	interval int
-	Points   []Point
+	Points   []Point `json:"points"`
 	latest   int
 }
 

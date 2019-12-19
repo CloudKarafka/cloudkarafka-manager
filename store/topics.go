@@ -11,11 +11,13 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	humanize "github.com/dustin/go-humanize"
 )
 
 type topics map[string]topic
 
 type Partition struct {
+	Number          int            `json:"number"`
 	Leader          int            `json:"leader"`
 	Replicas        []int          `json:"replicas"`
 	ISR             []int          `json:"isr"`
@@ -40,6 +42,8 @@ type topic struct {
 	Config     TopicConfig
 	Deleted    bool
 	Metrics    map[string]int
+	BytesIn    *SimpleTimeSerie
+	BytesOut   *SimpleTimeSerie
 }
 
 func (t topic) Size() int {
@@ -63,6 +67,12 @@ func (t topic) MarshalJSON() ([]byte, error) {
 		"deleted":    t.Deleted,
 		"partitions": t.Partitions,
 	}
+	if t.BytesIn != nil {
+		res["bytes_in"] = t.BytesIn.Points
+	}
+	if t.BytesOut != nil {
+		res["bytes_out"] = t.BytesOut.Points
+	}
 	if len(t.Metrics) > 0 {
 		res["metrics"] = t.Metrics
 	}
@@ -70,7 +80,7 @@ func (t topic) MarshalJSON() ([]byte, error) {
 		res["config"] = t.Config
 	}
 	if v := t.Size(); v != 0 {
-		res["size"] = v
+		res["size"] = humanize.Bytes(uint64(v))
 	}
 	if v := t.Messages(); v != 0 {
 		res["message_count"] = v
@@ -111,6 +121,7 @@ func fetchTopic(topicName string) (topic, error) {
 			i, _ := strconv.Atoi(p)
 			par.Replicas = replicas
 			par.Metrics = make(map[string]int)
+			par.Number = i
 			t.Partitions[i] = par
 		}
 	}

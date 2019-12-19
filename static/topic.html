@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Topic | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Topic
+        <small id="name"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <table id="topic" class="stats-table card">
+        <tbody>
+          <tr>
+            <td id="t-partitions"></td>
+            <td id="t-size"></td>
+            <td id="t-messages"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th class="cols-4">Partitions</th>
+            <th class="cols-4">Size</th>
+            <th class="cols-4">Messages</th>
+          </tr>
+        </tfoot>
+      </table>
+      <section class="card cols-6">
+        <h3>Data rates</h3>
+        <div class="chart-container" id="dataChart"></div>
+      </section>
+      <section class="card cols-12">
+        <h3>Partitions</h3>
+        <table class="table" id="partitions">
+            <thead>
+              <tr>
+                <th data-sort-key="number">#</th>
+                <th data-sort-key="leader">Leader</th>
+                <th data-sort-key="isr">ISR</th>
+                <th data-sort-key="replicas">Replicas</th>
+                <th data-sort-key="lso">Log Start Offset</th>
+                <th data-sort-key="leo">Log End Offset</th>
+                <th data-sort-key="size">Size</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/lib/chart.js"></script>
+    <script src="/js/chart.js"></script>
+    <script src="/js/topic.js"></script>
+    <script type="application/javascript">
+      const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
+      function updateView (response) {
+        let dataStats = {
+          send_details: response.bytes_out,
+          receive_details: response.bytes_in
+        }
+        ckm.chart.update(dataChart, dataStats)
+
+        var tBody = document.querySelector('#partitions tbody')
+        ckm.dom.removeChildren(tBody);
+        response.partitions.forEach(p => {
+          console.log(p)
+          var tr = document.createElement('tr')
+          ckm.table.renderCell(tr, 0, p.number)
+          ckm.table.renderCell(tr, 1, p.leader, 'center')
+          ckm.table.renderCell(tr, 2, p.isr, 'center')
+          ckm.table.renderCell(tr, 3, p.replicas, 'center')
+          ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
+          ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
+          ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
+          tBody.appendChild(tr)
+        })
+      }
+
+      ckm.topic.start(updateView)
+    </script>
+  </body>
+</html>

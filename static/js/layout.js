@@ -7,12 +7,11 @@
     </h1>
     <ul>
       <li><a href="/">Overview</a></li>
-      <li><a href="/topics">Topics</a></li>
       <li><a href="/consumers">Consumers</a></li>
       <li>
         <a href="/topics">Topics</a>
         <ul class="hide">
-          <li><a href="#create">Add topic</a></li>
+          <li><a href="#create">Create topic</a></li>
         </ul>
       </li>
       <li>

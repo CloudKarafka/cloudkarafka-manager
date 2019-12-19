@@ -20,7 +20,6 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-
 	writeAsJson(w, store.Topics())
 }
 

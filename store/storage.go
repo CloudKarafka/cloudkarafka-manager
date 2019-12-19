@@ -27,11 +27,6 @@ func (me storage) UpdateBroker(b broker) {
 	defer me.Unlock()
 	me.brokers[string(b.Id)] = b
 }
-func (me storage) UpdateTopic(t topic) {
-	me.Lock()
-	defer me.Unlock()
-	me.topics[string(t.Name)] = t
-}
 
 func (me storage) Brokers() brokers {
 	me.RLock()
@@ -46,16 +41,60 @@ func (me storage) Broker(id string) (broker, bool) {
 	return b, ok
 }
 
-func (me storage) Topics() topics {
+func (me storage) Topics() []topic {
 	me.RLock()
 	defer me.RUnlock()
-	return me.topics
+	var (
+		topics = make([]topic, len(me.topics))
+		i      = 0
+	)
+	for _, t := range me.topics {
+		topics[i] = t
+		i += 1
+	}
+	return topics
 }
 func (me storage) Topic(name string) (topic, bool) {
 	me.RLock()
 	defer me.RUnlock()
 	t, ok := me.topics[name]
 	return t, ok
+}
+func (me storage) UpdateTopic(t topic) {
+	me.Lock()
+	defer me.Unlock()
+	me.topics[string(t.Name)] = t
+}
+func (me *storage) UpdateTopicMetric(m Metric) {
+	me.Lock()
+	defer me.Unlock()
+	t, ok := me.topics[m.Topic]
+	if !ok {
+		return
+	}
+	if m.Partition != "" {
+		number, err := strconv.Atoi(m.Partition)
+		if err != nil {
+			return
+		}
+		p := t.Partitions[number]
+		p.Metrics[m.Name] = int(m.Value)
+		t.Partitions[number] = p
+	} else {
+		switch m.Name {
+		case "BytesInPerSec":
+			if t.BytesIn == nil {
+				t.BytesIn = NewSimpleTimeSerie(5, MaxPoints)
+			}
+			t.BytesIn.Add(int(m.Value))
+		case "BytesOutPerSec":
+			if t.BytesOut == nil {
+				t.BytesOut = NewSimpleTimeSerie(5, MaxPoints)
+			}
+			t.BytesOut.Add(int(m.Value))
+		}
+	}
+	me.topics[m.Topic] = t
 }
 
 func (me storage) Consumers() ConsumerGroups {
@@ -84,7 +123,7 @@ func Uptime() string {
 func Brokers() brokers {
 	return store.Brokers()
 }
-func Topics() topics {
+func Topics() []topic {
 	return store.Topics()
 }
 func Consumers() ConsumerGroups {

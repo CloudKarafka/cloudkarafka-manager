@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
@@ -12,7 +13,12 @@ import (
 
 func writeAsJson(w http.ResponseWriter, bytes interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(bytes)
+	if m, ok := bytes.(json.Marshaler); ok {
+		j, _ := m.MarshalJSON()
+		fmt.Fprintf(w, string(j))
+	} else {
+		json.NewEncoder(w).Encode(bytes)
+	}
 }
 
 func WhoAmI(w http.ResponseWriter, r *http.Request) {

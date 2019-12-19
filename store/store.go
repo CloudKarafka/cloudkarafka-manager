@@ -12,8 +12,6 @@ import (
 
 const MaxPoints int = 500
 
-var brokerRequests []MetricRequest
-
 func FetchMetrics(metrics chan Metric, reqs []MetricRequest) {
 	for _, r := range reqs {
 		resp, err := GetMetrics(r)
@@ -27,47 +25,67 @@ func FetchMetrics(metrics chan Metric, reqs []MetricRequest) {
 	}
 }
 
+func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
+	reqs := make([]MetricRequest, len(hps)*2)
+	for i, hp := range hps {
+		copy(reqs[i*2:], []MetricRequest{
+			MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
+			MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
+		})
+		broker, _ := fetchBroker(hp.Id)
+		store.UpdateBroker(broker)
+	}
+	return reqs
+}
+
+func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
+	reqs := make([]MetricRequest, 0, 5*len(topics))
+	for _, t := range topics {
+		topic, _ := fetchTopic(t.Name)
+		store.UpdateTopic(topic)
+		for _, p := range topic.Partitions {
+			reqs = append(reqs, []MetricRequest{
+				MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
+				MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
+				MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
+				MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
+				MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
+			}...)
+		}
+	}
+	return reqs
+}
+
 func Start() {
-	brokerChanges := zookeeper.WatchBrokers()
-	topicChanges := zookeeper.WatchTopics()
-	ticker := time.NewTicker(time.Duration(5) * time.Second)
+	var (
+		brokerRequests []MetricRequest
+		topicRequests  []MetricRequest
+		brokerChanges  = zookeeper.WatchBrokers()
+		topicChanges   = zookeeper.WatchTopics()
+		bMetrics       = make(chan Metric)
+		tMetrics       = make(chan Metric)
+		ticker         = time.NewTicker(time.Duration(5) * time.Second)
+	)
 	defer ticker.Stop()
-	metrics := make(chan Metric)
+	defer close(bMetrics)
+	defer close(tMetrics)
 	for {
 		select {
 		case <-ticker.C:
-			go FetchMetrics(metrics, brokerRequests)
+			go FetchMetrics(bMetrics, brokerRequests)
+			go FetchMetrics(tMetrics, topicRequests)
 		case hps := <-brokerChanges:
-			brokerRequests = make([]MetricRequest, len(hps)*4)
-			for i, hp := range hps {
-				copy(brokerRequests[i*4:], []MetricRequest{
-					MetricRequest{hp.Id, BeanAllTopicsBytesInPerSec, "Count"},
-					MetricRequest{hp.Id, BeanAllTopicsBytesOutPerSec, "Count"},
-					MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
-					MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
-				})
-				broker, _ := fetchBroker(hp.Id)
-				store.UpdateBroker(broker)
-			}
+			brokerRequests = handleBrokerChanges(hps)
 		case topics := <-topicChanges:
-			for _, topic := range topics {
-				topic, err := fetchTopic(topic.Name)
-				if err != nil {
-					continue
-				}
-				store.UpdateTopic(topic)
-			}
-		case metric := <-metrics:
-			var key SerieKey
-			if metric.Topic == "" {
-				key = SerieKey{"broker", metric.Broker, "", metric.Name}
-			} else {
-				key = SerieKey{"topic", metric.Broker, metric.Topic, metric.Name}
-			}
+			topicRequests = handleTopicChanges(topics)
+		case metric := <-bMetrics:
+			key := SerieKey{"broker", metric.Broker, "", metric.Name}
 			if _, ok := Series[key]; !ok {
 				Series[key] = NewSimpleTimeSerie(5, MaxPoints)
 			}
 			Series[key].(*SimpleTimeSerie).Add(int(metric.Value))
+		case metric := <-tMetrics:
+			store.UpdateTopicMetric(metric)
 		}
 	}
 }
