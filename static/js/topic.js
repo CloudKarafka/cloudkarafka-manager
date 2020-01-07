@@ -45,7 +45,6 @@
   }
 
   function render (data) {
-    document.querySelector('#version').innerText = data.version
     const table = document.querySelector('#topic')
     if (table) {
       table.querySelector('#t-partitions').innerText = data.partitions.length

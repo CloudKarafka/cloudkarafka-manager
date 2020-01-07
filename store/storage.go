@@ -168,12 +168,12 @@ func Partitions() int {
 	}
 	return count
 }
-func TotalTopicSize() int {
+func TotalTopicSize() string {
 	size := 0
 	for _, t := range store.Topics() {
 		size += t.Size()
 	}
-	return size
+	return humanize.Bytes(uint64(size))
 }
 func TotalMessageCount() int {
 	msgs := 0

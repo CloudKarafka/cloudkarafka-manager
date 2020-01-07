@@ -13,7 +13,7 @@ type overviewVM struct {
 	Brokers      int    `json:"brokers"`
 	Topics       int    `json:"topics"`
 	Partitions   int    `json:"partitions"`
-	TopicSize    int    `json:"topic_size"`
+	TopicSize    string `json:"topic_size"`
 	Messages     int    `json:"messages"`
 	Consumers    int    `json:"consumers"`
 	DataRates    []int  `json:"data_rates"`
