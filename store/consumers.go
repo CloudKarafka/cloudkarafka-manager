@@ -3,11 +3,12 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
 )
 
 type ConsumerGroupMember struct {
@@ -18,6 +19,7 @@ type ConsumerGroupMember struct {
 	ClientId      string `json:"clientid"`
 	ConsumerId    string `json:"consumerid"`
 	Host          string `json:"host"`
+	LastSeen      int    `json:"last_seen"`
 }
 
 func (g ConsumerGroupMember) Lag() int {
@@ -56,32 +58,51 @@ func (g ConsumerGroups) NumberConsumers(group string) int {
 }
 
 func (g ConsumerGroups) MarshalJSON() ([]byte, error) {
-	res := make(map[string]map[string]interface{})
+	var (
+		res = make([]map[string]interface{}, len(g))
+		i   = 0
+	)
 	for group, _ := range g {
-		res[group] = map[string]interface{}{
+		res[i] = map[string]interface{}{
+			"name":    group,
 			"topics":  g.Topics(group),
 			"lag":     g.Lag(group),
 			"clients": g.NumberConsumers(group),
 		}
+		i += 1
 	}
 	return json.Marshal(res)
 }
 
-func FetchConsumerGroups(ctx context.Context) (ConsumerGroups, error) {
+func FetchConsumerGroups(ctx context.Context, out chan ConsumerGroups) {
 	var (
 		err error
 		v   ConsumerGroups
 		r   *http.Response
 	)
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	host := config.BrokerUrls.Rand()
 	if host == "" {
-		return v, errors.New("No brokers to request consumer group metrics from")
+		log.Error("fetch_consumer_groups", log.StringEntry("No brokers to request consumer group metrics from"))
+		return
 	}
 	url := fmt.Sprintf("%s/consumer-groups", config.BrokerUrls.Rand())
-	r, err = http.Get(url)
-	if err != nil {
-		return v, err
+	select {
+	case <-ctx.Done():
+		log.Error("fetch_consumer_groups", log.ErrorEntry{ctx.Err()})
+		return
+	default:
+		r, err = http.Get(url)
+		if err != nil {
+			log.Error("fetch_consumer_groups", log.ErrorEntry{err})
+			return
+		}
+		err = json.NewDecoder(r.Body).Decode(&v)
+		if err != nil {
+			log.Error("fetch_consumer_groups", log.ErrorEntry{err})
+			return
+		}
+		out <- v
 	}
-	err = json.NewDecoder(r.Body).Decode(&v)
-	return v, err
 }

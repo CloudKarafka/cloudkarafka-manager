@@ -135,6 +135,21 @@ func (me storage) Consumers() ConsumerGroups {
 	return me.consumers
 }
 
+func (me storage) Consumer(name string) ([]ConsumerGroupMember, bool) {
+	me.RLock()
+	defer me.RUnlock()
+	cg, ok := me.consumers[name]
+	return cg, ok
+}
+
+func (me storage) UpdateConsumers(cgs ConsumerGroups) {
+	me.Lock()
+	defer me.Unlock()
+	for name, cg := range cgs {
+		me.consumers[name] = cg
+	}
+}
+
 func Uptime() string {
 	var ts int64
 	for _, b := range store.Brokers() {
@@ -192,4 +207,8 @@ func Topic(name string) (topic, bool) {
 
 func SumBrokerSeries(m string) TimeSerie {
 	return store.SumBrokerSeries(m)
+}
+
+func Consumer(name string) ([]ConsumerGroupMember, bool) {
+	return store.Consumer(name)
 }

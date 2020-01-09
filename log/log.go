@@ -40,6 +40,12 @@ func (me CmdEntry) ToLog() string {
 	return buffer.String()
 }
 
+type StringEntry string
+
+func (me StringEntry) ToLog() string {
+	return string(me)
+}
+
 type ErrorEntry struct {
 	Err error
 }

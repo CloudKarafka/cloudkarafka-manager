@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -12,15 +13,23 @@ import (
 
 const MaxPoints int = 500
 
-func FetchMetrics(metrics chan Metric, reqs []MetricRequest) {
+func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest) {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	for _, r := range reqs {
-		resp, err := GetMetrics(r)
-		if err != nil {
-			log.Error("timeserie_getdata", log.ErrorEntry{err})
-			continue
-		}
-		for _, r := range resp {
-			metrics <- r
+		select {
+		case <-ctx.Done():
+			log.Error("fetch_metrics", log.StringEntry("timeout"))
+			return
+		default:
+			resp, err := GetMetrics(ctx, r)
+			if err != nil {
+				log.Error("fetch_metrics", log.ErrorEntry{err})
+				continue
+			}
+			for _, r := range resp {
+				metrics <- r
+			}
 		}
 	}
 }
@@ -60,11 +69,15 @@ func Start() {
 	var (
 		brokerRequests []MetricRequest
 		topicRequests  []MetricRequest
-		brokerChanges  = zookeeper.WatchBrokers()
-		topicChanges   = zookeeper.WatchTopics()
-		bMetrics       = make(chan Metric)
-		tMetrics       = make(chan Metric)
-		ticker         = time.NewTicker(time.Duration(5) * time.Second)
+		ctx            context.Context
+		cancel         context.CancelFunc
+
+		brokerChanges = zookeeper.WatchBrokers()
+		topicChanges  = zookeeper.WatchTopics()
+		bMetrics      = make(chan Metric)
+		tMetrics      = make(chan Metric)
+		cMetrics      = make(chan ConsumerGroups)
+		ticker        = time.NewTicker(time.Duration(5) * time.Second)
 	)
 	defer ticker.Stop()
 	defer close(bMetrics)
@@ -72,8 +85,13 @@ func Start() {
 	for {
 		select {
 		case <-ticker.C:
-			go FetchMetrics(bMetrics, brokerRequests)
-			go FetchMetrics(tMetrics, topicRequests)
+			if cancel != nil {
+				cancel()
+			}
+			ctx, cancel = context.WithCancel(context.Background())
+			go FetchMetrics(ctx, bMetrics, brokerRequests)
+			go FetchMetrics(ctx, tMetrics, topicRequests)
+			go FetchConsumerGroups(ctx, cMetrics)
 		case hps := <-brokerChanges:
 			brokerRequests = handleBrokerChanges(hps)
 		case topics := <-topicChanges:
@@ -82,6 +100,8 @@ func Start() {
 			store.UpdateBrokerMetrics(metric)
 		case metric := <-tMetrics:
 			store.UpdateTopicMetric(metric)
+		case cgs := <-cMetrics:
+			store.UpdateConsumers(cgs)
 		}
 	}
 }

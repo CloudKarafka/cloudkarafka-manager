@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -46,7 +47,7 @@ type Metric struct {
 	Key              string  `json:"key"`
 }
 
-func doRequest(url string) ([]Metric, error) {
+func doRequest(ctx context.Context, url string) ([]Metric, error) {
 	var v []Metric
 	r, err := http.Get(url)
 	if err != nil {
@@ -67,7 +68,7 @@ func doRequest(url string) ([]Metric, error) {
 	return v, nil
 }
 
-func GetMetrics(query MetricRequest) ([]Metric, error) {
+func GetMetrics(ctx context.Context, query MetricRequest) ([]Metric, error) {
 	switch query.Attr {
 	case "OneMinuteRate":
 		if r, found := jmxCache1Min.Get(query.String()); found {
@@ -88,24 +89,31 @@ func GetMetrics(query MetricRequest) ([]Metric, error) {
 		return nil, fmt.Errorf("Broker %d not available", query.BrokerId)
 	}
 	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", host, query.Bean, query.Attr)
-	v, err := doRequest(url)
-	if err == nil {
-		for i, _ := range v {
-			v[i].Broker = query.BrokerId
+	select {
+	case <-ctx.Done():
+		return []Metric{}, ctx.Err()
+	default:
+		v, err := doRequest(ctx, url)
+		if err == nil {
+			for i, _ := range v {
+				v[i].Broker = query.BrokerId
+			}
 		}
+		switch query.Attr {
+		case "OneMinuteRate":
+			jmxCache1Min.Set(query.String(), v, cache.DefaultExpiration)
+		}
+		return v, err
 	}
-	switch query.Attr {
-	case "OneMinuteRate":
-		jmxCache1Min.Set(query.String(), v, cache.DefaultExpiration)
-	}
-	return v, err
 }
 
 func GetMetricsAsync(queries []MetricRequest) <-chan MetricResponse {
 	ch := make(chan MetricResponse)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
 	for _, query := range queries {
 		go func(query MetricRequest) {
-			data, err := GetMetrics(query)
+			data, err := GetMetrics(ctx, query)
 			ch <- MetricResponse{data, err}
 		}(query)
 	}

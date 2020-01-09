@@ -1,6 +1,7 @@
 package notifications
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"time"
@@ -33,13 +34,15 @@ func buildURPNotification(m store.Metric) Notification {
 
 func CheckURP(out chan []Notification) {
 	res := make([]Notification, 0)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	for brokerId, _ := range config.BrokerUrls {
 		req := store.MetricRequest{
 			brokerId,
 			store.BeanBrokerUnderReplicatedPartitions,
 			"Value",
 		}
-		r, err := store.GetMetrics(req)
+		r, err := store.GetMetrics(ctx, req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckURP: %s\n", err)
 		} else {
@@ -52,9 +55,13 @@ func CheckURP(out chan []Notification) {
 }
 
 func CheckBalancedLeaders(out chan []Notification) {
-	res := make([]Notification, 0)
-	stat := make(map[int]int)
-	total := 0
+	var (
+		res         = make([]Notification, 0)
+		stat        = make(map[int]int)
+		total       = 0
+		ctx, cancel = context.WithCancel(context.Background())
+	)
+	defer cancel()
 	if len(config.BrokerUrls) == 1 {
 		out <- res
 		return
@@ -65,7 +72,7 @@ func CheckBalancedLeaders(out chan []Notification) {
 			store.BeanBrokerLeaderCount,
 			"Value",
 		}
-		r, err := store.GetMetrics(req)
+		r, err := store.GetMetrics(ctx, req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckBalancedLeader: %s\n", err)
 		} else {

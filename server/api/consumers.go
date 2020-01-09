@@ -1,11 +1,11 @@
 package api
 
 import (
-	"context"
+	//"context"
 	"net/http"
 
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	//"github.com/cloudkarafka/cloudkarafka-manager/config"
+	//"github.com/cloudkarafka/cloudkarafka-manager/log"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
@@ -17,15 +17,7 @@ func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	res, err := store.FetchConsumerGroups(ctx)
-	if err != nil {
-		log.Error("api.list_consumers", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeAsJson(w, res)
+	writeAsJson(w, store.Consumers())
 }
 
 type ConsumerGroup struct {
@@ -43,20 +35,17 @@ func ViewConsumerGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	g, err := store.FetchConsumerGroups(ctx)
-	if err != nil {
-		log.Error("api.view_consumergroups", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	g, ok := store.Consumer(group)
+	if !ok {
+		http.NotFound(w, r)
 		return
 	}
-	res := ConsumerGroup{
-		Name:    group,
-		Topics:  g.Topics(group),
-		Lag:     g.Lag(group),
-		Clients: g.NumberConsumers(group),
-		Members: g[group],
-	}
-	writeAsJson(w, res)
+	//res := ConsumerGroup{
+	//Name:    group,
+	//Topics:  g.Topics(group),
+	//Lag:     g.Lag(group),
+	//Clients: g.NumberConsumers(group),
+	//Members: g[group],
+	//}
+	writeAsJson(w, g)
 }

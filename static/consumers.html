@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Consumer groups | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Consumer groups
+        <small id="cgs-count"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <section class="card">
+        <div id="cgs-error"></div>
+        <div class="table-wrapper">
+          <table id="cgs" class="table">
+            <thead>
+              <tr>
+                <th data-sort-key="name">Name</th>
+                <th data-sort-key="clients">Clients</th>
+                <th data-sort-key="lag">Lag</th>
+                <th data-sort-key="topics">Topics</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/overview.js"></script>
+    <script type="application/javascript">
+      const tableOptions = {
+        url: "/api/consumers",
+        keyColumns: ['name'],
+        interval: 5000,
+        pagination: false,
+        columnSelector: true,
+        search: true
+      }
+      const queuesTable = ckm.table.renderTable('cgs', tableOptions, function (tr, item, all) {
+        if (all) {
+          const queueLink = document.createElement('a')
+          queueLink.href = '/consumer?name=' + encodeURIComponent(item.name)
+          queueLink.textContent = item.name
+          ckm.table.renderCell(tr, 0, queueLink)
+        }
+
+        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.clients), 'right')
+        ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.lag || 0), 'right')
+        if (item.topics.length > 5) {
+          ckm.table.renderCell(tr, 3, item.topics.slice(0,5).join(', ') + '...')
+        } else {
+          ckm.table.renderCell(tr, 3, item.topics.join(', '))
+        }
+      })
+    </script>
+  </body>
+</html>
