@@ -24,35 +24,40 @@
       <table id="cg" class="stats-table card">
         <tbody>
           <tr>
-            <td id="t-clients"></td>
-            <td id="t-lag"></td>
-            <td id="t-topics"></td>
+            <td id="c-clients"></td>
+            <td id="c-topics"></td>
+            <td id="c-online"></td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
-            <th class="cols-4">Clients</th>
-            <th class="cols-4">Lag</th>
-            <th class="cols-4">Topics</th>
+            <th class="cols-6">Clients</th>
+            <th class="cols-6">Topics</th>
+            <th class="cols-6">Online</th>
           </tr>
         </tfoot>
       </table>
-      <section class="card cols-6">
-        <h3>Data rates</h3>
-        <div class="chart-container" id="dataChart"></div>
+      <section class="card cols-12">
+        <h3>Clients</h3>
+        <table class="table" id="clients">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Consumer Id</th>
+                <th>Host</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
       </section>
       <section class="card cols-12">
         <h3>Topics</h3>
-        <table class="table" id="partitions">
+        <table class="table" id="topics">
             <thead>
               <tr>
-                <th>#</th>
-                <th>Leader</th>
-                <th>ISR</th>
-                <th>Replicas</th>
-                <th>Log Start Offset</th>
-                <th>Log End Offset</th>
-                <th>Size</th>
+                <th>Name</th>
+                <th>Clients</th>
+                <th>Lag</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -67,34 +72,30 @@
     <script src="/js/dom.js"></script>
     <script src="/js/helpers.js"></script>
     <script src="/js/table.js"></script>
-    <script src="/js/lib/chart.js"></script>
-    <script src="/js/chart.js"></script>
+    <script src="/js/overview.js"></script>
     <script src="/js/consumer.js"></script>
     <script type="application/javascript">
-      const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
       function updateView (response) {
-        let dataStats = {
-          send_details: response.bytes_out,
-          receive_details: response.bytes_in
-        }
-        ckm.chart.update(dataChart, dataStats)
-
-        var tBody = document.querySelector('#partitions tbody')
+        var tBody = document.querySelector('#topics tbody')
         ckm.dom.removeChildren(tBody);
-        response.partitions.forEach(p => {
-          console.log(p)
+        response.topics.forEach(p => {
           var tr = document.createElement('tr')
-          ckm.table.renderCell(tr, 0, p.number)
-          ckm.table.renderCell(tr, 1, p.leader, 'center')
-          ckm.table.renderCell(tr, 2, p.isr, 'center')
-          ckm.table.renderCell(tr, 3, p.replicas, 'center')
-          ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
-          ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
-          ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
+          var link = ckm.dom.createLink('/topic?name=' + encodeURIComponent(p.name), p.name)
+          ckm.table.renderCell(tr, 0, link)
+          ckm.table.renderCell(tr, 1, p.clients, 'right')
+          ckm.table.renderCell(tr, 2, p.lag, 'right')
+          tBody.appendChild(tr)
+        })
+        var tBody = document.querySelector('#clients tbody')
+        ckm.dom.removeChildren(tBody);
+        response.clients.forEach(c => {
+          var tr = document.createElement('tr')
+          ckm.table.renderCell(tr, 0, c.id)
+          ckm.table.renderCell(tr, 1, c.consumer_id, 'right')
+          ckm.table.renderCell(tr, 2, c.host, 'right')
           tBody.appendChild(tr)
         })
       }
-
       ckm.consumer.start(updateView)
     </script>
   </body>

@@ -78,6 +78,21 @@
     }, 7000)
   }
 
+  function createLink(href, linkText) {
+    const queueLink = document.createElement('a')
+    queueLink.href = href
+    queueLink.textContent = linkText
+    return queueLink
+  }
+
+  function createBadge(text, badgeType) {
+    const span = document.createElement('span')
+    span.innerText = text
+    span.classList.add('badge');
+    span.classList.add('badge-' + badgeType);
+    return span
+  }
+
   Object.assign(window.ckm, {
     dom: {
       setChild,
@@ -85,7 +100,9 @@
       jsonToText,
       removeChildren,
       parseJSON,
-      toast
+      toast,
+      createLink,
+      createBadge
     }
   })
 })()

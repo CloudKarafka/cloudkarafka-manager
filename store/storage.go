@@ -135,10 +135,17 @@ func (me storage) Consumers() ConsumerGroups {
 	return me.consumers
 }
 
-func (me storage) Consumer(name string) ([]ConsumerGroupMember, bool) {
+func (me storage) Consumer(name string) (ConsumerGroup, bool) {
 	me.RLock()
 	defer me.RUnlock()
-	cg, ok := me.consumers[name]
+	members, ok := me.consumers[name]
+	cg := ConsumerGroup{
+		Name:               name,
+		Topics:             me.consumers.Topics(name),
+		Clients:            me.consumers.Clients(name),
+		ConsumedPartitions: members,
+		Online:             me.consumers.Online(name),
+	}
 	return cg, ok
 }
 
@@ -146,6 +153,10 @@ func (me storage) UpdateConsumers(cgs ConsumerGroups) {
 	me.Lock()
 	defer me.Unlock()
 	for name, cg := range cgs {
+		for i, cgm := range cg {
+			cgm.LastSeen = time.Now().Unix()
+			cg[i] = cgm
+		}
 		me.consumers[name] = cg
 	}
 }
@@ -209,6 +220,6 @@ func SumBrokerSeries(m string) TimeSerie {
 	return store.SumBrokerSeries(m)
 }
 
-func Consumer(name string) ([]ConsumerGroupMember, bool) {
+func Consumer(name string) (ConsumerGroup, bool) {
 	return store.Consumer(name)
 }

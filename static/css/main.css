@@ -757,3 +757,18 @@ pre.arguments > div {
   width: 24px;
   vertical-align: -9%;
 }
+
+.badge {
+  margin: 5px;
+  padding: 5px;
+  border-radius: 10px;
+}
+
+.badge-danger {
+  background-color: #c46868;
+  color: #fff;
+}
+.badge-primary {
+  background-color: #6b7076;
+  color: #fff;
+}

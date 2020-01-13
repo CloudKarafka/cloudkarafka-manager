@@ -19,7 +19,7 @@ func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest
 	for _, r := range reqs {
 		select {
 		case <-ctx.Done():
-			log.Error("fetch_metrics", log.StringEntry("timeout"))
+			log.Error("fetch_metrics", log.ErrorEntry{ctx.Err()})
 			return
 		default:
 			resp, err := GetMetrics(ctx, r)

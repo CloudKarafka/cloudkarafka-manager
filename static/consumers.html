@@ -29,8 +29,7 @@
               <tr>
                 <th data-sort-key="name">Name</th>
                 <th data-sort-key="clients">Clients</th>
-                <th data-sort-key="lag">Lag</th>
-                <th data-sort-key="topics">Topics</th>
+                <th data-sort-key="lag">Topics-lag</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -57,20 +56,29 @@
         search: true
       }
       const queuesTable = ckm.table.renderTable('cgs', tableOptions, function (tr, item, all) {
-        if (all) {
-          const queueLink = document.createElement('a')
-          queueLink.href = '/consumer?name=' + encodeURIComponent(item.name)
-          queueLink.textContent = item.name
-          ckm.table.renderCell(tr, 0, queueLink)
+        var div = document.createElement('div')
+        const href = '/consumer?name=' + encodeURIComponent(item.name)
+        const queueLink = ckm.dom.createLink(href, item.name)
+        div.appendChild(queueLink)
+        if (item.online == false) {
+          const badge = ckm.dom.createBadge('offline', 'danger')
+          div.appendChild(badge)
         }
+        ckm.table.renderCell(tr, 0, div)
 
         ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.clients), 'right')
-        ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.lag || 0), 'right')
-        if (item.topics.length > 5) {
-          ckm.table.renderCell(tr, 3, item.topics.slice(0,5).join(', ') + '...')
-        } else {
-          ckm.table.renderCell(tr, 3, item.topics.join(', '))
+        div = document.createElement('div')
+        const keys = Object.keys(item.lag)
+        keys.slice(0,5).forEach(k => {
+          var text = k + ": " + item.lag[k]
+          var badge = ckm.dom.createBadge(text, 'primary')
+          div.appendChild(badge)
+        })
+        if (keys.length > 5) {
+          var badge = ckm.dom.createBadge('...', 'primary')
+          div.appendChild(badge)
         }
+        ckm.table.renderCell(tr, 2, div)
       })
     </script>
   </body>
