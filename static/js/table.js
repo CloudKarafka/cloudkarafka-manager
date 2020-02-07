@@ -92,7 +92,11 @@
     }
 
     function buildQuery (page) {
-      let q = `page=${page}&page_size=${pageSize}`
+      let q = ''
+      if (options.baseQuery) {
+        q += `${options.baseQuery}&`
+      }
+      q += `page=${page}&page_size=${pageSize}`
       if (searchTerm) {
         q += `&name=${searchTerm}&use_regex=true`
       }

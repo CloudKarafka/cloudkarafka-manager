@@ -27,10 +27,10 @@
           <table id="topics" class="table">
             <thead>
               <tr>
-                <th data-sort-key="name">Name</th>
-                <th data-sort-key="partitions">Partitions</th>
-                <th data-sort-key="message_count">Messages</th>
-                <th data-sort-key="size">Size</th>
+                <th>Name</th>
+                <th>Partitions</th>
+                <th>Messages</th>
+                <th>Size</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -50,11 +50,10 @@
     <script type="application/javascript">
       const tableOptions = {
         url: "/api/topics",
-        keyColumns: ['name'],
         interval: 5000,
-        pagination: false,
-        columnSelector: true,
-        search: true
+        pagination: true,
+        search: true,
+        keyColumns: ["name"]
       }
       const queuesTable = ckm.table.renderTable('topics', tableOptions, function (tr, item, all) {
         if (all) {
@@ -64,7 +63,7 @@
           ckm.table.renderCell(tr, 0, queueLink)
         }
 
-        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.partitions.length), 'right')
+        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.partitions), 'right')
         ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.message_count || 0), 'right')
         ckm.table.renderCell(tr, 3, ckm.helpers.formatNumber(item.size || 0), 'right')
       })

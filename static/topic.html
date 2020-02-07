@@ -42,11 +42,14 @@
         <div class="chart-container" id="dataChart"></div>
       </section>
       <section class="card cols-12">
-        <h3>Partitions</h3>
+        <h3>
+          Partitions
+          <small id="partitions-count"></small>
+        </h3>
+        <div id="partitions-error"></div>
         <table class="table" id="partitions">
             <thead>
-              <tr>
-                <th>#</th>
+              <tr> <th>#</th>
                 <th>Leader</th>
                 <th>ISR</th>
                 <th>Replicas</th>
@@ -72,27 +75,31 @@
     <script src="/js/topic.js"></script>
     <script type="application/javascript">
       const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
+      const tableOptions = {
+        url: `${ckm.topic.url}/partitions`,
+        interval: 5000,
+        pagination: true,
+        search: true,
+        keyColumns: ["number"],
+        baseQuery: `name=${ckm.topic.name}`
+      }
+      const partitionsTable = ckm.table.renderTable('partitions', tableOptions, function (tr, p, all) {
+        if (all) {
+          ckm.table.renderCell(tr, 0, p.number)
+        }
+        ckm.table.renderCell(tr, 1, p.leader, 'center')
+        ckm.table.renderCell(tr, 2, p.isr, 'center')
+        ckm.table.renderCell(tr, 3, p.replicas, 'center')
+        ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
+        ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
+        ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
+      })
       function updateView (response) {
         let dataStats = {
           send_details: response.bytes_out,
           receive_details: response.bytes_in
         }
         ckm.chart.update(dataChart, dataStats)
-
-        var tBody = document.querySelector('#partitions tbody')
-        ckm.dom.removeChildren(tBody);
-        response.partitions.forEach(p => {
-          console.log(p)
-          var tr = document.createElement('tr')
-          ckm.table.renderCell(tr, 0, p.number)
-          ckm.table.renderCell(tr, 1, p.leader, 'center')
-          ckm.table.renderCell(tr, 2, p.isr, 'center')
-          ckm.table.renderCell(tr, 3, p.replicas, 'center')
-          ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
-          ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
-          ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
-          tBody.appendChild(tr)
-        })
       }
 
       ckm.topic.start(updateView)

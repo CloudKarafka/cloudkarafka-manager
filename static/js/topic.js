@@ -1,7 +1,7 @@
 (function () {
   window.ckm = window.ckm || {}
-  const topic = new URLSearchParams(window.location.search).get('name')
-  const url = '/api/topics/' + topic
+  const name = new URLSearchParams(window.location.search).get('name')
+  const url = '/api/topics/' + name
   const raw = window.sessionStorage.getItem(cacheKey())
   let data = null
   let updateTimer = null
@@ -25,7 +25,7 @@
 
   function cacheKey () {
     const user = window.sessionStorage.getItem('username')
-    return url + '/' + topic + '#' + user
+    return url + '/' + name + '#' + user
   }
 
   function update (cb) {
@@ -47,7 +47,7 @@
   function render (data) {
     const table = document.querySelector('#topic')
     if (table) {
-      table.querySelector('#t-partitions').innerText = data.partitions.length
+      table.querySelector('#t-partitions').innerText = data.partitions
       if (data.size === undefined) {
         table.querySelector('#t-size').innerText = '-'
       } else {
@@ -91,7 +91,7 @@
 
   Object.assign(window.ckm, {
     topic: {
-      update, start, stop, render, get
+      update, start, stop, render, get, url, name
     }
   })
 })()

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 func parseRequestBody(r *http.Request, target interface{}) error {
@@ -18,6 +19,53 @@ func parseRequestBody(r *http.Request, target interface{}) error {
 		return nil
 	}
 	return errors.New("This endpoint only supports content type application/json")
+}
+
+func pageInfo(r *http.Request) (int, int, error) {
+	var (
+		p   int
+		ps  int
+		err error
+	)
+	page := r.URL.Query().Get("page")
+	p, err = strconv.Atoi(page)
+	if err != nil {
+		err = fmt.Errorf("page must be a number")
+	}
+	pageSize := r.URL.Query().Get("page_size")
+	ps, err = strconv.Atoi(pageSize)
+	if err != nil {
+		err = fmt.Errorf("page must be a number")
+	}
+	return ps, p, err
+}
+
+type page struct {
+	PageSize      int           `json:"page_size"`
+	Page          int           `json:"page"`
+	ItemCount     int           `json:"item_count"`
+	TotalCount    int           `json:"total_count"`
+	Items         []interface{} `json:"items"`
+	FilteredCount int           `json:"filtered_count"`
+}
+
+type pageable interface {
+	Get(int) interface{}
+	TotalCount() int
+}
+
+func Page(pageSize, p int, items pageable) page {
+	var (
+		result = make([]interface{}, 0, pageSize)
+		tc     = items.TotalCount()
+	)
+	for i := (p - 1) * pageSize; i < p*pageSize; i++ {
+		if i >= tc {
+			break
+		}
+		result = append(result, items.Get(i))
+	}
+	return page{pageSize, p, len(result), tc, result, tc}
 }
 
 func SSEHeaders(rw http.ResponseWriter) {

@@ -16,6 +16,16 @@ import (
 
 type topics map[string]topic
 
+type topicSlice []topic
+
+func (me topicSlice) Get(i int) interface{} {
+	return me[i]
+}
+
+func (me topicSlice) TotalCount() int {
+	return len(me)
+}
+
 type Partition struct {
 	Number          int            `json:"number"`
 	Leader          int            `json:"leader"`
@@ -36,14 +46,24 @@ func (t TopicConfig) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.Data)
 }
 
+type partitions []Partition
+
+func (me partitions) Get(i int) interface{} {
+	return me[i]
+}
+
+func (me partitions) TotalCount() int {
+	return len(me)
+}
+
 type topic struct {
-	Name       string
-	Partitions []Partition
-	Config     TopicConfig
-	Deleted    bool
-	Metrics    map[string]int
-	BytesIn    *SimpleTimeSerie
-	BytesOut   *SimpleTimeSerie
+	Name       string           `json:"name"`
+	Partitions partitions       `json:"partitions"`
+	Config     TopicConfig      `json:"config"`
+	Deleted    bool             `json:"deleted"`
+	Metrics    map[string]int   `json:"metrics"`
+	BytesIn    *SimpleTimeSerie `json:"bytes_in"`
+	BytesOut   *SimpleTimeSerie `json:"bytes_out"`
 }
 
 func (t topic) Size() int {
@@ -65,7 +85,7 @@ func (t topic) MarshalJSON() ([]byte, error) {
 	res := map[string]interface{}{
 		"name":       t.Name,
 		"deleted":    t.Deleted,
-		"partitions": t.Partitions,
+		"partitions": len(t.Partitions),
 	}
 	if t.BytesIn != nil {
 		res["bytes_in"] = t.BytesIn.Points

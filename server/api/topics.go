@@ -15,12 +15,20 @@ import (
 )
 
 func Topics(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value("user").(mw.SessionUser)
+	var (
+		user = r.Context().Value("user").(mw.SessionUser)
+	)
 	if !user.Permissions.ListTopics() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	writeAsJson(w, store.Topics())
+	topics := store.Topics()
+	ps, p, err := pageInfo(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeAsJson(w, Page(ps, p, topics))
 }
 
 func Topic(w http.ResponseWriter, r *http.Request) {
@@ -166,8 +174,10 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteTopic(w http.ResponseWriter, r *http.Request) {
-	name := pat.Param(r, "name")
-	user := r.Context().Value("user").(mw.SessionUser)
+	var (
+		name = pat.Param(r, "name")
+		user = r.Context().Value("user").(mw.SessionUser)
+	)
 	if !user.Permissions.DeleteTopic(name) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -180,4 +190,27 @@ func DeleteTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func Partitions(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	var (
+		name = pat.Param(r, "name")
+		user = r.Context().Value("user").(mw.SessionUser)
+	)
+	ps, p, err := pageInfo(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if !user.Permissions.ReadTopic(name) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	topic, ok := store.Topic(name)
+	if !ok {
+		http.NotFound(w, r)
+		return
+	}
+	writeAsJson(w, Page(ps, p, topic.Partitions))
 }

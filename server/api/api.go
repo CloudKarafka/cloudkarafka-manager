@@ -50,6 +50,7 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Get("/topics/:name"), http.HandlerFunc(Topic))
 	mux.Handle(pat.Patch("/topics/:name"), http.HandlerFunc(UpdateTopic))
 	mux.Handle(pat.Delete("/topics/:name"), http.HandlerFunc(DeleteTopic))
+	mux.Handle(pat.Get("/topics/:name/partitions"), http.HandlerFunc(Partitions))
 
 	mux.Handle(pat.Get("/users"), http.HandlerFunc(Users))
 	mux.Handle(pat.Post("/users"), http.HandlerFunc(CreateUser))
