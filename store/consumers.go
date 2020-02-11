@@ -19,6 +19,18 @@ type client struct {
 
 type ConsumerGroups map[string][]ConsumedPartition
 
+type consumers []ConsumerGroup
+
+func (me consumers) Get(i int) interface{} {
+	return me[i]
+}
+
+func (me consumers) TotalCount() int {
+	return len(me)
+}
+
+type consumedPartitions []ConsumedPartition
+
 type ConsumedPartition struct {
 	Topic         string `json:"topic"`
 	Partition     int    `json:"partition"`

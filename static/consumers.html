@@ -51,7 +51,7 @@
         url: "/api/consumers",
         keyColumns: ['name'],
         interval: 5000,
-        pagination: false,
+        pagination: true,
         columnSelector: true,
         search: true
       }
@@ -66,15 +66,14 @@
         }
         ckm.table.renderCell(tr, 0, div)
 
-        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.clients), 'right')
+        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.clients.length), 'right')
         div = document.createElement('div')
-        const keys = Object.keys(item.lag)
-        keys.slice(0,5).forEach(k => {
-          var text = k + ": " + item.lag[k]
+        item.topics.slice(0,5).forEach(t => {
+          var text = t.name + ": " + t.lag;
           var badge = ckm.dom.createBadge(text, 'primary')
           div.appendChild(badge)
         })
-        if (keys.length > 5) {
+        if (item.topics.length > 5) {
           var badge = ckm.dom.createBadge('...', 'primary')
           div.appendChild(badge)
         }

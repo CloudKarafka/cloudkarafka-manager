@@ -129,10 +129,19 @@ func (me storage) SumBrokerSeries(metric string) TimeSerie {
 	return NewSumTimeSerie(series)
 }
 
-func (me storage) Consumers() ConsumerGroups {
+func (me storage) Consumers() consumers {
 	me.RLock()
 	defer me.RUnlock()
-	return me.consumers
+	var (
+		cs = make(consumers, len(me.consumers))
+		i  = 0
+	)
+	for c, _ := range me.consumers {
+		consumer, _ := me.Consumer(c)
+		cs[i] = consumer
+		i += 1
+	}
+	return cs
 }
 
 func (me storage) Consumer(name string) (ConsumerGroup, bool) {
@@ -184,7 +193,7 @@ func Brokers() brokers {
 func Topics() topicSlice {
 	return store.Topics()
 }
-func Consumers() ConsumerGroups {
+func Consumers() consumers {
 	return store.Consumers()
 }
 func Partitions() int {

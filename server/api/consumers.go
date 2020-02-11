@@ -14,7 +14,13 @@ func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	writeAsJson(w, store.Consumers())
+	consumers := store.Consumers()
+	ps, p, err := pageInfo(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeAsJson(w, Page(ps, p, consumers))
 }
 
 func ViewConsumerGroup(w http.ResponseWriter, r *http.Request) {
