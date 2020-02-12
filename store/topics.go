@@ -256,5 +256,6 @@ func DeleteTopic(ctx context.Context, name string) error {
 			return result.Error
 		}
 	}
+	store.DeleteTopic(name)
 	return nil
 }

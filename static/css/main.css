@@ -503,7 +503,7 @@ a[data-tag] {
   margin-right: 4px;
 }
 
-button {
+button, input {
   font-size: 1.16em;
   line-height: 2em;
 }

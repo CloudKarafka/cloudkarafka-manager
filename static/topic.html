@@ -61,6 +61,13 @@
             <tbody></tbody>
         </table>
       </section>
+      <section class="card cols-12">
+        <form method="delete" id="deleteTopic" class="form">
+          <label>
+            <input type="submit" class="btn-danger" value="Delete topic"/>
+          </label>
+        </form>
+      </section>
     </main>
     <footer></footer>
     <script src="/js/layout.js"></script>
@@ -101,6 +108,15 @@
         }
         ckm.chart.update(dataChart, dataStats)
       }
+      document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
+        evt.preventDefault();
+        if (window.confirm('Are you sure? The topic is going to be deleted. Messages cannot be recovered after deletion.')) {
+          ckm.http.request('DELETE', ckm.topic.url)
+            .then(() => { window.location = '/topics' })
+            .catch(ckm.http.standardErrorHandler)
+        }
+
+      })
 
       ckm.topic.start(updateView)
     </script>

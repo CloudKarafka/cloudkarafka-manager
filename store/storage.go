@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,6 +21,10 @@ var store = storage{
 	brokers:   make(brokers),
 	topics:    make(topics),
 	consumers: make(ConsumerGroups),
+}
+
+func (me storage) DeleteTopic(name string) {
+	delete(me.topics, name)
 }
 
 func (me storage) UpdateBroker(b broker) {
@@ -77,7 +82,14 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 		if err != nil {
 			return
 		}
+		if len(t.Partitions) <= number {
+			fmt.Printf("[WARN] store.UpdateTopicMetric missing-partition topic=%s partition=%v\n", t.Name, number)
+			return
+		}
 		p := t.Partitions[number]
+		if p.Metrics == nil {
+			p.Metrics = make(map[string]int)
+		}
 		p.Metrics[m.Name] = int(m.Value)
 		t.Partitions[number] = p
 	} else {
