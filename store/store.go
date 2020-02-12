@@ -14,7 +14,7 @@ import (
 const MaxPoints int = 500
 
 func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 4*time.Second)
 	defer cancel()
 	for _, r := range reqs {
 		select {

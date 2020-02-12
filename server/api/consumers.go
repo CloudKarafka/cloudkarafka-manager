@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"sort"
 
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
@@ -20,6 +21,9 @@ func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	sort.Slice(consumers, func(i, j int) bool {
+		return consumers[i].Name < consumers[j].Name
+	})
 	writeAsJson(w, Page(ps, p, consumers))
 }
 

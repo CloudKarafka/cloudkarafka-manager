@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ func Topics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	topics := store.Topics()
+	sort.Slice(topics, func(i, j int) bool { return topics[i].Name < topics[j].Name })
 	ps, p, err := pageInfo(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -75,11 +75,7 @@ func GetMetrics(ctx context.Context, query MetricRequest) ([]Metric, error) {
 			log.Info("GetMetrics cached", log.MapEntry{"Bean": query.Bean.String(), "Attr": query.Attr})
 			return r.([]Metric), nil
 		}
-	case "TimeSerie":
-		// Never cache
-	case "Count":
-		// Never cache
-	case "Value":
+	case "TimeSerie", "Count", "Value":
 		// Never cache
 	default:
 		log.Info("GetMetrics nocache", log.MapEntry{"Attr": query.Attr})
