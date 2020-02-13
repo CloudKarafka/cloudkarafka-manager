@@ -8,6 +8,21 @@ import (
 	"strconv"
 )
 
+func writeAsJson(w http.ResponseWriter, bytes interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	if m, ok := bytes.(json.Marshaler); ok {
+		j, _ := m.MarshalJSON()
+		fmt.Fprintf(w, string(j))
+	} else {
+		json.NewEncoder(w).Encode(bytes)
+	}
+}
+
+func jsonError(w http.ResponseWriter, msg string) {
+	w.WriteHeader(http.StatusBadRequest)
+	writeAsJson(w, map[string]string{"reason": msg})
+}
+
 func parseRequestBody(r *http.Request, target interface{}) error {
 	switch r.Header.Get("content-type") {
 	case "application/json":

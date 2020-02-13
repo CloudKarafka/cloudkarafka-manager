@@ -49,10 +49,12 @@ func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
 
 func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 	reqs := make([]MetricRequest, 0, 5*len(topics))
-	// Start by removing deleted topics
 	for _, t := range topics {
-		topic, _ := fetchTopic(t.Name)
+		topic, _ := FetchTopic(t.Name)
 		store.UpdateTopic(topic)
+		if 200 < len(topic.Partitions) {
+			break
+		}
 		for _, p := range topic.Partitions {
 			reqs = append(reqs, []MetricRequest{
 				MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},

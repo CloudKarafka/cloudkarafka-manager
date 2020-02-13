@@ -244,3 +244,12 @@ func SumBrokerSeries(m string) TimeSerie {
 func Consumer(name string) (ConsumerGroup, bool) {
 	return store.Consumer(name)
 }
+
+func UpdateTopic(name string) bool {
+	t, err := FetchTopic(name)
+	if err != nil {
+		return false
+	}
+	store.UpdateTopic(t)
+	return true
+}

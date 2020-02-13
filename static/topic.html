@@ -80,13 +80,13 @@
     <script src="/js/lib/chart.js"></script>
     <script src="/js/chart.js"></script>
     <script src="/js/topic.js"></script>
+    <script src="/js/overview.js"></script>
     <script type="application/javascript">
       const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
       const tableOptions = {
         url: `${ckm.topic.url}/partitions`,
         interval: 5000,
         pagination: true,
-        search: true,
         keyColumns: ["number"],
         baseQuery: `name=${ckm.topic.name}`
       }
@@ -115,9 +115,12 @@
             .then(() => { window.location = '/topics' })
             .catch(ckm.http.standardErrorHandler)
         }
-
       })
 
+      ckm.topic.update(data => {
+        const form = ckm.topic.form('PATCH', data)
+        document.querySelector('#deleteTopic').parentElement.insertAdjacentElement('beforebegin', form)
+      })
       ckm.topic.start(updateView)
     </script>
   </body>

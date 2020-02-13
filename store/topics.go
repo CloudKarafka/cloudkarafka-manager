@@ -119,7 +119,7 @@ type TopicRequest struct {
 	Metrics    []MetricRequest
 }
 
-func fetchTopic(topicName string) (topic, error) {
+func FetchTopic(topicName string) (topic, error) {
 	tp, err := zookeeper.Topic(topicName)
 	if err != nil {
 		if err == zookeeper.PathDoesNotExistsErr {
@@ -139,12 +139,16 @@ func fetchTopic(topicName string) (topic, error) {
 	for p, replicas := range tp.Partitions {
 		var par Partition
 		partitionPath := fmt.Sprintf("/brokers/topics/%s/partitions/%s/state", topicName, p)
+	getPartitions:
 		if err := zookeeper.Get(partitionPath, &par); err == nil {
 			i, _ := strconv.Atoi(p)
 			par.Replicas = replicas
 			par.Metrics = make(map[string]int)
 			par.Number = i
 			t.Partitions[i] = par
+		} else {
+			// If the partition for some reason does not alreaady exist retry until it does, this should not happen many times
+			goto getPartitions
 		}
 	}
 	return t, nil

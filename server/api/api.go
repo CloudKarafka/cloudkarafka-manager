@@ -1,8 +1,6 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
@@ -10,16 +8,6 @@ import (
 	goji "goji.io"
 	"goji.io/pat"
 )
-
-func writeAsJson(w http.ResponseWriter, bytes interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	if m, ok := bytes.(json.Marshaler); ok {
-		j, _ := m.MarshalJSON()
-		fmt.Fprintf(w, string(j))
-	} else {
-		json.NewEncoder(w).Encode(bytes)
-	}
-}
 
 func WhoAmI(w http.ResponseWriter, r *http.Request) {
 	writeAsJson(w, r.Context().Value("permissions"))

@@ -761,7 +761,7 @@ pre.arguments > div {
 .badge {
   margin: 5px;
   padding: 5px;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .badge-danger {

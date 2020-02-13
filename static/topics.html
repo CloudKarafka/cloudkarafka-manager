@@ -37,26 +37,6 @@
           </table>
         </div>
       </section>
-      <form method="post" id="declare" class="form card">
-        <h3>Add topic</h3>
-        <label>
-          <span>Name</span>
-          <input type="text" name="name" required>
-        </label>
-        <label>
-          <span>Partition count</span>
-          <input type="number" name="partitions" value="10">
-        </label>
-        <label>
-          <span>Replication factor</span>
-          <input type="number" name="replication_factor" value="1">
-        </label>
-        <label>
-          <span>Config</span>
-          <textarea name="options" placeholder='{ "key": "value" }'></textarea>
-        </label>
-        <button type="submit" class="btn-primary">Create topic</button>
-      </form>
     </main>
     <footer></footer>
     <script src="/js/layout.js"></script>
@@ -67,6 +47,7 @@
     <script src="/js/helpers.js"></script>
     <script src="/js/table.js"></script>
     <script src="/js/overview.js"></script>
+    <script src="/js/topic.js"></script>
     <script type="application/javascript">
       const tableOptions = {
         url: "/api/topics",
@@ -83,29 +64,19 @@
           ckm.table.renderCell(tr, 0, queueLink)
         }
 
-        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.partitions), 'right')
+        var div = document.createElement('div')
+        var span = document.createElement('span')
+        span.innerText = ckm.helpers.formatNumber(item.partitions)
+        if (100 < item.partitions) {
+          div.appendChild(ckm.dom.createBadge('No stats', 'primary'))
+        }
+        div.appendChild(span)
+        ckm.table.renderCell(tr, 1, div, 'right')
         ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.message_count || 0), 'right')
         ckm.table.renderCell(tr, 3, ckm.helpers.formatNumber(item.size || 0), 'right')
       })
-
-      document.querySelector('#declare').addEventListener('submit', function(evt) {
-        evt.preventDefault()
-        const data = new window.FormData(this)
-        const name = encodeURIComponent(data.get('name'))
-        const url = `/api/topics/${name}`
-        const body = {
-          name: name,
-          partitions: parseInt(data.get("partitions")),
-          replication_factor: parseInt(data.get("replication_factor")),
-          options: ckm.dom.parseJSON(data.get('options'))
-
-        }
-        ckm.http.request('POST', url, { body }).then(() => {
-          topicsTable.fetchAndUpdate()
-          evt.target.reset()
-          ckm.dom.toast(`Topic ${name} created`)
-        }).catch(ckm.http.standardErrorHandler)
-      })
+      const form = ckm.topic.form('POST', {}, topicsTable.fetchAndUpdate)
+      document.getElementsByTagName('main')[0].insertAdjacentElement('beforeend', form)
     </script>
   </body>
 </html>

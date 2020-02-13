@@ -64,43 +64,43 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 		config            map[string]string
 	)
 	user := r.Context().Value("user").(mw.SessionUser)
-
-	err = parseRequestBody(r, &data)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if name, ok = data["name"].(string); !ok {
-		http.Error(w, "Name must be a string", http.StatusBadRequest)
-		return
-	}
-	if errs := validators.ValidateTopicName(name); len(errs) > 0 {
-		http.Error(w, strings.Join(errs, "\n"), http.StatusBadRequest)
-		return
-	}
 	if !user.Permissions.CreateTopic(name) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
+
+	err = parseRequestBody(r, &data)
+	if err != nil {
+		jsonError(w, err.Error())
+		return
+	}
+	if name, ok = data["name"].(string); !ok {
+		jsonError(w, "Name must be a string")
+		return
+	}
+	if errs := validators.ValidateTopicName(name); len(errs) > 0 {
+		jsonError(w, strings.Join(errs, "\n"))
+		return
+	}
 	if replicationFactor, ok = data["replication_factor"].(float64); !ok {
-		http.Error(w, "replication_factor must be an integer", http.StatusBadRequest)
+		jsonError(w, "replication_factor must be an integer")
 		return
 	}
 	if replicationFactor <= 0 {
-		http.Error(w, "Replication factor cannot be zero", http.StatusBadRequest)
+		jsonError(w, "Replication factor cannot be zero")
 		return
 	}
 	if partitions, ok = data["partitions"].(float64); !ok {
-		http.Error(w, "partitions must be an integer", http.StatusBadRequest)
+		jsonError(w, "partitions must be an integer")
 		return
 	}
 	if partitions <= 0 {
-		http.Error(w, "Topic must have at least one partition", http.StatusBadRequest)
+		jsonError(w, "Topic must have at least one partition")
 		return
 	}
 	if data["config"] != nil {
 		if config, ok = data["config"].(map[string]string); !ok {
-			http.Error(w, "config must be a hashmap of string=>string", http.StatusBadRequest)
+			jsonError(w, "config must be a hashmap of string=>string")
 			return
 		}
 	}
@@ -108,7 +108,7 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	err = store.CreateTopic(ctx, name, int(partitions), int(replicationFactor), config)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		jsonError(w, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -134,7 +134,7 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 	err = parseRequestBody(r, &data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		jsonError(w, err.Error())
 		return
 	}
 	if data["partitions"] != nil {
@@ -145,33 +145,34 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 		}
 		var partitions_f float64
 		if partitions_f, ok = data["partitions"].(float64); !ok {
-			http.Error(w, "partitions must be an integer", http.StatusBadRequest)
+			jsonError(w, "partitions must be an integer")
 			return
 		}
 		partitions := int(partitions_f)
 		if partitions <= len(topic.Partitions) {
 			msg := fmt.Sprintf("You can only add partitions to topic, topic has %d partitions", len(topic.Partitions))
-			http.Error(w, msg, http.StatusBadRequest)
+			jsonError(w, msg)
 			return
 		}
 		if err = store.AddParitions(ctx, name, partitions); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			jsonError(w, err.Error())
 			return
 		}
 	}
 	if data["config"] != nil {
 		var config map[string]interface{}
 		if config, ok = data["config"].(map[string]interface{}); !ok {
-			http.Error(w, "config must be a hashmap of string=>string", http.StatusBadRequest)
+			jsonError(w, "config must be a hashmap of string=>string")
 			return
 		}
 		if len(config) > 0 {
 			if err = store.UpdateTopicConfig(ctx, name, config); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				jsonError(w, err.Error())
 				return
 			}
 		}
 	}
+	store.UpdateTopic(name)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -188,7 +189,7 @@ func DeleteTopic(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	if err := store.DeleteTopic(ctx, name); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		jsonError(w, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusOK)

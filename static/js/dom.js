@@ -38,6 +38,7 @@
     } catch (e) {
       if (e instanceof SyntaxError) {
         window.alert('Input must be JSON')
+        return false
       } else {
         throw e
       }
