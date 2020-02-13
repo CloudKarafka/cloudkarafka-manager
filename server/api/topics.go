@@ -61,7 +61,8 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 		name              string
 		replicationFactor float64
 		partitions        float64
-		config            map[string]string
+
+		config = make(map[string]string)
 	)
 	user := r.Context().Value("user").(mw.SessionUser)
 	if !user.Permissions.CreateTopic(name) {
@@ -98,10 +99,17 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "Topic must have at least one partition")
 		return
 	}
+	fmt.Println(data["config"].(map[string]interface{}))
 	if data["config"] != nil {
-		if config, ok = data["config"].(map[string]string); !ok {
+		cfg, ok := data["config"].(map[string]interface{})
+		if !ok {
 			jsonError(w, "config must be a hashmap of string=>string")
 			return
+		}
+		for k, v := range cfg {
+			if config[k], ok = v.(string); !ok {
+				continue
+			}
 		}
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
@@ -201,11 +209,6 @@ func Partitions(w http.ResponseWriter, r *http.Request) {
 		name = pat.Param(r, "name")
 		user = r.Context().Value("user").(mw.SessionUser)
 	)
-	ps, p, err := pageInfo(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	if !user.Permissions.ReadTopic(name) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -213,6 +216,11 @@ func Partitions(w http.ResponseWriter, r *http.Request) {
 	topic, ok := store.Topic(name)
 	if !ok {
 		http.NotFound(w, r)
+		return
+	}
+	ps, p, err := pageInfo(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 	writeAsJson(w, Page(ps, p, topic.Partitions))

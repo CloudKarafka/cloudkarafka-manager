@@ -32,7 +32,13 @@ func Users(w http.ResponseWriter, r *http.Request) {
 			res[i] = zookeeper.PermissionsFor(user)
 		}
 	*/
-	writeAsJson(w, users)
+
+	ps, p, err := pageInfo(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeAsJson(w, Page(ps, p, users))
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {

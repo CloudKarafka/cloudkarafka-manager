@@ -79,6 +79,21 @@
     }, 7000)
   }
 
+  function formInput(element, name, options) {
+    const label = document.createElement('label')
+    const span = document.createElement('span')
+    span.innerText = name
+    label.appendChild(span)
+    const elem = document.createElement(element)
+    elem.name = name.toLowerCase().replace(' ', '_')
+    Object.keys(options).forEach((key) => {
+      var val = options[key]
+      if (val !== undefined) { elem[key] = val }
+    })
+    label.appendChild(elem)
+    return label
+  }
+
   function createLink(href, linkText) {
     const queueLink = document.createElement('a')
     queueLink.href = href
@@ -96,6 +111,7 @@
 
   Object.assign(window.ckm, {
     dom: {
+      formInput,
       setChild,
       removeNodes,
       jsonToText,

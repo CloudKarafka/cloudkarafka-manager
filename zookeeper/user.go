@@ -15,7 +15,17 @@ var (
 	userAlreadyExists = errors.New("User already exists")
 )
 
-func Users(username string, p Permissions) ([]string, error) {
+type users []string
+
+func (u users) Get(i int) interface{} {
+	return u[i]
+}
+
+func (u users) TotalCount() int {
+	return len(u)
+}
+
+func Users(username string, p Permissions) (users, error) {
 	users, err := all("/config/users", func(usr string) bool {
 		return p.ReadCluster("kafka-cluster") || usr == username
 	})

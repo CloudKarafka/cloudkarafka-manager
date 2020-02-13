@@ -61,49 +61,35 @@
     }
   }
 
-  function form(method = 'POST', data = {}, cb = null) {
+  function form(method, data = {}, cb = null) {
     const form = document.createElement('form')
-    const h3 = document.createElement('h3')
     form.classList.add('form', 'card')
+
+    const h3 = document.createElement('h3')
     if (method === 'POST') {
       h3.innerText = 'Create topic'
     } else {
       h3.innerText = 'Edit topic'
     }
     form.appendChild(h3)
-
-    function input(name, element, options) {
-      const label = document.createElement('label')
-      const span = document.createElement('span')
-      span.innerText = name
-      label.appendChild(span)
-      const elem = document.createElement(element)
-      elem.name = name.toLowerCase().replace(' ', '_')
-      Object.keys(options).forEach((key) => {
-        var val = options[key]
-        if (val !== undefined) { elem[key] = val }
-      })
-      label.appendChild(elem)
-      return label
-    }
-    form.appendChild(input('Name', 'input', {
+    form.appendChild(ckm.dom.formInput('input', 'Name', {
       type: 'text',
       value: data.name,
       readOnly: data.name !== undefined,
       placeholder: 'Topic name'
     }))
-    form.appendChild(input('Partitions', 'input', {
+    form.appendChild(ckm.dom.formInput('input', 'Partitions', {
       type: 'number',
       value: data.partitions || 10,
       min: data.partitions || 1
     }))
-    form.appendChild(input('Replication factor', 'input', {
+    form.appendChild(ckm.dom.formInput('input', 'Replication factor', {
       type: 'number',
       value: data.replication_factor || 1,
       min: data.replication_factor || 1
     }))
-    form.appendChild(input('Config', 'textarea', { value: data.config,
-      placeholder: '\'{"key": "value"}\''
+    form.appendChild(ckm.dom.formInput('textarea', 'Config',
+      { value: data.config, placeholder: '\'{"key": "value"}\''
     }))
     const btn = document.createElement('button')
     btn.classList.add('btn-primary')

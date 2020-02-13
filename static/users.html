@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Users | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Users
+        <small id="users-count"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <section class="card">
+        <div id="users-error"></div>
+        <div class="table-wrapper">
+          <table id="users" class="table">
+            <thead>
+              <tr>
+                <th>Name</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+      <form id="createUser" method="post" path="/api/users" class="form card">
+        <h3> Create user </h3>
+        <label> <input type="submit" class="btn-primary" value="Create"/> </label>
+      </form>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/overview.js"></script>
+    <script type="application/javascript">
+      const tableOptions = {
+        url: "/api/users",
+        interval: 5000,
+        pagination: true,
+        keyColumns: ["name"]
+      }
+      const usersTable = ckm.table.renderTable('users', tableOptions, function (tr, item, all) {
+
+        ckm.table.renderCell(tr, 0, item)
+      })
+      const btn = document.querySelector('#createUser .btn-primary')
+      btn.insertAdjacentElement('beforebegin',
+        ckm.dom.formInput("input", "Name", { placeholder: 'Username' })
+      )
+      btn.insertAdjacentElement('beforebegin',
+        ckm.dom.formInput("input", "Password",
+          { type: 'password', placeholder: '******' })
+      )
+      document.querySelector('#createUser').addEventListener('submit', function(evt) {
+        evt.preventDefault()
+        const data = new window.FormData(this)
+        const name = encodeURIComponent(data.get('name'))
+        const url = '/api/users'
+        const body = {
+          name: name,
+          password: data.get("password")
+        }
+        ckm.http.request(this.method, url, { body }).then(() => {
+          evt.target.reset()
+          ckm.dom.toast(`User ${name} created`)
+        }).catch(ckm.http.standardErrorHandler)
+      })
+    </script>
+  </body>
+</html>
