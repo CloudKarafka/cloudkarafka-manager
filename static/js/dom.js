@@ -61,7 +61,7 @@
 
   function jsonToText (obj) {
     if (obj == null) return ''
-    return JSON.stringify(obj, undefined, 2).replace(/["{},]/g, '')
+    return JSON.stringify(obj, undefined, 2)
   }
 
   function toast (text) {
@@ -101,12 +101,13 @@
     return queueLink
   }
 
-  function createBadge(text, badgeType) {
-    const span = document.createElement('span')
-    span.innerText = text
-    span.classList.add('badge');
-    span.classList.add('badge-' + badgeType);
-    return span
+  function createBadge(text, title, badgeType) {
+    const abbr = document.createElement('abbr')
+    abbr.setAttribute('title', title)
+    abbr.innerText = text
+    abbr.classList.add('badge');
+    abbr.classList.add('badge-' + badgeType);
+    return abbr
   }
 
   Object.assign(window.ckm, {

@@ -31,6 +31,7 @@
                 <th>Partitions</th>
                 <th>Messages</th>
                 <th>Size</th>
+                <th>Tags</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -64,16 +65,18 @@
           ckm.table.renderCell(tr, 0, queueLink)
         }
 
-        var div = document.createElement('div')
-        var span = document.createElement('span')
-        span.innerText = ckm.helpers.formatNumber(item.partitions)
-        if (100 < item.partitions) {
-          div.appendChild(ckm.dom.createBadge('No stats', 'primary'))
-        }
-        div.appendChild(span)
-        ckm.table.renderCell(tr, 1, div, 'right')
+        ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.partitions), 'right')
         ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.message_count || 0), 'right')
         ckm.table.renderCell(tr, 3, ckm.helpers.formatNumber(item.size || 0), 'right')
+
+        var tags = document.createElement('div')
+        if (100 < item.partitions) {
+          tags.appendChild(ckm.dom.createBadge('N', 'No metrics for topics with more than 250 partitions.', 'primary'))
+        }
+        if (item.config !== undefined) {
+          tags.appendChild(ckm.dom.createBadge('C', 'This topic has custom configuration.', 'primary'))
+        }
+        ckm.table.renderCell(tr, 4, tags)
       })
       const form = ckm.topic.form('POST', {}, topicsTable.fetchAndUpdate)
       document.getElementsByTagName('main')[0].insertAdjacentElement('beforeend', form)

@@ -151,14 +151,15 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		partitions := int(partitions_f)
-		if partitions <= len(topic.Partitions) {
+		if partitions < len(topic.Partitions) {
 			msg := fmt.Sprintf("You can only add partitions to topic, topic has %d partitions", len(topic.Partitions))
 			jsonError(w, msg)
 			return
-		}
-		if err = store.AddParitions(ctx, name, partitions); err != nil {
-			jsonError(w, err.Error())
-			return
+		} else if partitions > len(topic.Partitions) {
+			if err = store.AddParitions(ctx, name, partitions); err != nil {
+				jsonError(w, err.Error())
+				return
+			}
 		}
 	}
 	if data["config"] != nil {
