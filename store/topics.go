@@ -108,17 +108,6 @@ func (t topic) MarshalJSON() ([]byte, error) {
 	return json.Marshal(res)
 }
 
-type TopicResponse struct {
-	Topic topic
-	Error error
-}
-
-type TopicRequest struct {
-	TopicNames []string
-	Config     bool
-	Metrics    []MetricRequest
-}
-
 func FetchTopic(topicName string) (topic, error) {
 	tp, err := zookeeper.Topic(topicName)
 	if err != nil {
@@ -153,12 +142,6 @@ func FetchTopic(topicName string) (topic, error) {
 		}
 	}
 	return t, nil
-}
-
-func fetchConfig(ctx context.Context, topicName string) (TopicConfig, error) {
-	var topicConfig TopicConfig
-	err := zookeeper.Get(fmt.Sprintf("/config/topics/%s", topicName), &topicConfig)
-	return topicConfig, err
 }
 
 func CreateTopic(ctx context.Context, name string, partitions, replicationFactor int, topicConfig map[string]string) error {

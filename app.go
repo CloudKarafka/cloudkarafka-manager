@@ -7,14 +7,12 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/server"
-	"github.com/cloudkarafka/cloudkarafka-manager/server/cookie"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
 func main() {
 	config.Parse()
-	cookie.Setup()
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	if err := zookeeper.Connect(config.ZookeeperURL); err != nil {

@@ -3,7 +3,6 @@ package zookeeper
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 )
 
 var (
@@ -51,14 +50,6 @@ func TopicConfig(name string) ([]byte, error) {
 	path := "/config/topics/" + name
 	d, _, err := conn.Get(path)
 	return d, err
-}
-
-func TopicsMarkedForDeletion() []string {
-	data, err := all("/admin/delete_topics", func(v string) bool { return true })
-	if err != nil {
-		fmt.Println("Err", err)
-	}
-	return data
 }
 
 var topicsListeners = make([]chan []T, 0, 10)

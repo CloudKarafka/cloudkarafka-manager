@@ -40,11 +40,6 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	if !zookeeper.Exists(fmt.Sprintf("/brokers/topics/%s", topicName)) {
-		http.NotFound(w, r)
-		return
-	}
-
 	topic, ok := store.Topic(topicName)
 	if !ok {
 		http.NotFound(w, r)
@@ -99,7 +94,6 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, "Topic must have at least one partition")
 		return
 	}
-	fmt.Println(data["config"].(map[string]interface{}))
 	if data["config"] != nil {
 		cfg, ok := data["config"].(map[string]interface{})
 		if !ok {
