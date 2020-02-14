@@ -24,28 +24,27 @@ func Topics(p Permissions) ([]string, error) {
 	return all("/brokers/topics", p.DescribeTopic)
 }
 
-func fetchTopicInfo(name string, withConfig bool) (T, error) {
+func Topic(name string) (T, error) {
+	return fetchTopicInfo(name)
+}
+
+func fetchTopicInfo(name string) (T, error) {
 	var t T
 	t.Name = name
 	err := get("/brokers/topics/"+name, &t)
 	if err != nil {
 		return t, err
 	}
-	if withConfig {
-		cfg, err := TopicConfig(name)
-		if err != nil {
-			return t, nil
-		}
-		config := make(map[string]interface{})
-		json.Unmarshal(cfg, &config)
-		if config, ok := config["config"].(map[string]interface{}); ok {
-			t.Config = config
-		}
+	cfg, err := TopicConfig(name)
+	if err != nil {
+		return t, nil
+	}
+	config := make(map[string]interface{})
+	json.Unmarshal(cfg, &config)
+	if config, ok := config["config"].(map[string]interface{}); ok {
+		t.Config = config
 	}
 	return t, nil
-}
-func Topic(name string) (T, error) {
-	return fetchTopicInfo(name, false)
 }
 
 func TopicConfig(name string) ([]byte, error) {

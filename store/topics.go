@@ -135,6 +135,7 @@ func FetchTopic(topicName string) (topic, error) {
 		Metrics:    make(map[string]int),
 		BytesIn:    NewSimpleTimeSerie(5, MaxPoints),
 		BytesOut:   NewSimpleTimeSerie(5, MaxPoints),
+		Config:     TopicConfig{Data: tp.Config},
 	}
 	for p, replicas := range tp.Partitions {
 		var par Partition

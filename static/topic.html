@@ -41,6 +41,18 @@
         <h3>Data rates</h3>
         <div class="chart-container" id="dataChart"></div>
       </section>
+      <section class="card cols-6">
+        <h3>Config</h3>
+        <table class="table" id="config">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th class="left" >Value</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </section>
       <section class="card cols-12">
         <h3>
           Partitions
@@ -49,7 +61,8 @@
         <div id="partitions-error"></div>
         <table class="table" id="partitions">
             <thead>
-              <tr> <th>#</th>
+              <tr>
+                <th>#</th>
                 <th>Leader</th>
                 <th>ISR</th>
                 <th>Replicas</th>
@@ -107,6 +120,15 @@
           receive_details: response.bytes_in
         }
         ckm.chart.update(dataChart, dataStats)
+
+        var tBody = document.querySelector('#config tbody')
+        ckm.dom.removeChildren(tBody);
+        Object.keys(response.config).forEach(k => {
+          var tr = document.createElement('tr')
+          ckm.table.renderCell(tr, 0, k)
+          ckm.table.renderCell(tr, 1, response.config[k])
+          tBody.appendChild(tr)
+        })
       }
       document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
         evt.preventDefault();

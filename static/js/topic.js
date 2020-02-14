@@ -88,8 +88,8 @@
       value: data.replication_factor || 1,
       min: data.replication_factor || 1
     }))
-    form.appendChild(ckm.dom.formInput('textarea', 'Config',
-      { value: data.config, placeholder: '\'{"key": "value"}\''
+    form.appendChild(ckm.dom.formInput('textarea', 'Config', {
+      value: data.config, placeholder: '{"key": "value"}'
     }))
     const btn = document.createElement('button')
     btn.classList.add('btn-primary')
