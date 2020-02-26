@@ -43,15 +43,19 @@ func Acl(w http.ResponseWriter, r *http.Request) {
 	}
 	var (
 		p = user.Permissions
-		n = pat.Param(r, "name")
-		t = pat.Param(r, "type")
+		n = pat.Param(r, "resourceName")
+		t = strings.ToLower(pat.Param(r, "type"))
 	)
 	data, err := zookeeper.Acl(p, t, n)
 	if err != nil {
 		jsonError(w, err.Error())
 		return
 	}
-	writeAsJson(w, data)
+	if strings.HasSuffix(r.URL.Path, "users") {
+		writeAsJson(w, data.Users)
+	} else {
+		writeAsJson(w, data)
+	}
 }
 
 func CreateAcl(w http.ResponseWriter, r *http.Request) {

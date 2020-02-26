@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ACLRule | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        ACLRule
+        <small id="name"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <table id="acl" class="stats-table card">
+        <tbody>
+          <tr>
+            <td id="a-name"></td>
+            <td id="a-resource_type"></td>
+            <td id="a-pattern_type"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th class="cols-6">Name</th>
+            <th class="cols-6">Resource type</th>
+            <th class="cols-6">Pattern type</th>
+          </tr>
+        </tfoot>
+      </table>
+      <section class="card cols-12">
+        <h3>
+          Users
+          <small id="users-count"></small>
+        </h3>
+        <div id="users-error"></div>
+        <table class="table" id="users">
+            <thead>
+              <tr>
+                <th>Principal</th>
+                <th>Permission type</th>
+                <th>Operation</th>
+                <th>Host</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/overview.js"></script>
+    <script src="/js/acl.js"></script>
+    <script type="application/javascript">
+      const tableOptions = {
+        url: `${ckm.acl.url}/users`,
+        interval: 5000,
+        pagination: true,
+        keyColumns: ["principal"],
+        baseQuery: `name=${ckm.acl.name}&type=${ckm.acl.type}`
+      }
+      const usersTable = ckm.table.renderTable('users', tableOptions, function (tr, p, all) {
+        if (all) {
+          ckm.table.renderCell(tr, 0, p.principal)
+        }
+        ckm.table.renderCell(tr, 1, p.permission_type, 'center')
+        ckm.table.renderCell(tr, 2, p.operation, 'center')
+        ckm.table.renderCell(tr, 3, p.host, 'center')
+      })
+      ckm.acl.start()
+    </script>
+  </body>
+</html>

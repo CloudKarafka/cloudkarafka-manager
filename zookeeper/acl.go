@@ -278,11 +278,11 @@ func Acl(p Permissions, resourceType, name string) (ACLRule, error) {
 		err  error
 	)
 	switch resourceType {
-	case "Topic":
+	case "topic":
 		acls, err = TopicAcls(p)
-	case "Group":
+	case "group":
 		acls, err = GroupAcls(p)
-	case "Cluster":
+	case "cluster":
 		acls, err = ClusterAcls(p)
 	default:
 		err = fmt.Errorf("Resource type must be one of; Topic, Group or Cluster, got %s", resourceType)

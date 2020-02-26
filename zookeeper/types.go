@@ -16,7 +16,7 @@ type ACLResource struct {
 
 type UserACL struct {
 	Principal      string `json:"principal"`
-	PermissionType string `json:"permssion_type"`
+	PermissionType string `json:"permission_type"`
 	Operation      string `json:"operation"`
 	Host           string `json:"host"`
 }
