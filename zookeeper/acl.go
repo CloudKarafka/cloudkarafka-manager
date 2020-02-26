@@ -238,14 +238,63 @@ func childAcls(resourceType string, permFn permissionFunc) ([]ACLRule, error) {
 	return res, nil
 }
 
-func TopicAcls(p Permissions) ([]ACLRule, error) {
+func Acls(p Permissions) (ACLRules, error) {
+	var a []ACLRule
+	t, err := TopicAcls(p)
+	if err != nil {
+		return a, err
+	}
+	g, err := GroupAcls(p)
+	if err != nil {
+		return a, err
+	}
+	c, err := ClusterAcls(p)
+	if err != nil {
+		return a, err
+	}
+	a = make([]ACLRule, len(t)+len(g)+len(c))
+	copy(a[0:], t)
+	copy(a[len(a):], g)
+	copy(a[len(a):], c)
+	return a, err
+}
+
+func TopicAcls(p Permissions) (ACLRules, error) {
 	return childAcls("Topic", p.ReadTopic)
 }
 
-func GroupAcls(p Permissions) ([]ACLRule, error) {
+func GroupAcls(p Permissions) (ACLRules, error) {
 	return childAcls("Group", p.ReadGroup)
 }
 
-func ClusterAcls(p Permissions) ([]ACLRule, error) {
+func ClusterAcls(p Permissions) (ACLRules, error) {
 	return childAcls("Cluster", p.ReadCluster)
+}
+
+func Acl(p Permissions, resourceType, name string) (ACLRule, error) {
+	var (
+		acls []ACLRule
+		ar   ACLRule
+		err  error
+	)
+	switch resourceType {
+	case "Topic":
+		acls, err = TopicAcls(p)
+	case "Group":
+		acls, err = GroupAcls(p)
+	case "Cluster":
+		acls, err = ClusterAcls(p)
+	default:
+		err = fmt.Errorf("Resource type must be one of; Topic, Group or Cluster, got %s", resourceType)
+	}
+	if err != nil {
+		return ar, err
+	}
+	for _, r := range acls {
+		if r.Resource.Name == name {
+			ar = r
+			break
+		}
+	}
+	return ar, err
 }

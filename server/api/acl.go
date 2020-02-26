@@ -9,15 +9,30 @@ import (
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
+	"goji.io/pat"
 )
 
-type aclVM struct {
-	Principal  string               `json:"principal"`
-	Name       string               `json:"name"`
-	Resource   string               `json:"resource"`
-	Type       string               `json:"type"`
-	Host       string               `json:"host"`
-	Permission zookeeper.Permission `json:"permission"`
+func Acls(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.ListAcls() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	var (
+		aclRules zookeeper.ACLRules
+		err      error
+	)
+	aclRules, err = zookeeper.Acls(user.Permissions)
+	if err != nil {
+		jsonError(w, err.Error())
+		return
+	}
+	ps, p, err := pageInfo(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	writeAsJson(w, Page(ps, p, aclRules))
 }
 
 func Acl(w http.ResponseWriter, r *http.Request) {
@@ -26,26 +41,17 @@ func Acl(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	res := make(map[string]interface{})
-	v, err := zookeeper.ClusterAcls(user.Permissions)
+	var (
+		p = user.Permissions
+		n = pat.Param(r, "name")
+		t = pat.Param(r, "type")
+	)
+	data, err := zookeeper.Acl(p, t, n)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		jsonError(w, err.Error())
 		return
 	}
-	res["cluster"] = v
-	v, err = zookeeper.GroupAcls(user.Permissions)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	res["group"] = v
-	v, err = zookeeper.TopicAcls(user.Permissions)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	res["topic"] = v
-	writeAsJson(w, res)
+	writeAsJson(w, data)
 }
 
 func CreateAcl(w http.ResponseWriter, r *http.Request) {

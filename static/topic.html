@@ -50,7 +50,11 @@
                 <th class="left" >Value</th>
               </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+              <tr>
+                <td colspan=2>No custom configuration</td>
+              </tr>
+            </tbody>
         </table>
       </section>
       <section class="card cols-12">
@@ -123,12 +127,21 @@
 
         var tBody = document.querySelector('#config tbody')
         ckm.dom.removeChildren(tBody);
-        Object.keys(response.config).forEach(k => {
+        const keys = Object.keys(response.config)
+        if (keys.length == 0) {
           var tr = document.createElement('tr')
-          ckm.table.renderCell(tr, 0, k)
-          ckm.table.renderCell(tr, 1, response.config[k])
+          var td = document.createElement('td')
+          td.attributes
+          ckm.table.renderCell(tr, 0, td)
           tBody.appendChild(tr)
-        })
+        } else {
+          keys.forEach(k => {
+            var tr = document.createElement('tr')
+            ckm.table.renderCell(tr, 0, k)
+            ckm.table.renderCell(tr, 1, response.config[k])
+            tBody.appendChild(tr)
+          })
+        }
       }
       document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
         evt.preventDefault();

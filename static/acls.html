@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>Brokers | CloudKarafka Manager</title>
+    <title>ACLs | CloudKarafka Manager</title>
     <link href="/css/main.css" rel="stylesheet">
     <meta name="google" content="notranslate">
     <meta charset="utf-8">
@@ -15,23 +15,22 @@
   <body>
     <header>
       <h2>
-        Brokers
-        <small id="brokers-count"></small>
+        ACLs
+        <small id="acls-count"></small>
       </h2>
     </header>
     <aside></aside>
     <main>
       <section class="card">
-        <div id="brokers-error"></div>
+        <div id="acls-error"></div>
         <div class="table-wrapper">
-          <table id="brokers" class="table">
+          <table id="acls" class="table">
             <thead>
               <tr>
-                <th>Id</th>
-                <th>Tags</th>
-                <th>Kafka version</th>
-                <th>Host</th>
-                <th>Uptime</th>
+                <th>Name</th>
+                <th>Type</th>
+                <th>Pattern type</th>
+                <th>Users</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -50,26 +49,21 @@
     <script src="/js/overview.js"></script>
     <script type="application/javascript">
       const tableOptions = {
-        url: "/api/brokers",
-        keyColumns: ['id'],
+        url: `/api/acls`,
+        keyColumns: ['name'],
         interval: 5000,
-        pagination: false,
+        pagination: true,
       }
-      const queuesTable = ckm.table.renderTable('brokers', tableOptions, function (tr, item, all) {
+      const aclTable = ckm.table.renderTable('acls', tableOptions, function (tr, item, all) {
         if (all) {
           const queueLink = document.createElement('a')
-          queueLink.href = '/broker?id=' + encodeURIComponent(item.id)
-          if (item.controller) {
-            queueLink.textContent = '*'
-          }
-          queueLink.textContent += item.id
+          queueLink.href = `/acl?name=${encodeURIComponent(item.name)}&type=${encodeURIComponent(item.resource_type)}`
+          queueLink.textContent = item.name
           ckm.table.renderCell(tr, 0, queueLink)
         }
-        const badge = ckm.dom.createBadge('C', 'Controller', 'primary')
-        ckm.table.renderCell(tr, 1, badge, 'center')
-        ckm.table.renderCell(tr, 2, item.kafka_version, 'center')
-        ckm.table.renderCell(tr, 3, item.host, 'center')
-        ckm.table.renderCell(tr, 4, item.uptime, 'center')
+        ckm.table.renderCell(tr, 1, item.resource_type, 'center')
+        ckm.table.renderCell(tr, 2, item.pattern_type, 'center')
+        ckm.table.renderCell(tr, 3, item.users, 'center')
       })
     </script>
   </body>

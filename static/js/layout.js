@@ -24,11 +24,11 @@
         </ul>
       </li>
       <li>
-        <a href="/acls">ACL</a>
+        <a href="/acls?type=topic">ACL</a>
         <ul class="hide">
-          <li><a href="#createTopicACL">Add Topic ACL</a></li>
-          <li><a href="#createGroupACL">Add Consumer Group ACL</a></li>
-          <li><a href="#createClusterACL">Add Cluster ACL</a></li>
+          <li><a href="/acls?type=topic">Topic ACLs</a></li>
+          <li><a href="/acls?type=group">Consumer Group ACLs</a></li>
+          <li><a href="/acls?type=cluster">Cluster ACLs</a></li>
         </ul>
       </li>
     </ul>

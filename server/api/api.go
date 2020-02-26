@@ -45,7 +45,8 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Post("/users"), http.HandlerFunc(CreateUser))
 	mux.Handle(pat.Delete("/users/:name"), http.HandlerFunc(DeleteUser))
 
-	mux.Handle(pat.Get("/acls"), http.HandlerFunc(Acl))
+	mux.Handle(pat.Get("/acls"), http.HandlerFunc(Acls))
+	mux.Handle(pat.Get("/acls/:type/:resourceName"), http.HandlerFunc(Acl))
 	mux.Handle(pat.Post("/acls"), http.HandlerFunc(CreateAcl))
 	mux.Handle(pat.Delete("/acls/:resource/:name/:principal"), http.HandlerFunc(DeleteAcl))
 
