@@ -86,10 +86,18 @@
     label.appendChild(span)
     const elem = document.createElement(element)
     elem.name = name.toLowerCase().replace(' ', '_')
-    Object.keys(options).forEach((key) => {
-      var val = options[key]
-      if (val !== undefined) { elem[key] = val }
-    })
+    if (element == "select") {
+      options.forEach((txt) => {
+        var opt = document.createElement('option')
+        opt.innerText = txt
+        elem.appendChild(opt)
+      })
+    } else {
+      Object.keys(options).forEach((key) => {
+        var val = options[key]
+        if (val !== undefined) { elem[key] = val }
+      })
+    }
     label.appendChild(elem)
     return label
   }

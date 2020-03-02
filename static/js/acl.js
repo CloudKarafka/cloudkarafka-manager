@@ -1,9 +1,10 @@
 (function () {
   window.ckm = window.ckm || {}
-  const type = new URLSearchParams(window.location.search).get('type')
+  const resource_type = new URLSearchParams(window.location.search).get('type')
   const name = new URLSearchParams(window.location.search).get('name')
-  const url = `/api/acls/${type}/${name}`
+  const url = `/api/acls/${resource_type}/${name}`
   const raw = window.sessionStorage.getItem(cacheKey())
+  let pattern_type = null
   let data = null
   let updateTimer = null
 
@@ -47,6 +48,7 @@
 
   function render (data) {
     const table = document.querySelector('#acl')
+    pattern_type = data.pattern_type
     if (table) {
       table.querySelector('#a-name').innerText = data.name
       table.querySelector('#a-resource_type').innerText = data.resource_type
@@ -84,8 +86,7 @@
 
   Object.assign(window.ckm, {
     acl: {
-      update, start, stop, render, get, url, name
+      update, start, stop, render, get, url, name, pattern_type, resource_type
     }
   })
 })()
-

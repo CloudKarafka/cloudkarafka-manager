@@ -72,7 +72,7 @@ func CreateAcl(w http.ResponseWriter, r *http.Request) {
 	err = zookeeper.CreateAcl(req)
 	if err != nil {
 		log.Error("create_acl", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		jsonError(w, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
@@ -127,6 +127,7 @@ func aclRequestFromHttpRequest(r *http.Request, checkKeys bool) (zookeeper.AclRe
 		Principal:      acl["principal"],
 		Permission:     strings.ToUpper(acl["permission"]),
 		PermissionType: strings.ToUpper(acl["permission_type"]),
+		Host:           acl["host"],
 	}
 	return req, nil
 }

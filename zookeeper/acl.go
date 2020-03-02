@@ -18,7 +18,7 @@ const (
 )
 
 func AclPatternTypeFromString(v string) (AclPatternType, error) {
-	switch v {
+	switch strings.ToLower(v) {
 	case "prefixed":
 		return PrefixedPattern, nil
 	case "literal":
@@ -47,7 +47,7 @@ func (me AclResourceType) String() string {
 	return ""
 }
 func AclResourceFromString(v string) (AclResourceType, error) {
-	switch v {
+	switch strings.ToLower(v) {
 	case "group":
 		return GroupResource, nil
 	case "topic":
@@ -65,6 +65,7 @@ type AclRequest struct {
 	Principal      string
 	Permission     string
 	PermissionType string
+	Host           string
 }
 
 func (me AclRequest) Path() string {
@@ -87,8 +88,12 @@ func (me AclRequest) Equal(acl map[string]string) bool {
 	return e
 }
 func (me AclRequest) Data() map[string]string {
+	host := me.Host
+	if host == "" {
+		host = "*"
+	}
 	return map[string]string{
-		"host":           "*",
+		"host":           host,
 		"principal":      me.Principal,
 		"permissionType": strings.ToUpper(me.PermissionType),
 		"operation":      strings.ToUpper(me.Permission)}
