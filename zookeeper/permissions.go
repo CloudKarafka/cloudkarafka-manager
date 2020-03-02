@@ -16,7 +16,8 @@ func (p Permissions) check(perm []Permission, action func(Permission) bool) bool
 	allow := false
 	for _, tp := range perm {
 		if tp.Deny() && action(tp) {
-			return false
+			allow = false
+			break
 		}
 		if tp.Allow() && action(tp) {
 			allow = true

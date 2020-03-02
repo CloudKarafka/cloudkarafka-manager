@@ -86,13 +86,14 @@ func DeleteAcl(w http.ResponseWriter, r *http.Request) {
 	}
 	req, err := aclRequestFromHttpRequest(r, false)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		log.Error("delete_acl", log.ErrorEntry{err})
+		jsonError(w, err.Error())
 		return
 	}
 	err = zookeeper.DeleteAcl(req)
 	if err != nil {
 		log.Error("delete_acl", log.ErrorEntry{err})
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		jsonError(w, err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -105,11 +106,11 @@ func aclRequestFromHttpRequest(r *http.Request, checkKeys bool) (zookeeper.AclRe
 	if err != nil {
 		return e, errors.New("Cannot parse request body")
 	}
-	resource, err := zookeeper.AclResourceFromString(acl["resource"])
+	resource, err := zookeeper.AclResourceFromString(acl["resource_type"])
 	if err != nil {
 		return e, err
 	}
-	pattern, err := zookeeper.AclPatternTypeFromString(acl["pattern"])
+	pattern, err := zookeeper.AclPatternTypeFromString(acl["pattern_type"])
 	if err != nil {
 		return e, err
 	}

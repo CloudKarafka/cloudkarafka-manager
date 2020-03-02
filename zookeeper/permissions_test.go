@@ -48,6 +48,18 @@ func TestCreateAcl(t *testing.T) {
 	}
 }
 
+func TestDeleteAcl(t *testing.T) {
+	specs := []spec{
+		{Permissions{Cluster: []Permission{{"All", "Allow", "LITERAL", "kafka-cluster"}}}, true},
+		{Permissions{Cluster: []Permission{{"Alter", "Allow", "LITERAL", "kafka-cluster"}}}, true},
+	}
+	for _, spec := range specs {
+		if spec.In.DeleteAcl() != spec.Expected {
+			t.Errorf("FAILED! expected %v for Permission %v", spec.Expected, spec.In)
+		}
+	}
+}
+
 // { Operation, Type, Patter, Name }
 func TestListAcls(t *testing.T) {
 	specs := []spec{

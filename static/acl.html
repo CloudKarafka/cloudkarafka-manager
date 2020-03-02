@@ -56,13 +56,6 @@
             <tbody></tbody>
         </table>
       </section>
-      <section class="card cols-12">
-        <form method="delete" id="deleteTopic" class="form">
-          <label>
-            <input type="submit" class="btn-danger" value="Delete all rules"/>
-          </label>
-        </form>
-      </section>
     </main>
     <footer></footer>
     <script src="/js/layout.js"></script>
@@ -103,7 +96,7 @@
             permission_type: p.permission_type,
           }
           if (window.confirm('Are you sure? The ACL rule will be deleted and all principals authorized with this rule will be unable to access the resource.')) {
-            ckm.http.request('DELETE', url, body).then(() => {
+            ckm.http.request('DELETE', url, { body }).then(() => {
               ckm.dom.removeNodes(tr)
             }).catch(ckm.http.standardErrorHandler)
           }
