@@ -30,7 +30,7 @@ func (me storage) DeleteTopic(name string) {
 func (me storage) UpdateBroker(b broker) {
 	me.Lock()
 	defer me.Unlock()
-	me.brokers[string(b.Id)] = b
+	me.brokers[strconv.Itoa(b.Id)] = b
 }
 
 func (me storage) Brokers() brokers {
@@ -42,6 +42,7 @@ func (me storage) Brokers() brokers {
 func (me storage) Broker(id string) (broker, bool) {
 	me.RLock()
 	defer me.RUnlock()
+	fmt.Println(me.brokers)
 	b, ok := me.brokers[id]
 	return b, ok
 }
@@ -106,7 +107,7 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 func (me *storage) UpdateBrokerMetrics(m Metric) {
 	me.Lock()
 	defer me.Unlock()
-	b, ok := me.brokers[string(m.Broker)]
+	b, ok := me.brokers[strconv.Itoa(m.Broker)]
 	if !ok {
 		return
 	}
