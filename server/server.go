@@ -38,8 +38,6 @@ func Start() {
 	fs := http.FileServer(StaticDir{http.Dir("static/")})
 	root.Handle(pat.Get("/*"), http.StripPrefix("/", fs))
 
-	//root.Handle(pat.New("/*"), web.Router())
-
 	log.Info("web_server", log.MapEntry{"port": config.Port})
 	if err := http.ListenAndServe(":"+config.Port, root); err != nil {
 		log.Error("web_server", log.MapEntry{"err": err})

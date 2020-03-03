@@ -111,7 +111,6 @@ aside {
 }
 
 aside::after {
-  background-image: url(img/bg-mountain.jpg);
   background-attachment: fixed;
   content: "";
   opacity: 0.9;

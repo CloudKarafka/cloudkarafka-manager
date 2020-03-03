@@ -96,67 +96,8 @@
     <script src="/js/table.js"></script>
     <script src="/js/lib/chart.js"></script>
     <script src="/js/chart.js"></script>
-    <script src="/js/topic.js"></script>
     <script src="/js/overview.js"></script>
-    <script type="application/javascript">
-      const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
-      const tableOptions = {
-        url: `${ckm.topic.url}/partitions`,
-        interval: 5000,
-        pagination: true,
-        keyColumns: ["number"],
-        baseQuery: `name=${ckm.topic.name}`
-      }
-      const partitionsTable = ckm.table.renderTable('partitions', tableOptions, function (tr, p, all) {
-        if (all) {
-          ckm.table.renderCell(tr, 0, p.number)
-        }
-        ckm.table.renderCell(tr, 1, p.leader, 'center')
-        ckm.table.renderCell(tr, 2, p.isr, 'center')
-        ckm.table.renderCell(tr, 3, p.replicas, 'center')
-        ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
-        ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
-        ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
-      })
-      function updateView (response) {
-        let dataStats = {
-          send_details: response.bytes_out,
-          receive_details: response.bytes_in
-        }
-        ckm.chart.update(dataChart, dataStats)
-
-        var tBody = document.querySelector('#config tbody')
-        ckm.dom.removeChildren(tBody);
-        const keys = Object.keys(response.config)
-        if (keys.length == 0) {
-          var tr = document.createElement('tr')
-          var td = document.createElement('td')
-          td.attributes
-          ckm.table.renderCell(tr, 0, td)
-          tBody.appendChild(tr)
-        } else {
-          keys.forEach(k => {
-            var tr = document.createElement('tr')
-            ckm.table.renderCell(tr, 0, k)
-            ckm.table.renderCell(tr, 1, response.config[k])
-            tBody.appendChild(tr)
-          })
-        }
-      }
-      document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
-        evt.preventDefault();
-        if (window.confirm('Are you sure? The topic is going to be deleted. Messages cannot be recovered after deletion.')) {
-          ckm.http.request('DELETE', ckm.topic.url)
-            .then(() => { window.location = '/topics' })
-            .catch(ckm.http.standardErrorHandler)
-        }
-      })
-
-      ckm.topic.update(data => {
-        const form = ckm.topic.form('PATCH', data)
-        document.querySelector('#deleteTopic').parentElement.insertAdjacentElement('beforebegin', form)
-      })
-      ckm.topic.start(updateView)
-    </script>
+    <script src="/js/topic_form.js"></script>
+    <script src="/js/topic.js"></script>
   </body>
 </html>

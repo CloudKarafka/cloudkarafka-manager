@@ -61,79 +61,6 @@
     }
   }
 
-  function form(method, data = {}, cb = null) {
-    const form = document.createElement('form')
-    form.classList.add('form', 'card')
-
-    const h3 = document.createElement('h3')
-    if (method === 'POST') {
-      h3.innerText = 'Create topic'
-    } else {
-      h3.innerText = 'Edit topic'
-    }
-    form.appendChild(h3)
-    form.appendChild(ckm.dom.formInput('input', 'Name', {
-      type: 'text',
-      value: data.name,
-      readOnly: data.name !== undefined,
-      placeholder: 'Topic name'
-    }))
-    form.appendChild(ckm.dom.formInput('input', 'Partitions', {
-      type: 'number',
-      value: data.partitions || 10,
-      min: data.partitions || 1
-    }))
-    form.appendChild(ckm.dom.formInput('input', 'Replication factor', {
-      type: 'number',
-      value: data.replication_factor || 1,
-      min: data.replication_factor || 1
-    }))
-    form.appendChild(ckm.dom.formInput('textarea', 'Config', {
-      value: ckm.dom.jsonToText(data.config), placeholder: '{"key": "value"}'
-    }))
-    const btn = document.createElement('button')
-    btn.classList.add('btn-primary')
-    btn.type = 'submit'
-    btn.innerText = h3.innerText
-    form.appendChild(btn)
-    form.addEventListener('submit', function(evt) {
-      evt.preventDefault()
-      const data = new window.FormData(this)
-      const name = encodeURIComponent(data.get('name'))
-      const url = `/api/topics/${name}`
-      const body = {
-        name: name,
-        partitions: parseInt(data.get("partitions")),
-        replication_factor: parseInt(data.get("replication_factor")),
-      }
-      if (data.get('config') !== '') {
-        var config = ckm.dom.parseJSON(data.get('config'))
-        if (config == false) { return }
-        body.config = config
-      }
-      ckm.http.request(method, url, { body }).then(() => {
-        if (cb !== null) {
-          evt.target.reset()
-          cb()
-        }
-        ckm.dom.toast(`Topic ${name} created`)
-      }).catch(ckm.http.standardErrorHandler)
-    })
-    return form
-  }
-
-  function start (cb) {
-    update(cb)
-    updateTimer = setInterval(() => update(cb), 5000)
-  }
-
-  // Show that we're offline in the UI
-  function stop () {
-    if (updateTimer) {
-      clearInterval(updateTimer)
-    }
-  }
-
   function get (key) {
     return new Promise(function (resolve, reject) {
       try {
@@ -150,10 +77,82 @@
     })
   }
 
+  function start (cb) {
+    update(cb)
+    updateTimer = setInterval(() => update(cb), 5000)
+  }
+
+  // Show that we're offline in the UI
+  function stop () {
+    if (updateTimer) {
+      clearInterval(updateTimer)
+    }
+  }
+
   Object.assign(window.ckm, {
     topic: {
-      update, start, stop, render, get, url, name, form
+      update, start, stop, render, get, url, name
     }
   })
-})()
 
+  const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
+  const tableOptions = {
+    url: `${ckm.topic.url}/partitions`,
+    interval: 5000,
+    pagination: true,
+    keyColumns: ["number"],
+    baseQuery: `name=${ckm.topic.name}`
+  }
+  const partitionsTable = ckm.table.renderTable('partitions', tableOptions, function (tr, p, all) {
+    if (all) {
+      ckm.table.renderCell(tr, 0, p.number)
+    }
+    ckm.table.renderCell(tr, 1, p.leader, 'center')
+    ckm.table.renderCell(tr, 2, p.isr, 'center')
+    ckm.table.renderCell(tr, 3, p.replicas, 'center')
+    ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
+    ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
+    ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
+  })
+
+  function updateView (response) {
+    let dataStats = {
+      send_details: response.bytes_out,
+      receive_details: response.bytes_in
+    }
+    ckm.chart.update(dataChart, dataStats)
+
+    var tBody = document.querySelector('#config tbody')
+    ckm.dom.removeChildren(tBody);
+    const keys = Object.keys(response.config)
+    if (keys.length == 0) {
+      var tr = document.createElement('tr')
+      var td = document.createElement('td')
+      td.attributes
+      ckm.table.renderCell(tr, 0, td)
+      tBody.appendChild(tr)
+    } else {
+      keys.forEach(k => {
+        var tr = document.createElement('tr')
+        ckm.table.renderCell(tr, 0, k)
+        ckm.table.renderCell(tr, 1, response.config[k])
+        tBody.appendChild(tr)
+      })
+    }
+  }
+
+  document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
+    evt.preventDefault();
+    if (window.confirm('Are you sure? The topic is going to be deleted. Messages cannot be recovered after deletion.')) {
+      ckm.http.request('DELETE', ckm.topic.url)
+        .then(() => { window.location = '/topics' })
+        .catch(ckm.http.standardErrorHandler)
+    }
+  })
+
+  ckm.topic.update(data => {
+    const form = ckm.topic.form('PATCH', data)
+    document.querySelector('#deleteTopic').parentElement.insertAdjacentElement('beforebegin', form)
+  })
+  ckm.topic.start(updateView)
+})()

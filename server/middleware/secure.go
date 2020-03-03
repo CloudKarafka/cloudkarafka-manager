@@ -7,9 +7,7 @@ import (
 	"os"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
-	"github.com/gorilla/sessions"
 )
 
 type SessionUser struct {
@@ -69,24 +67,4 @@ func SecureApi(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r.WithContext(ctx))
 	}
 	return http.HandlerFunc(fn)
-}
-
-func SecureWeb(store *sessions.CookieStore) func(h http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			session, err := store.Get(r, "session")
-			if err != nil {
-				log.Error("session_secure", log.ErrorEntry{err})
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			if user, ok := session.Values["user"].(SessionUser); ok {
-				ctx := context.WithValue(r.Context(), "user", user)
-				h.ServeHTTP(w, r.WithContext(ctx))
-			} else {
-				http.Redirect(w, r, "/login", 302)
-			}
-		}
-		return http.HandlerFunc(fn)
-	}
 }

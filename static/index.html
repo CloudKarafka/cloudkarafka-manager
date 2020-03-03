@@ -57,19 +57,6 @@
     <script src="/js/table.js"></script>
     <script src="/js/lib/chart.js"></script>
     <script src="/js/chart.js"></script>
-    <script>
-      /* globals CloudKarafka Manager */
-      const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
-
-      function updateCharts (response) {
-        let dataStats = {
-          send_details: response.bytes_out,
-          receive_details: response.bytes_in
-        }
-        ckm.chart.update(dataChart, dataStats)
-      }
-
-      ckm.overview.start(updateCharts)
-    </script>
+    <script src="/js/index.js"></script>
   </body>
 </html>

@@ -94,5 +94,27 @@
       update, start, stop, render, get
     }
   })
+  function updateView (response) {
+    var tBody = document.querySelector('#topics tbody')
+    ckm.dom.removeChildren(tBody);
+    response.topics.forEach(p => {
+      var tr = document.createElement('tr')
+      var link = ckm.dom.createLink('/topic?name=' + encodeURIComponent(p.name), p.name)
+      ckm.table.renderCell(tr, 0, link)
+      ckm.table.renderCell(tr, 1, p.clients, 'right')
+      ckm.table.renderCell(tr, 2, p.lag, 'right')
+      tBody.appendChild(tr)
+    })
+    var tBody = document.querySelector('#clients tbody')
+    ckm.dom.removeChildren(tBody);
+    response.clients.forEach(c => {
+      var tr = document.createElement('tr')
+      ckm.table.renderCell(tr, 0, c.id)
+      ckm.table.renderCell(tr, 1, c.consumer_id, 'right')
+      ckm.table.renderCell(tr, 2, c.host, 'right')
+      tBody.appendChild(tr)
+    })
+  }
+  ckm.consumer.start(updateView)
 })()
 
