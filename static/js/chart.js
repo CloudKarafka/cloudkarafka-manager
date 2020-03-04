@@ -81,26 +81,40 @@
           }]
         },
         legendCallback: function (chart) {
-          let text = []
+          let asdf = []
           for (let i = 0; i < chart.data.datasets.length; i++) {
+            let base = document.createElement('div')
+            base.classList.add('legend-item', 'checked')
             let dataSet = chart.data.datasets[i]
             let value = dataSet.data[-1] ? dataSet.data[-1].y : ''
-            text.push(`<div class="legend-item checked">
-              <div class="toggle"></div>
-              <div class="color-ref" style="background-color:${dataSet.backgroundColor}"></div>
-              <div>
-                <div class="legend-label">${dataSet.label}</div>
-                <div class="legend-value">${ckm.helpers.formatNumber(value)}</div>
-              </div>
-            </div>`)
+            let toggle = document.createElement('div')
+            toggle.classList.add('toggle')
+            base.append(toggle)
+
+            let bg = document.createElement('div')
+            bg.classList.add('color-ref')
+            bg.style.backgroundColor = dataSet.backgroundColor
+            base.append(bg)
+
+            let label = document.createElement('div')
+            label.classList.add('legend-label')
+            label.innerText = dataSet.label
+            let valueLegend = document.createElement('div')
+            valueLegend.classList.add('legend-value')
+            valueLegend.innerText = ckm.helpers.formatNumber(value)
+            let legends = document.createElement('div')
+            legends.append(label)
+            legends.append(valueLegend)
+            base.append(legends)
+            asdf.push(base)
           }
-          return text.join('')
+          return asdf.slice()
         }
       }, options)
     })
     legendEl.classList.add(chart.id + '-legend')
 
-    legendEl.innerHTML = chart.generateLegend()
+    chart.generateLegend().forEach((l) => { legendEl.appendChild(l) })
     addLegendClickHandler(legendEl)
     return chart
   }
@@ -198,7 +212,10 @@
         let color = chartColors[Math.floor((i / keys.length) * chartColors.length)]
         dataset = createDataset(key, color)
         chart.data.datasets.push(dataset)
-        legend.innerHTML = chart.generateLegend()
+        while (legend.lastChild) {
+            legend.removeChild(legend.lastChild);
+        }
+        chart.generateLegend().forEach((l) => { legend.appendChild(l) })
         let log = data[key] || []
         log.forEach((p, i) => {
           let pDate = new Date(date.getTime() - 5000 * (log.length - i))
