@@ -259,8 +259,8 @@ func Acls(p Permissions) (ACLRules, error) {
 	}
 	a = make([]ACLRule, len(t)+len(g)+len(c))
 	copy(a[0:], t)
-	copy(a[len(a):], g)
-	copy(a[len(a):], c)
+	copy(a[len(t):], g)
+	copy(a[len(t)+len(g):], c)
 	return a, err
 }
 
