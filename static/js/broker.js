@@ -47,9 +47,9 @@
   function render (data) {
     const table = document.querySelector('#broker')
     if (table) {
-      table.querySelector('#leader_count').innerText = data.leader_count
-      table.querySelector('#partition_count').innerText = data.partition_count
-      table.querySelector('#size').innerText = data.size
+      table.querySelector('#leader_count').innerText = data.leader
+      table.querySelector('#partition_count').innerText = data.partitions
+      table.querySelector('#size').innerText = data.topic_size
       table.querySelector('#uptime').innerText = data.uptime
     }
   }

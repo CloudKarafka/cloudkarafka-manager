@@ -16,6 +16,9 @@ type brokerVM struct {
 	Uptime       string `json:"uptime"`
 	BytesIn      []int  `json:"bytes_in,omitempty"`
 	BytesOut     []int  `json:"bytes_out,omitempty"`
+	Leader       int    `json:"leader"`
+	Partitions   int    `json:"partitions"`
+	TopicSize    string `json:"topic_size"`
 }
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
@@ -49,6 +52,7 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
+	lc, pc, ts := store.BrokerToipcStats(b.Id)
 	writeAsJson(w, brokerVM{
 		Id:           b.Id,
 		KafkaVersion: b.KafkaVersion,
@@ -57,5 +61,8 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		Uptime:       b.Uptime(),
 		BytesIn:      b.BytesIn.Points,
 		BytesOut:     b.BytesOut.Points,
+		Leader:       lc,
+		Partitions:   pc,
+		TopicSize:    ts,
 	})
 }

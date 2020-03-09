@@ -2,6 +2,7 @@ package store
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,7 +43,6 @@ func (me storage) Brokers() brokers {
 func (me storage) Broker(id string) (broker, bool) {
 	me.RLock()
 	defer me.RUnlock()
-	fmt.Println(me.brokers)
 	b, ok := me.brokers[id]
 	return b, ok
 }
@@ -102,6 +102,29 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 		}
 	}
 	me.topics[m.Topic] = t
+}
+
+func (me storage) BrokerToipcStats(brokerId int) (int, int, string) {
+	me.RLock()
+	defer me.RUnlock()
+	var (
+		partitionCount int
+		leaderCount    int
+		size           int
+	)
+	for _, t := range me.topics {
+		for _, p := range t.Partitions {
+			if p.Leader == brokerId {
+				leaderCount += 1
+			}
+			sort.Ints(p.Replicas)
+			if sort.SearchInts(p.Replicas, brokerId) != len(p.Replicas) {
+				partitionCount += 1
+				size += p.Metrics["Size"]
+			}
+		}
+	}
+	return partitionCount, leaderCount, humanize.Bytes(uint64(size))
 }
 
 func (me *storage) UpdateBrokerMetrics(m Metric) {
@@ -253,4 +276,8 @@ func UpdateTopic(name string) bool {
 	}
 	store.UpdateTopic(t)
 	return true
+}
+
+func BrokerToipcStats(brokerId int) (int, int, string) {
+	return store.BrokerToipcStats(brokerId)
 }
