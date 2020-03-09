@@ -12,8 +12,12 @@
       queueLink.textContent = item.id
       ckm.table.renderCell(tr, 0, queueLink)
     }
-    const badge = ckm.dom.createBadge('C', 'Controller', 'primary')
-    ckm.table.renderCell(tr, 1, badge, 'center')
+    if (item.controller) {
+      const badge = ckm.dom.createBadge('C', 'Controller', 'primary')
+      ckm.table.renderCell(tr, 1, badge, 'center')
+    } else {
+      ckm.table.renderCell(tr, 1, '', 'center')
+    }
     ckm.table.renderCell(tr, 2, item.kafka_version, 'center')
     ckm.table.renderCell(tr, 3, item.host, 'center')
     ckm.table.renderCell(tr, 4, item.uptime, 'center')
