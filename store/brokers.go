@@ -53,13 +53,13 @@ func fetchBroker(id int) (broker, error) {
 	if err != nil {
 		return b, err
 	}
+	b.Id = id
+	b.Metrics = make(map[string]int)
 	if controller, err := zookeeper.Controller(); err != nil {
 		return b, err
 	} else {
 		b.Controller = controller.BrokerId == id
 	}
-	b.Id = id
-	b.Metrics = make(map[string]int)
 	version, err := KafkaVersion(id)
 	if err != nil {
 		return b, err

@@ -89,10 +89,8 @@
     }
   }
 
-  Object.assign(window.ckm, {
-    topic: {
-      update, start, stop, render, get, url, name
-    }
+  Object.assign(window.ckm.topic, {
+    update, start, stop, render, get, url, name
   })
 
   const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
@@ -124,20 +122,22 @@
 
     var tBody = document.querySelector('#config tbody')
     ckm.dom.removeChildren(tBody);
-    const keys = Object.keys(response.config)
-    if (keys.length == 0) {
-      var tr = document.createElement('tr')
-      var td = document.createElement('td')
-      td.attributes
-      ckm.table.renderCell(tr, 0, td)
-      tBody.appendChild(tr)
-    } else {
-      keys.forEach(k => {
+    if (response.config !== undefined) {
+      const keys = Object.keys(response.config)
+      if (keys.length == 0) {
         var tr = document.createElement('tr')
-        ckm.table.renderCell(tr, 0, k)
-        ckm.table.renderCell(tr, 1, response.config[k])
+        var td = document.createElement('td')
+        td.attributes
+        ckm.table.renderCell(tr, 0, td)
         tBody.appendChild(tr)
-      })
+      } else {
+        keys.forEach(k => {
+          var tr = document.createElement('tr')
+          ckm.table.renderCell(tr, 0, k)
+          ckm.table.renderCell(tr, 1, response.config[k])
+          tBody.appendChild(tr)
+        })
+      }
     }
   }
 
@@ -150,7 +150,7 @@
     }
   })
 
-  ckm.topic.update(data => {
+  ckm.topic.update((data) => {
     const form = ckm.topic.form('PATCH', data)
     document.querySelector('#deleteTopic').parentElement.insertAdjacentElement('beforebegin', form)
   })

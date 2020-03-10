@@ -66,7 +66,7 @@ func CreateAcl(w http.ResponseWriter, r *http.Request) {
 	}
 	req, err := aclRequestFromHttpRequest(r, true)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+		jsonError(w, err.Error())
 		return
 	}
 	err = zookeeper.CreateAcl(req)

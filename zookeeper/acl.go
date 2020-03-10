@@ -75,17 +75,16 @@ func (me AclRequest) Path() string {
 	return fmt.Sprintf("/kafka-acl/%s/%s", me.ResourceType, me.Name)
 }
 func (me AclRequest) Equal(acl map[string]string) bool {
-	e := false
-	if me.Principal != "" {
-		e = me.Principal == acl["principal"]
+	if me.Principal != acl["principal"] {
+		return false
 	}
-	if me.Permission != "" {
-		e = me.Permission == acl["operation"]
+	if me.Permission != acl["operation"] {
+		return false
 	}
-	if me.PermissionType != "" {
-		e = me.PermissionType == acl["permissionType"]
+	if me.PermissionType != acl["permissionType"] {
+		return false
 	}
-	return e
+	return true
 }
 func (me AclRequest) Data() map[string]string {
 	host := me.Host
@@ -120,6 +119,7 @@ func CreateAcl(req AclRequest) error {
 	}
 	for _, acl := range a.Acls {
 		if req.Equal(acl) {
+			fmt.Println("Already exists!!!")
 			return nil
 		}
 	}

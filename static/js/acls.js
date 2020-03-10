@@ -33,7 +33,7 @@
     ckm.dom.formInput("select", "Permission type", ["Allow", "Deny"])
   )
   addBtn.insertAdjacentElement('beforebegin',
-    ckm.dom.formInput("select", "Pattern type", ["Litteral", "Prefixed"])
+    ckm.dom.formInput("select", "Pattern type", ["Literal", "Prefixed"])
   )
   addBtn.insertAdjacentElement('beforebegin',
     ckm.dom.formInput("input", "Host", {value: "*"})
