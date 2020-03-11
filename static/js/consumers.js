@@ -8,20 +8,23 @@
     search: true
   }
   const queuesTable = ckm.table.renderTable('cgs', tableOptions, function (tr, item, all) {
-    var div = document.createElement('div')
     const href = '/consumer?name=' + encodeURIComponent(item.name)
     const queueLink = ckm.dom.createLink(href, item.name)
-    div.appendChild(queueLink)
-    if (item.online == false) {
-      const badge = ckm.dom.createBadge('O', 'This consumer group has no clients', 'danger')
-      div.appendChild(badge)
-    }
-    ckm.table.renderCell(tr, 0, div)
+    ckm.table.renderCell(tr, 0, queueLink)
 
-    ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.clients.length), 'right')
+    if (item.online) {
+      ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.clients.length), 'right')
+    } else {
+      const badge = ckm.dom.createBadge('Offline',
+        'This consumer group has no clients', 'danger')
+      ckm.table.renderCell(tr, 1, badge, 'right')
+    }
     div = document.createElement('div')
     item.topics.slice(0,5).forEach(t => {
-      var text = t.name + ": " + t.lag;
+      var text = t.name
+      if (item.online) {
+          text += ": " + t.lag;
+      }
       var badge = ckm.dom.createBadge(text, '', 'primary')
       div.appendChild(badge)
     })
