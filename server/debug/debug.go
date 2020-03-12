@@ -26,7 +26,7 @@ func Router() *goji.Mux {
 
 	mux.Handle(pat.Get("/p/pprof"), http.HandlerFunc(pprof.Index))
 	mux.Handle(pat.Get("/pprof/cpu"), http.HandlerFunc(pprof.Profile))
-	mux.Handle(pat.Get("/p/pprof/profile"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle(pat.Get("/p/pprof/:profile"), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		profile := pat.Param(r, "profile")
 		handler := pprof.Handler(profile)
 		handler.ServeHTTP(w, r)

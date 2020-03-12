@@ -11,10 +11,14 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-const MaxPoints int = 500
+const (
+	MaxPoints  int           = 500
+	Timeout    time.Duration = 3 * time.Second
+	SampleTime time.Duration = 10 * time.Second
+)
 
 func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest) {
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, Timeout)
 	defer cancel()
 	for _, r := range reqs {
 		select {
@@ -80,7 +84,7 @@ func Start() {
 		bMetrics      = make(chan Metric)
 		tMetrics      = make(chan Metric)
 		cMetrics      = make(chan ConsumerGroups)
-		ticker        = time.NewTicker(time.Duration(5) * time.Second)
+		ticker        = time.NewTicker(SampleTime)
 	)
 	defer ticker.Stop()
 	defer close(bMetrics)
