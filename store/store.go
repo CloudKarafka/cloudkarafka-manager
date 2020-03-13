@@ -39,7 +39,7 @@ func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest
 }
 
 func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
-	reqs := make([]MetricRequest, len(hps)*2)
+	reqs := make([]MetricRequest, len(hps)*4)
 	for i, hp := range hps {
 		copy(reqs[i*4:], []MetricRequest{
 			MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
