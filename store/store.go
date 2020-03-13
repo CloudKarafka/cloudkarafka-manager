@@ -62,13 +62,15 @@ func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 			break
 		}
 		for _, p := range topic.Partitions {
-			reqs = append(reqs, []MetricRequest{
-				MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
-				MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
-				MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
-				MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
-				MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
-			}...)
+			if p.Leader != -1 {
+				reqs = append(reqs, []MetricRequest{
+					MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
+					MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
+					MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
+					MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
+					MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
+				}...)
+			}
 		}
 	}
 	return reqs
