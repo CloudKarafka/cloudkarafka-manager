@@ -16,10 +16,11 @@ type overviewVM struct {
 	TopicSize    string `json:"topic_size"`
 	Messages     int    `json:"messages"`
 	Consumers    int    `json:"consumers"`
-	DataRates    []int  `json:"data_rates"`
 	MessageRates []int  `json:"message_rates"`
 	BytesOut     []int  `json:"bytes_out"`
 	BytesIn      []int  `json:"bytes_in"`
+	ISRExpand    []int  `json:"isr_expand"`
+	ISRShrink    []int  `json:"isr_shrink"`
 }
 
 func Overview(w http.ResponseWriter, r *http.Request) {
@@ -34,5 +35,7 @@ func Overview(w http.ResponseWriter, r *http.Request) {
 		Messages:   store.TotalMessageCount(),
 		BytesOut:   store.SumBrokerSeries("bytes_out").All(),
 		BytesIn:    store.SumBrokerSeries("bytes_in").All(),
+		ISRShrink:  store.SumBrokerSeries("isr_shrink").All(),
+		ISRExpand:  store.SumBrokerSeries("isr_expand").All(),
 	})
 }

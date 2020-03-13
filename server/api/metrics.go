@@ -1,9 +1,11 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
@@ -19,27 +21,22 @@ func KafkaMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	brokers := config.BrokerUrls
-	l := len(wanted) * len(brokers)
-	metricReqs := make([]store.MetricRequest, l)
-	i := 0
+	var all []store.Metric
 	for _, m := range wanted {
 		for brokerId, _ := range brokers {
-			metricReqs[i] = store.MetricRequest{
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			metrics, err := store.GetMetrics(ctx, store.MetricRequest{
 				brokerId,
 				store.BeanFromString(m[0]),
 				m[1],
+			})
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
+			all = append(all, metrics...)
 		}
-	}
-	ch := store.GetMetricsAsync(metricReqs)
-	all := make([]store.Metric, 0)
-	for i := 0; i < l; i++ {
-		r := <-ch
-		if r.Error != nil {
-			http.Error(w, r.Error.Error(), http.StatusInternalServerError)
-			return
-		}
-		all = append(all, r.Metrics...)
 	}
 	writeAsJson(w, all)
 }

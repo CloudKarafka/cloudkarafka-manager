@@ -139,6 +139,10 @@ func (me *storage) UpdateBrokerMetrics(m Metric) {
 		b.BytesIn.Add(int(m.Value))
 	case "BytesOutPerSec":
 		b.BytesOut.Add(int(m.Value))
+	case "IsrExpandsPerSec":
+		b.ISRShrink.Add(int(m.Value))
+	case "IsrShrinksPerSec":
+		b.ISRExpand.Add(int(m.Value))
 	}
 }
 func (me storage) SumBrokerSeries(metric string) TimeSerie {
@@ -155,6 +159,10 @@ func (me storage) SumBrokerSeries(metric string) TimeSerie {
 			s = b.BytesIn
 		case "bytes_out":
 			s = b.BytesOut
+		case "isr_expand":
+			s = b.ISRExpand
+		case "isr_shrink":
+			s = b.ISRShrink
 		}
 		series[i] = s
 		i += 1

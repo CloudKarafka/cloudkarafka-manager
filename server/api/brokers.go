@@ -16,6 +16,8 @@ type brokerVM struct {
 	Uptime       string `json:"uptime"`
 	BytesIn      []int  `json:"bytes_in,omitempty"`
 	BytesOut     []int  `json:"bytes_out,omitempty"`
+	ISRShrink    []int  `json:"isr_shrink,omitempty"`
+	ISRExpand    []int  `json:"isr_expand,omitempty"`
 	Leader       int    `json:"leader"`
 	Partitions   int    `json:"partitions"`
 	TopicSize    string `json:"topic_size"`
@@ -61,6 +63,8 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		Uptime:       b.Uptime(),
 		BytesIn:      b.BytesIn.Points,
 		BytesOut:     b.BytesOut.Points,
+		ISRExpand:    b.ISRExpand.Points,
+		ISRShrink:    b.ISRShrink.Points,
 		Leader:       lc,
 		Partitions:   pc,
 		TopicSize:    ts,

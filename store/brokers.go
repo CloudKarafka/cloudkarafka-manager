@@ -26,6 +26,8 @@ type broker struct {
 	Metrics      map[string]int `json:"metrics"`
 	BytesIn      *SimpleTimeSerie
 	BytesOut     *SimpleTimeSerie
+	ISRShrink    *SimpleTimeSerie
+	ISRExpand    *SimpleTimeSerie
 }
 
 func (b broker) Online() bool {
@@ -37,8 +39,14 @@ func (b broker) Online() bool {
 	return false
 }
 func NewBroker() broker {
-	return broker{BytesIn: NewSimpleTimeSerie(5, MaxPoints), BytesOut: NewSimpleTimeSerie(5, MaxPoints)}
+	return broker{
+		BytesIn:   NewSimpleTimeSerie(5, MaxPoints),
+		BytesOut:  NewSimpleTimeSerie(5, MaxPoints),
+		ISRExpand: NewSimpleTimeSerie(5, MaxPoints),
+		ISRShrink: NewSimpleTimeSerie(5, MaxPoints),
+	}
 }
+
 func (b broker) Uptime() string {
 	if ts, err := strconv.ParseInt(b.Timestamp, 10, 64); err == nil {
 		return strings.TrimSpace(humanize.RelTime(time.Now(), time.Unix(ts/1000, 0), "", ""))

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 )
 
@@ -105,40 +104,13 @@ func (me IsrStat) Diff() int {
 
 func CheckISRDelta(out chan []Notification) {
 	res := make([]Notification, 0)
-	stat := make(map[int]IsrStat)
-	metrics := make([]store.MetricRequest, 0)
-	beans := []store.JMXBean{store.BeanBrokerIsrExpands, store.BeanBrokerIsrShrinks}
-	l := 0
-	for brokerId, _ := range config.BrokerUrls {
-		for _, bean := range beans {
-			metrics[l] = store.MetricRequest{brokerId, bean, "OneMinuteRate"}
-			l += 1
+	brokers := store.Brokers()
+	stat := make([]IsrStat, len(brokers))
+	for _, b := range brokers {
+		stat[b.Id] = IsrStat{
+			Expand: b.ISRExpand.Last(),
+			Shrink: b.ISRShrink.Last(),
 		}
-	}
-	ch := store.GetMetricsAsync(metrics)
-	for i := 0; i < l; i++ {
-		select {
-		case response := <-ch:
-			if response.Error != nil {
-				log.Error("CheckISRDelta", log.ErrorEntry{response.Error})
-			} else {
-				for _, metric := range response.Metrics {
-					if _, ok := stat[metric.Broker]; !ok {
-						stat[metric.Broker] = IsrStat{}
-					}
-					a := stat[metric.Broker]
-					if metric.Name == "IsrExpandsPerSec" {
-						a.Expand = int(metric.Value)
-					} else {
-						a.Shrink = int(metric.Value)
-					}
-					stat[metric.Broker] = a
-				}
-			}
-			//case <-ctx.Done():
-			//return res, fmt.Errorf("Fetching broker metrics failed: %s", ctx.Err())
-		}
-
 	}
 	for b, s := range stat {
 		if s.Diff() > 0 {

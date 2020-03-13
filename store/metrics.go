@@ -103,19 +103,6 @@ func GetMetrics(ctx context.Context, query MetricRequest) ([]Metric, error) {
 	}
 }
 
-func GetMetricsAsync(queries []MetricRequest) <-chan MetricResponse {
-	ch := make(chan MetricResponse)
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel()
-	for _, query := range queries {
-		go func(query MetricRequest) {
-			data, err := GetMetrics(ctx, query)
-			ch <- MetricResponse{data, err}
-		}(query)
-	}
-	return ch
-}
-
 func getSimpleValue(url string) (string, error) {
 	r, err := http.Get(url)
 	if err != nil {
