@@ -44,8 +44,8 @@ func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
 		copy(reqs[i*4:], []MetricRequest{
 			MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
 			MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
-			MetricRequest{hp.Id, BeanBrokerIsrExpands, "OneMinuteRate"},
-			MetricRequest{hp.Id, BeanBrokerIsrShrinks, "OneMinuteRate"},
+			MetricRequest{hp.Id, BeanBrokerIsrExpands, "Count"},
+			MetricRequest{hp.Id, BeanBrokerIsrShrinks, "Count"},
 		})
 		broker, _ := fetchBroker(hp.Id)
 		store.UpdateBroker(broker)
