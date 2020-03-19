@@ -59,7 +59,7 @@ func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 		topic, _ := FetchTopic(t.Name)
 		store.UpdateTopic(topic)
 		if 200 < len(topic.Partitions) {
-			break
+			continue
 		}
 		for _, p := range topic.Partitions {
 			if p.Leader != -1 {
@@ -83,16 +83,22 @@ func Start() {
 		ctx            context.Context
 		cancel         context.CancelFunc
 
-		brokerChanges = zookeeper.WatchBrokers()
-		topicChanges  = zookeeper.WatchTopics()
+		topicChanges  = make(chan []zookeeper.T)
+		brokerChanges = make(chan []zookeeper.HostPort)
 		bMetrics      = make(chan Metric)
 		tMetrics      = make(chan Metric)
 		cMetrics      = make(chan ConsumerGroups)
 		ticker        = time.NewTicker(SampleTime)
 	)
+
+	zookeeper.WatchTopics(topicChanges)
+	zookeeper.WatchBrokers(brokerChanges)
+
 	defer ticker.Stop()
 	defer close(bMetrics)
 	defer close(tMetrics)
+	defer close(topicChanges)
+	defer close(brokerChanges)
 	for {
 		select {
 		case <-ticker.C:

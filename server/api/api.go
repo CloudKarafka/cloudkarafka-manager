@@ -34,8 +34,8 @@ func Router() *goji.Mux {
 	mux.Handle(pat.Get("/consumers/:name"), http.HandlerFunc(ViewConsumerGroup))
 
 	mux.Handle(pat.Get("/topics"), http.HandlerFunc(Topics))
+	mux.Handle(pat.Post("/topics"), http.HandlerFunc(CreateTopic))
 	mux.Handle(pat.Get("/topics/:name"), http.HandlerFunc(Topic))
-	mux.Handle(pat.Post("/topics/:name"), http.HandlerFunc(CreateTopic))
 	mux.Handle(pat.Patch("/topics/:name"), http.HandlerFunc(UpdateTopic))
 	mux.Handle(pat.Delete("/topics/:name"), http.HandlerFunc(DeleteTopic))
 

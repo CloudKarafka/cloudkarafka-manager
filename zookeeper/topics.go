@@ -3,6 +3,7 @@ package zookeeper
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 var (
@@ -54,10 +55,8 @@ func TopicConfig(name string) ([]byte, error) {
 
 var topicsListeners = make([]chan []T, 0, 10)
 
-func WatchTopics() chan []T {
-	ch := make(chan []T)
+func WatchTopics(ch chan []T) {
 	topicsListeners = append(topicsListeners, ch)
-	return ch
 }
 
 func watchTopics() {
@@ -66,11 +65,14 @@ func watchTopics() {
 	for i, name := range data {
 		topic, err := Topic(name)
 		if err != nil {
+			fmt.Println(err)
 			continue
 		}
 		list[i] = topic
 	}
-	fanoutCH <- list
+	for _, ch := range topicsListeners {
+		ch <- list
+	}
 	_, ok := <-events
 	if ok {
 		watchTopics()

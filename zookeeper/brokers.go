@@ -57,10 +57,8 @@ type HostPort struct {
 
 var brokersListeners = make([]chan []HostPort, 0, 10)
 
-func WatchBrokers() chan []HostPort {
-	ch := make(chan []HostPort)
+func WatchBrokers(ch chan []HostPort) {
 	brokersListeners = append(brokersListeners, ch)
-	return ch
 }
 
 func watchBrokers() {
@@ -77,7 +75,9 @@ func watchBrokers() {
 		}
 		list[i] = HostPort{intId, broker.Host, broker.Port}
 	}
-	fanoutCH <- list
+	for _, ch := range brokersListeners {
+		ch <- list
+	}
 	_, ok := <-events
 	if ok {
 		watchBrokers()

@@ -14,7 +14,9 @@ func init() {
 }
 
 func handleBrokerChanges() {
-	brokerChanges := zookeeper.WatchBrokers()
+	brokerChanges := make(chan []zookeeper.HostPort)
+	zookeeper.WatchBrokers(brokerChanges)
+	defer close(brokerChanges)
 	for hps := range brokerChanges {
 		hash := make(map[int]zookeeper.HostPort)
 		for _, hp := range hps {

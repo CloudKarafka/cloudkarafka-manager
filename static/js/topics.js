@@ -18,8 +18,8 @@
 
     var tags = document.createElement('div')
     if (100 < item.partitions) {
-      ckm.table.renderCell(tr, 2, '-'), 'right')
-      ckm.table.renderCell(tr, 3, '-'), 'right')
+      ckm.table.renderCell(tr, 2, '-', 'right')
+      ckm.table.renderCell(tr, 3, '-', 'right')
       tags.appendChild(ckm.dom.createBadge('N', 'No metrics for topics with more than 100 partitions.', 'primary'))
     } else {
       ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.message_count || 0), 'right')
