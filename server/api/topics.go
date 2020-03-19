@@ -59,11 +59,6 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 
 		config = make(map[string]string)
 	)
-	user := r.Context().Value("user").(mw.SessionUser)
-	if !user.Permissions.CreateTopic(name) {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
 
 	err = parseRequestBody(r, &data)
 	if err != nil {
@@ -72,6 +67,11 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 	}
 	if name, ok = data["name"].(string); !ok {
 		jsonError(w, "Name must be a string")
+		return
+	}
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.CreateTopic(name) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
 	if errs := validators.ValidateTopicName(name); len(errs) > 0 {

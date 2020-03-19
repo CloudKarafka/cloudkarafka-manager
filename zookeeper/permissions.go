@@ -57,7 +57,7 @@ func (p Permissions) ReadTopic(resource string) bool {
 	return p.read(p.Topic, resource) || p.describe(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) CreateTopic(resource string) bool {
-	return p.create(p.Topic, resource)
+	return p.create(p.Topic, resource) || p.create(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) UpdateTopic(resource string) bool {
 	return p.alter(p.Topic, resource)
