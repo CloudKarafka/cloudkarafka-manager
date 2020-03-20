@@ -28,11 +28,6 @@ func (mr MetricRequest) String() string {
 	return fmt.Sprintf("%d:%s/%s", mr.BrokerId, mr.Bean, mr.Attr)
 }
 
-type MetricResponse struct {
-	Metrics []Metric
-	Error   error
-}
-
 type Metric struct {
 	Broker           int     `json:"broker"`
 	Topic            string  `json:"topic"`
@@ -45,6 +40,7 @@ type Metric struct {
 	Attribute        string  `json:"attribute"`
 	Request          string  `json:"request"`
 	Key              string  `json:"key"`
+	Error            string  `json:"-"`
 }
 
 func doRequest(ctx context.Context, url string) ([]Metric, error) {

@@ -17,13 +17,17 @@
     ckm.table.renderCell(tr, 1, ckm.helpers.formatNumber(item.partitions), 'right')
 
     var tags = document.createElement('div')
-    if (100 < item.partitions) {
-      ckm.table.renderCell(tr, 2, '-', 'right')
-      ckm.table.renderCell(tr, 3, '-', 'right')
-      tags.appendChild(ckm.dom.createBadge('N', 'No metrics for topics with more than 100 partitions.', 'primary'))
-    } else {
+    if (item.message_count !== undefined) {
       ckm.table.renderCell(tr, 2, ckm.helpers.formatNumber(item.message_count || 0), 'right')
+    } else {
+      ckm.table.renderCell(tr, 2, '-', 'right')
+      tags.appendChild(ckm.dom.createBadge('msg', 'Unable to fetch metrics for message count .', 'primary'))
+    }
+    if (item.size !== undefined) {
       ckm.table.renderCell(tr, 3, ckm.helpers.formatNumber(item.size || 0), 'right')
+    } else {
+      ckm.table.renderCell(tr, 3, '-', 'right')
+      tags.appendChild(ckm.dom.createBadge('size', 'Unable to fetch metrics for topic size .', 'primary'))
     }
     if (item.config !== undefined) {
       tags.appendChild(ckm.dom.createBadge('C', 'This topic has custom configuration.', 'primary'))

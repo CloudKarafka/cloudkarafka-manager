@@ -50,6 +50,13 @@ func (p Permissions) describe(perm []Permission, resource string) bool {
 		return p.Describe(resource)
 	})
 }
+
+func (p Permissions) delete(perm []Permission, resource string) bool {
+	return p.check(perm, func(p Permission) bool {
+		return p.Delete(resource)
+	})
+}
+
 func (p Permissions) WriteCluster(resource string) bool {
 	return p.write(p.Cluster, resource)
 }
@@ -84,9 +91,7 @@ func (p Permissions) AlterConfigsCluster() bool {
 	})
 }
 func (p Permissions) DeleteTopic(resource string) bool {
-	return p.check(p.Topic, func(p Permission) bool {
-		return p.Delete(resource)
-	})
+	return p.delete(p.Topic, resource) || p.alter(p.Cluster, "kafka-cluster")
 }
 
 func (p Permissions) DescribeConfigs() bool {
@@ -96,14 +101,10 @@ func (p Permissions) DescribeConfigs() bool {
 }
 
 func (p Permissions) CreateUser() bool {
-	return p.check(p.Cluster, func(p Permission) bool {
-		return p.Write("kafka-cluster")
-	})
+	return p.create(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) DeleteUser() bool {
-	return p.check(p.Cluster, func(p Permission) bool {
-		return p.Delete("kafka-cluster")
-	})
+	return p.delete(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) CreateAcl() bool {
 	return p.check(p.Cluster, func(p Permission) bool {

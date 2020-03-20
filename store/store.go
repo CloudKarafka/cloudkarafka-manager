@@ -24,7 +24,7 @@ func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest
 		select {
 		case <-ctx.Done():
 			log.Error("fetch_metrics", log.ErrorEntry{ctx.Err()})
-			return
+			break
 		default:
 			resp, err := GetMetrics(ctx, r)
 			if err != nil {
