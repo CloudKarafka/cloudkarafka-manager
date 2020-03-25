@@ -2,13 +2,16 @@
   window.ckm = window.ckm || {}
   function form(method, data = {}, cb = null) {
     const form = document.createElement('form')
+    let url = ''
     form.classList.add('form', 'card')
 
     const h3 = document.createElement('h3')
     if (method === 'POST') {
       h3.innerText = 'Create topic'
+      url = `/api/topics`
     } else {
       h3.innerText = 'Edit topic'
+      url = `/api/topics/${name}`
     }
     form.appendChild(h3)
     form.appendChild(ckm.dom.formInput('input', 'Name', {
@@ -39,7 +42,6 @@
       evt.preventDefault()
       const data = new window.FormData(this)
       const name = encodeURIComponent(data.get('name'))
-      const url = `/api/topics/${name}`
       const body = {
         name: name,
         partitions: parseInt(data.get("partitions")),
@@ -50,12 +52,14 @@
         if (config == false) { return }
         body.config = config
       }
+      showLoader()
       ckm.http.request(method, url, { body }).then(() => {
         if (cb !== null) {
           evt.target.reset()
           cb()
         }
         ckm.dom.toast(`Topic ${name} created`)
+        rmLoader()
       }).catch(ckm.http.standardErrorHandler)
     })
     return form

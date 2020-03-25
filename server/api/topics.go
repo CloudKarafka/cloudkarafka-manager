@@ -188,10 +188,8 @@ func DeleteTopic(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
-	defer cancel()
 
-	if err := store.DeleteTopic(ctx, name); err != nil {
+	if err := store.DeleteTopic(name); err != nil {
 		jsonError(w, err.Error())
 		return
 	}

@@ -144,6 +144,7 @@
   document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
     evt.preventDefault();
     if (window.confirm('Are you sure? The topic is going to be deleted. Messages cannot be recovered after deletion.')) {
+      showLoader()
       ckm.http.request('DELETE', ckm.topic.url)
         .then(() => { window.location = '/topics' })
         .catch(ckm.http.standardErrorHandler)

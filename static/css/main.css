@@ -771,3 +771,37 @@ pre.arguments > div {
   background-color: #6b7076;
   color: #fff;
 }
+
+.loader {
+  background-image: url('/img/spin.gif');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: inline-block;
+  height: 64px;
+  width: 100%;
+  z-index: 9999;
+}
+
+.loader.loader-md {
+  height: 32px;
+  width: 32px;
+}
+
+.loader.loader-sm {
+  height: 16px;
+  width: 32px;
+}
+
+.loader.loader-full {
+  background-attachment: fixed;
+  background-color: $loader-bg;
+  background-position: 50% 200px;
+  background-size: auto;
+  bottom: -1000px;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}

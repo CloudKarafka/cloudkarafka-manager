@@ -230,8 +230,11 @@ func AddParitions(ctx context.Context, name string, increaseTo int) error {
 	return nil
 }
 
-func DeleteTopic(ctx context.Context, name string) error {
-	a, err := adminClient()
+func DeleteTopic(name string) error {
+	var (
+		a, err = adminClient()
+		ctx    = context.Background()
+	)
 	results, err := a.DeleteTopics(ctx, []string{name},
 		kafka.SetAdminOperationTimeout(15*time.Second))
 	if err != nil {

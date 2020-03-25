@@ -62,4 +62,21 @@
       </li>
     </div>
   `)
+  function showLoader (e) {
+    if (e && (e.ctrlKey || e.shiftKey || e.metaKey || e.which === 2)) {
+      // ctrl/cmd click
+      return
+    }
+    setTimeout(function () {
+      const div = document.createElement('div')
+      div.classList.add('loader', 'loader-full')
+
+      document.querySelector('main').insertAdjacentElement('afterbegin', div)
+    }, 15)
+  }
+  window.showLoader = showLoader
+  function rmLoader() {
+    document.querySelector('.loader').remove()
+  }
+  window.rmLoader = rmLoader
 })()
