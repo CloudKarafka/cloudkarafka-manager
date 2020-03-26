@@ -148,6 +148,7 @@
       ckm.http.request('DELETE', ckm.topic.url)
         .then(() => { window.location = '/topics' })
         .catch(ckm.http.standardErrorHandler)
+        .finally(rmLoader)
     }
   })
 

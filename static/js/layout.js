@@ -24,11 +24,9 @@
         </ul>
       </li>
       <li>
-        <a href="/acls?type=topic">ACL</a>
+        <a href="/acls">ACL</a>
         <ul class="hide">
-          <li><a href="/acls?type=topic">Topic ACLs</a></li>
-          <li><a href="/acls?type=group">Consumer Group ACLs</a></li>
-          <li><a href="/acls?type=cluster">Cluster ACLs</a></li>
+          <li><a href="#createACL">Add ACL Rule</a></li>
         </ul>
       </li>
     </ul>
