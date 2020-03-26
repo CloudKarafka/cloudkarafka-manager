@@ -4,8 +4,8 @@
     keyColumns: ['name'],
     interval: 5000,
     pagination: true,
-    columnSelector: true,
-    search: true
+    columnSelector: false,
+    search: false
   }
   const queuesTable = ckm.table.renderTable('cgs', tableOptions, function (tr, item, all) {
     const href = '/consumer?name=' + encodeURIComponent(item.name)

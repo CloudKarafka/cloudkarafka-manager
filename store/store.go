@@ -13,7 +13,7 @@ import (
 
 const (
 	MaxPoints  int           = 500
-	Timeout    time.Duration = 3 * time.Second
+	Timeout    time.Duration = 5 * time.Second
 	SampleTime time.Duration = 10 * time.Second
 )
 

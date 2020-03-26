@@ -3,7 +3,7 @@
     url: "/api/topics",
     interval: 5000,
     pagination: true,
-    search: true,
+    search: false,
     keyColumns: ["name"]
   }
   const topicsTable = ckm.table.renderTable('topics', tableOptions, function (tr, item, all) {

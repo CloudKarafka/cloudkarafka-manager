@@ -11,7 +11,7 @@
       url = `/api/topics`
     } else {
       h3.innerText = 'Edit topic'
-      url = `/api/topics/${name}`
+      url = `/api/topics/${data.name}`
     }
     form.appendChild(h3)
     form.appendChild(ckm.dom.formInput('input', 'Name', {
@@ -59,8 +59,7 @@
           cb()
         }
         ckm.dom.toast(`Topic ${name} created`)
-        rmLoader()
-      }).catch(ckm.http.standardErrorHandler)
+      }).catch(ckm.http.standardErrorHandler).finally(rmLoader)
     })
     return form
   }
