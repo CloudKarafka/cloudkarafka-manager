@@ -6,7 +6,7 @@ import (
 
 // Correct permission for each operation is here: https://docs.confluent.io/current/kafka/authorization.html#acl-format
 
-type permissionFunc func(string) bool
+type PermissionFunc func(string) bool
 
 type ACLResource struct {
 	Name         string `json:"name"`
@@ -32,7 +32,7 @@ func (me ACLRules) Get(i int) interface{} {
 	return me[i]
 }
 
-func (me ACLRules) TotalCount() int {
+func (me ACLRules) Size() int {
 	return len(me)
 }
 

@@ -206,7 +206,7 @@ func parseAclNode(basepath, child, resourceType, pattern string) (ACLRule, error
 	return rule, nil
 }
 
-func aclFromPath(basePath, resourceType, pattern string, pFn permissionFunc) ([]ACLRule, error) {
+func aclFromPath(basePath, resourceType, pattern string, pFn PermissionFunc) ([]ACLRule, error) {
 	var res []ACLRule
 	path := fmt.Sprintf("%s/%s", basePath, resourceType)
 	if !Exists(path) {
@@ -228,7 +228,7 @@ func aclFromPath(basePath, resourceType, pattern string, pFn permissionFunc) ([]
 	return res, nil
 }
 
-func childAcls(resourceType string, permFn permissionFunc) ([]ACLRule, error) {
+func childAcls(resourceType string, permFn PermissionFunc) ([]ACLRule, error) {
 	var res []ACLRule
 	acls, err := aclFromPath("/kafka-acl", resourceType, "LITERAL", permFn)
 	if err != nil {

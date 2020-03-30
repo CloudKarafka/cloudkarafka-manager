@@ -21,7 +21,7 @@ func (u users) Get(i int) interface{} {
 	return u[i]
 }
 
-func (u users) TotalCount() int {
+func (u users) Size() int {
 	return len(u)
 }
 

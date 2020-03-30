@@ -13,32 +13,30 @@ type Permission struct {
 }
 
 func (p Permission) check(op, resource string) bool {
-	return (p.All() || p.Operation == op) &&
-		p.Resource(resource)
+	return (p.All() || p.Operation == op) && p.Resource(resource)
 }
 
 // Check if rule matches resource on name
 func (p Permission) Resource(principal string) bool {
+	allowed := false
 	if p.Principal == "*" {
-		return true
+		allowed = true
+	} else if p.Pattern == "literal" && p.Principal == principal {
+		allowed = true
+	} else if p.Pattern == "prefixed" && strings.HasPrefix(principal, p.Principal) {
+		allowed = true
 	}
-	if p.Pattern == "LITERAL" && p.Principal == principal {
-		return true
-	}
-	if p.Pattern == "PREFIXED" && strings.HasPrefix(principal, p.Principal) {
-		return true
-	}
-	return false
+	return allowed
 }
 
 func (p Permission) Allow() bool {
-	return p.Type == "Allow"
+	return strings.ToLower(p.Type) == "allow"
 }
 func (p Permission) Deny() bool {
-	return p.Type == "Deny"
+	return strings.ToLower(p.Type) == "deny"
 }
 func (p Permission) All() bool {
-	return p.Operation == "All"
+	return strings.ToLower(p.Operation) == "all"
 }
 func (p Permission) Alter(resource string) bool {
 	return p.check("Alter", resource)

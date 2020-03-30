@@ -17,13 +17,9 @@ import (
 
 func Topics(w http.ResponseWriter, r *http.Request) {
 	var (
-		user = r.Context().Value("user").(mw.SessionUser)
+		user   = r.Context().Value("user").(mw.SessionUser)
+		topics = topics(user.Permissions.DescribeTopic)
 	)
-	if !user.Permissions.ListTopics() {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	topics := store.Topics()
 	sort.Slice(topics, func(i, j int) bool { return topics[i].Name < topics[j].Name })
 	ps, p, err := pageInfo(r)
 	if err != nil {

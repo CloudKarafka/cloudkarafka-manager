@@ -66,13 +66,13 @@ type page struct {
 
 type pageable interface {
 	Get(int) interface{}
-	TotalCount() int
+	Size() int
 }
 
 func Page(pageSize, p int, items pageable) page {
 	var (
 		result = make([]interface{}, 0, pageSize)
-		tc     = items.TotalCount()
+		tc     = items.Size()
 	)
 	for i := (p - 1) * pageSize; i < p*pageSize; i++ {
 		if i >= tc {

@@ -75,9 +75,6 @@ func (p Permissions) ReadGroup(resource string) bool {
 func (p Permissions) ReadCluster(resource string) bool {
 	return p.read(p.Cluster, resource)
 }
-func (p Permissions) DescribeCluster(resource string) bool {
-	return p.describe(p.Cluster, resource)
-}
 func (p Permissions) DescribeTopic(resource string) bool {
 	return p.describe(p.Topic, resource) || p.create(p.Cluster, "kafka-cluster")
 }
@@ -107,22 +104,13 @@ func (p Permissions) DeleteUser() bool {
 	return p.delete(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) CreateAcl() bool {
-	return p.check(p.Cluster, func(p Permission) bool {
-		return p.Alter("kafka-cluster")
-	})
+	return p.alter(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) DeleteAcl() bool {
-	return p.check(p.Cluster, func(p Permission) bool {
-		return p.Alter("kafka-cluster")
-	})
+	return p.alter(p.Cluster, "kafka-cluster")
 }
 func (p Permissions) ListAcls() bool {
-	return p.check(p.Cluster, func(p Permission) bool {
-		return p.Describe("kafka-cluster")
-	})
-}
-func (p Permissions) ListTopics() bool {
-	return p.DescribeTopic("*")
+	return p.describe(p.Cluster, "kafka-cluster")
 }
 
 func (p Permissions) ListUsers() bool {
@@ -134,7 +122,7 @@ func (p Permissions) ListBrokers() bool {
 }
 
 func (p Permissions) ListGroups() bool {
-	return p.DescribeCluster("kafka-cluster")
+	return p.describe(p.Cluster, "kafka-cluster")
 }
 
 var AllowAll = []Permission{Permission{"All", "Allow", "LITERAL", "*"}}

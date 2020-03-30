@@ -16,13 +16,13 @@ import (
 
 type topics map[string]topic
 
-type topicSlice []topic
+type TopicSlice []topic
 
-func (me topicSlice) Get(i int) interface{} {
+func (me TopicSlice) Get(i int) interface{} {
 	return me[i]
 }
 
-func (me topicSlice) TotalCount() int {
+func (me TopicSlice) Size() int {
 	return len(me)
 }
 
@@ -52,7 +52,7 @@ func (me partitions) Get(i int) interface{} {
 	return me[i]
 }
 
-func (me partitions) TotalCount() int {
+func (me partitions) Size() int {
 	return len(me)
 }
 

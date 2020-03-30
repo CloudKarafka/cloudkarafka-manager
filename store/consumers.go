@@ -25,7 +25,7 @@ func (me consumers) Get(i int) interface{} {
 	return me[i]
 }
 
-func (me consumers) TotalCount() int {
+func (me consumers) Size() int {
 	return len(me)
 }
 

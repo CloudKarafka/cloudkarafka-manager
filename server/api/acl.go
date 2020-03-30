@@ -27,12 +27,20 @@ func Acls(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, err.Error())
 		return
 	}
+
+	// filter all rules without any users
+	ars := make(zookeeper.ACLRules, 0, len(aclRules))
+	for _, ar := range aclRules {
+		if len(ar.Users) != 0 {
+			ars = append(ars, ar)
+		}
+	}
 	ps, p, err := pageInfo(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	writeAsJson(w, Page(ps, p, aclRules))
+	writeAsJson(w, Page(ps, p, ars))
 }
 
 func Acl(w http.ResponseWriter, r *http.Request) {

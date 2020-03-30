@@ -47,11 +47,11 @@ func (me storage) Broker(id string) (broker, bool) {
 	return b, ok
 }
 
-func (me storage) Topics() topicSlice {
+func (me storage) Topics() TopicSlice {
 	me.RLock()
 	defer me.RUnlock()
 	var (
-		topics = make(topicSlice, len(me.topics))
+		topics = make(TopicSlice, len(me.topics))
 		i      = 0
 	)
 	for _, t := range me.topics {
@@ -234,7 +234,7 @@ func Uptime() string {
 func Brokers() brokers {
 	return store.Brokers()
 }
-func Topics() topicSlice {
+func Topics() TopicSlice {
 	return store.Topics()
 }
 func Consumers() consumers {

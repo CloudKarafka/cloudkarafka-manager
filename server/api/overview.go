@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
+
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 )
@@ -24,12 +26,18 @@ type overviewVM struct {
 }
 
 func Overview(w http.ResponseWriter, r *http.Request) {
+	var (
+		user      = r.Context().Value("user").(mw.SessionUser)
+		brokers   = store.Brokers()
+		topics    = topics(user.Permissions.DescribeTopic)
+		consumers = store.Consumers()
+	)
 	writeAsJson(w, overviewVM{
 		Version:    config.Version,
 		Uptime:     store.Uptime(),
-		Brokers:    len(store.Brokers()),
-		Topics:     len(store.Topics()),
-		Consumers:  len(store.Consumers()),
+		Brokers:    len(brokers),
+		Topics:     len(topics),
+		Consumers:  len(consumers),
 		Partitions: store.Partitions(),
 		TopicSize:  store.TotalTopicSize(),
 		Messages:   store.TotalMessageCount(),
