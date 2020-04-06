@@ -18,12 +18,15 @@ func (p Permission) check(op, resource string) bool {
 
 // Check if rule matches resource on name
 func (p Permission) Resource(principal string) bool {
-	allowed := false
+	var (
+		pattern = strings.ToLower(p.Pattern)
+		allowed = false
+	)
 	if p.Principal == "*" {
 		allowed = true
-	} else if p.Pattern == "literal" && p.Principal == principal {
+	} else if pattern == "literal" && p.Principal == principal {
 		allowed = true
-	} else if p.Pattern == "prefixed" && strings.HasPrefix(principal, p.Principal) {
+	} else if pattern == "prefixed" && strings.HasPrefix(principal, p.Principal) {
 		allowed = true
 	}
 	return allowed
