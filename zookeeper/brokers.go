@@ -48,3 +48,38 @@ func Controller() (C, error) {
 	err := get("/controller", &c)
 	return c, err
 }
+
+type HostPort struct {
+	Id   int
+	Host string
+	Port int
+}
+
+var brokersListeners = make([]chan []HostPort, 0, 10)
+
+func WatchBrokers(ch chan []HostPort) {
+	brokersListeners = append(brokersListeners, ch)
+}
+
+func watchBrokers() {
+	data, _, events, _ := WatchChildren("/brokers/ids")
+	list := make([]HostPort, len(data))
+	for i, id := range data {
+		intId, err := strconv.Atoi(id)
+		if err != nil {
+			continue
+		}
+		broker, err := Broker(intId)
+		if err != nil {
+			continue
+		}
+		list[i] = HostPort{intId, broker.Host, broker.Port}
+	}
+	for _, ch := range brokersListeners {
+		ch <- list
+	}
+	_, ok := <-events
+	if ok {
+		watchBrokers()
+	}
+}

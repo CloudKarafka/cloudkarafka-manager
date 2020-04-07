@@ -1,0 +1,236 @@
+/* globals Chart */
+(function () {
+  window.ckm = window.ckm || {}
+
+  const chartColors = ['#5899DA', '#E8743B', '#19A979', '#ED4A7B', '#945ECF', '#13A4B4',
+    '#525DF4', '#BF399E', '#6C8893', '#EE6868', '#2F6497']
+
+  function ticks (ctx) {
+    return ctx.clientWidth / 10
+  }
+
+  function render (id, unit, options = {}) {
+    const el = document.getElementById(id)
+    const graphContainer = document.createElement('div')
+    graphContainer.classList.add('graph')
+    const ctx = document.createElement('canvas')
+    graphContainer.append(ctx)
+    el.append(graphContainer)
+    const legendEl = document.createElement('div')
+    legendEl.classList.add('legend')
+    el.append(legendEl)
+    const chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: []
+      },
+      options: Object.assign({
+        responsive: true,
+        aspectRatio: 4,
+        legend: {
+          display: false
+        },
+        tooltips: {
+          mode: 'x',
+          intersect: false,
+          position: 'nearest',
+          callbacks: {
+            label: function(tooltipItem, data) {
+              var label = data.datasets[tooltipItem.datasetIndex].label || ''
+              label += ': ' + ckm.helpers.formatNumber(tooltipItem.yLabel)
+              return label
+            }
+          }
+        },
+        hover: {
+          mode: 'x',
+          intersect: false
+        },
+        scales: {
+          xAxes: [{
+            type: 'time',
+            distribution: 'series',
+            gridLines: {
+              display: false
+            },
+            time: {
+              unit: 'second',
+              displayFormats: {
+                second: 'HH:mm:ss'
+              }
+            },
+            ticks: {
+              min: 0,
+              max: ticks(ctx),
+              source: 'auto'
+            }
+          }],
+          yAxes: [{
+            scaleLabel: {
+              display: true,
+              labelString: unit,
+              fontSize: 14
+            },
+            ticks: {
+              beginAtZero: true,
+              min: 0,
+              suggestedMax: 10,
+              callback: nFormatter
+            }
+          }]
+        },
+        legendCallback: function (chart) {
+          let asdf = []
+          for (let i = 0; i < chart.data.datasets.length; i++) {
+            let base = document.createElement('div')
+            base.classList.add('legend-item', 'checked')
+            let dataSet = chart.data.datasets[i]
+            let value = dataSet.data[-1] ? dataSet.data[-1].y : ''
+            let toggle = document.createElement('div')
+            toggle.classList.add('toggle')
+            base.append(toggle)
+
+            let bg = document.createElement('div')
+            bg.classList.add('color-ref')
+            bg.style.backgroundColor = dataSet.backgroundColor
+            base.append(bg)
+
+            let label = document.createElement('div')
+            label.classList.add('legend-label')
+            label.innerText = dataSet.label
+            let valueLegend = document.createElement('div')
+            valueLegend.classList.add('legend-value')
+            valueLegend.innerText = ckm.helpers.formatNumber(value)
+            let legends = document.createElement('div')
+            legends.append(label)
+            legends.append(valueLegend)
+            base.append(legends)
+            asdf.push(base)
+          }
+          return asdf.slice()
+        }
+      }, options)
+    })
+    legendEl.classList.add(chart.id + '-legend')
+
+    chart.generateLegend().forEach((l) => { legendEl.appendChild(l) })
+    addLegendClickHandler(legendEl)
+    return chart
+  }
+
+  function addLegendClickHandler (legendEl) {
+    legendEl.addEventListener('click', e => {
+      let target = e.target
+      while (!target.classList.contains('legend-item')) {
+        target = target.parentElement
+      }
+      let parent = target.parentElement
+      let chartId = parseInt(parent.classList[1].split('-')[0], 10)
+      let chart = Chart.instances[chartId]
+      let index = Array.prototype.slice.call(parent.children).indexOf(target)
+
+      chart.legend.options.onClick.call(chart, e, chart.legend.legendItems[index])
+      if (chart.isDatasetVisible(index)) {
+        target.classList.add('checked')
+      } else {
+        target.classList.remove('checked')
+      }
+    })
+  }
+
+  function nFormatter (num) {
+    let suffix = ''
+
+    if (num === '') {
+      return num
+    }
+
+    if (num >= 1000000000) {
+      suffix = 'G'
+      num = (num / 1000000000)
+    }
+    if (num >= 1000000) {
+      suffix = 'M'
+      num = (num / 1000000)
+    }
+    if (num >= 1000) {
+      suffix = 'K'
+      num = (num / 1000)
+    }
+
+    return ckm.helpers.formatNumber(num) + suffix
+  }
+
+  function formatLabel (key) {
+    let label = key.replace(/_/g, ' ').replace(/(rate|details|unroutable|messages)/ig, '').trim()
+      .replace(/^\w/, c => c.toUpperCase())
+    return label || 'Total'
+  }
+
+  function value (data) {
+    return (data.rate === undefined) ? data : data.rate
+  }
+
+  function createDataset (key, color) {
+    let label = formatLabel(key)
+    return {
+      key,
+      label,
+      fill: false,
+      type: 'line',
+      steppedLine: true,
+      pointRadius: 0,
+      pointStyle: 'line',
+      data: [],
+      backgroundColor: color,
+      borderColor: color
+    }
+  }
+
+  function addToDataset (dataset, data, date, maxY) {
+    let point = {
+      x: date,
+      y: value(data)
+    }
+    if (dataset.data.length >= maxY) {
+      dataset.data.shift()
+    }
+    dataset.data.push(point)
+  }
+
+  function update (chart, data) {
+    const date = new Date()
+    const maxY = ticks(chart.ctx.canvas)
+    const keys = Object.keys(data)
+    const legend = chart.ctx.canvas.closest('.chart-container').querySelector('.legend')
+    for (let key in data) {
+      if (key.match(/_log$/)) continue
+      let dataset = chart.data.datasets.find(dataset => dataset.key === key)
+      let i = keys.indexOf(key)
+      if (dataset === undefined) {
+        let color = chartColors[Math.floor((i / keys.length) * chartColors.length)]
+        dataset = createDataset(key, color)
+        chart.data.datasets.push(dataset)
+        while (legend.lastChild) {
+            legend.removeChild(legend.lastChild);
+        }
+        chart.generateLegend().forEach((l) => { legend.appendChild(l) })
+        let log = data[key] || []
+        log.forEach((p, i) => {
+          let pDate = new Date(date.getTime() - 5000 * (log.length - i))
+          addToDataset(dataset, p, pDate, maxY)
+        })
+      }
+      d = data[key]
+      addToDataset(dataset, d[d.length - 1], date, maxY)
+    }
+    chart.update()
+  }
+
+  Object.assign(window.ckm, {
+    chart: {
+      render, update
+    }
+  })
+})()

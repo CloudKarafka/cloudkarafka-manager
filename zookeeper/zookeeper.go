@@ -12,7 +12,6 @@ import (
 
 var (
 	conn                 *zk.Conn
-	authenticaionMethod  string
 	PathDoesNotExistsErr = errors.New("Zookeeper: Path does not exists")
 )
 
@@ -22,16 +21,6 @@ func Stop() {
 	if conn != nil {
 		conn.Close()
 	}
-}
-
-func SetAuthentication(method string) {
-	authenticaionMethod = method
-}
-func SkipAuthentication() bool {
-	return authenticaionMethod == "none"
-}
-func SkipAuthenticationWithWrite() bool {
-	return authenticaionMethod == "none-with-write"
 }
 
 func Connect(urls []string) error {
@@ -44,18 +33,27 @@ func Connect(urls []string) error {
 	})
 	conn, _, err = zk.Connect(urls, 30*time.Second, opts)
 	if err != nil {
-		time.Sleep(1 * time.Second)
-		Connect(urls)
 		return err
 	}
+	go watchBrokers()
+	go watchTopics()
 	return nil
 }
+
+func Exists(path string) bool {
+	exists, _, _ := conn.Exists(path)
+	return exists
+}
+
 func WatchChildren(path string) ([]string, *zk.Stat, <-chan zk.Event, error) {
 	return conn.ChildrenW(path)
 }
 
-func all(path string, fn permissionFunc) ([]string, error) {
+func all(path string, fn PermissionFunc) ([]string, error) {
 	rows := make([]string, 0)
+	if exists, _, _ := conn.Exists(path); !exists {
+		return rows, PathDoesNotExistsErr
+	}
 	children, _, err := conn.Children(path)
 	if err != nil {
 		return rows, err

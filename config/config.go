@@ -4,31 +4,64 @@ import (
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/cloudkarafka/cloudkarafka-manager/log"
+	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
 )
 
-type HostPort struct {
-	Host string
-	Port int
+func init() {
+	go handleBrokerChanges()
 }
-type BrokerURLs map[int]HostPort
+
+func handleBrokerChanges() {
+	brokerChanges := make(chan []zookeeper.HostPort)
+	zookeeper.WatchBrokers(brokerChanges)
+	defer close(brokerChanges)
+	for hps := range brokerChanges {
+		hash := make(map[int]zookeeper.HostPort)
+		for _, hp := range hps {
+			le := make(log.MapEntry)
+			le[string(hp.Id)] = hp
+			if len(le) > 0 {
+				log.Info("broker_change", le)
+			}
+			hash[hp.Id] = hp
+		}
+		BrokerUrls = hash
+	}
+}
+
+type BrokerURLs map[int]zookeeper.HostPort
 
 var (
-	BrokerUrls        BrokerURLs
+	BrokerUrls        = make(BrokerURLs)
 	Port              string
 	Retention         int64
 	AuthType          string
-	BuildDate         string = time.Now().Format("2006-01-02")
-	GitCommit         string = "master"
+	Version           string = "0.2.0"
+	GitCommit         string = "HEAD"
 	JMXRequestTimeout time.Duration
 	KafkaDir          string
 	ZookeeperURL      []string
+	WebRequestTimeout time.Duration = 5 * time.Second
+	DevMode           bool          = false
 )
 
 func PrintConfig() {
-	fmt.Printf("Build info\n BuildDate:\t%s\n Git commit:\t%s\n", BuildDate, GitCommit)
+	fmt.Printf("Build info\n Version:\t%s\n Git commit:\t%s\n", Version, GitCommit)
 	fmt.Printf("Runtime\n HTTP Port:\t%s\n Auth type:\t%s\n Retention:\t%d hours\n",
 		Port, AuthType, Retention)
 
+}
+
+func (b BrokerURLs) IDs() []int {
+	brokerIds := make([]int, len(b))
+	i := 0
+	for id, _ := range b {
+		brokerIds[i] = id
+		i += 1
+	}
+	return brokerIds
 }
 
 func (b BrokerURLs) KafkaUrl(k int) string {
@@ -44,6 +77,14 @@ func (b BrokerURLs) HttpUrl(k int) string {
 		return ""
 	}
 	return fmt.Sprintf("http://%s:1%d", b[k].Host, b[k].Port)
+}
+
+// Metrics reporter exposes http server on port 10000+PLAINTEXT-PORT (19092)
+func (b BrokerURLs) MgmtUrl(k int) string {
+	if b[k].Host == "" {
+		return ""
+	}
+	return fmt.Sprintf("http://%s:8080", b[k].Host)
 }
 
 func (b BrokerURLs) Rand() string {

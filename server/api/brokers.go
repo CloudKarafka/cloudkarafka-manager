@@ -1,126 +1,72 @@
 package api
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"os"
-	"sort"
-	"strconv"
-	"time"
 
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
-	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
 )
 
-var brokerMetrics = map[string]string{
-	"messages_MessagesInPerSec": "Messages in",
-	"bytes_BytesInPerSec":       "Bytes in",
-	"bytes_BytesOutPerSec":      "Bytes out",
-	"bytes_BytesRejectedPerSec": "Bytes rejected",
+type brokerVM struct {
+	Id           int    `json:"id"`
+	KafkaVersion string `json:"kafka_version"`
+	Host         string `json:"host"`
+	Controller   bool   `json:"controller"`
+	Uptime       string `json:"uptime"`
+	BytesIn      []int  `json:"bytes_in,omitempty"`
+	BytesOut     []int  `json:"bytes_out,omitempty"`
+	ISRShrink    []int  `json:"isr_shrink,omitempty"`
+	ISRExpand    []int  `json:"isr_expand,omitempty"`
+	Leader       int    `json:"leader"`
+	Partitions   int    `json:"partitions"`
+	TopicSize    string `json:"topic_size"`
 }
 
 func Brokers(w http.ResponseWriter, r *http.Request) {
-	res := make([]map[string]interface{}, 0)
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	for brokerId, _ := range config.BrokerUrls {
-		broker, err := m.FetchBroker(brokerId)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "[WARN] Brokers: could not get broker info from zk: %s\n", err)
-			res = append(res, map[string]interface{}{
-				"details": broker,
-			})
-
-		} else {
-			b := map[string]interface{}{
-				"details": broker,
-			}
-			m, err := m.FetchBrokerMetrics(ctx, brokerId, false)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "[INFO] Brokers: failed fetching broker(%d) metrics: %s\n", brokerId, err)
-			} else {
-				b["metrics"] = m
-			}
-			res = append(res, b)
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.ListBrokers() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+	brokers := make([]brokerVM, len(store.Brokers()))
+	for _, b := range store.Brokers() {
+		brokers[b.Id] = brokerVM{
+			Id:           b.Id,
+			KafkaVersion: b.KafkaVersion,
+			Host:         b.Host,
+			Controller:   b.Controller,
+			Uptime:       b.Uptime(),
 		}
 	}
-	sort.Slice(res, func(i, j int) bool {
-		return res[i]["details"].(m.Broker).Id < res[j]["details"].(m.Broker).Id
-	})
-	writeAsJson(w, res)
+	writeAsJson(w, brokers)
 }
 
 func Broker(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(pat.Param(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Broker id must a an integer"))
+	user := r.Context().Value("user").(mw.SessionUser)
+	if !user.Permissions.ListBrokers() {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	broker, err := m.FetchBroker(id)
-	if err != nil {
-		if err == zookeeper.PathDoesNotExistsErr {
-			http.NotFound(w, r)
-			return
-		}
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
+	id := pat.Param(r, "id")
+	b, ok := store.Broker(id)
+	if !ok {
+		http.NotFound(w, r)
 		return
 	}
-	res := map[string]interface{}{
-		"details": broker,
-	}
-	conn, err := m.FetchBrokerConnections(id)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching connections for %d: %s\n", id, err)
-	} else {
-		res["connections"] = conn
-	}
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	d, err := m.FetchBrokerMetrics(ctx, id, true)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] Broker: failed fetching broker(%d) metrics: %s\n", id, err)
-	} else {
-		res["metrics"] = d
-	}
-
-	writeAsJson(w, res)
-}
-
-func BrokersThroughput(w http.ResponseWriter, r *http.Request) {
-	from := time.Now().Add(time.Hour * 2 * -1)
-	brokerIds := make([]int, len(config.BrokerUrls))
-	i := 0
-	for id, _ := range config.BrokerUrls {
-		brokerIds[i] = id
-		i += 1
-	}
-	res, err := m.BrokersThroughput(brokerMetrics, brokerIds, from)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	writeAsJson(w, res)
-}
-func BrokerThroughput(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.Atoi(pat.Param(r, "id"))
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Broker id must a an integer"))
-		return
-	}
-	from := time.Now().Add(time.Hour * 2 * -1)
-	res, err := m.BrokersThroughput(brokerMetrics, []int{id}, from)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(err.Error()))
-		return
-	}
-	writeAsJson(w, res)
-
+	pc, lc, ts := store.BrokerToipcStats(b.Id)
+	writeAsJson(w, brokerVM{
+		Id:           b.Id,
+		KafkaVersion: b.KafkaVersion,
+		Host:         b.Host,
+		Controller:   b.Controller,
+		Uptime:       b.Uptime(),
+		BytesIn:      b.BytesIn.Points,
+		BytesOut:     b.BytesOut.Points,
+		ISRExpand:    b.ISRExpand.Points,
+		ISRShrink:    b.ISRShrink.Points,
+		Partitions:   pc,
+		Leader:       lc,
+		TopicSize:    ts,
+	})
 }

@@ -5,13 +5,13 @@ import (
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/metrics"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 )
 
 func CheckPluginVersion(ch chan []Notification) {
 	nots := make([]Notification, 0)
 	for brokerId, _ := range config.BrokerUrls {
-		res, err := metrics.PluginVersion(brokerId)
+		res, err := store.PluginVersion(brokerId)
 		if err != nil || res == "" {
 			nots = append(nots, Notification{
 				Key:       fmt.Sprintf("plugin-version-%d", brokerId),

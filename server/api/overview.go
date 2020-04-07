@@ -1,67 +1,49 @@
 package api
 
 import (
-	"context"
-	"fmt"
 	"net/http"
-	"os"
+
+	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	m "github.com/cloudkarafka/cloudkarafka-manager/metrics"
-	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
+	"github.com/cloudkarafka/cloudkarafka-manager/store"
 )
 
-func topicOverview(ctx context.Context, p zookeeper.Permissions, res map[string]int) map[string]int {
-	res["topic_size"] = 0
-	res["topic_msg_count"] = 0
-	res["topic_count"] = 0
-	topics, err := m.FetchTopicList(ctx, p)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[INFO] api.topicOverview: %s", err)
-		return res
-	}
-	for _, topic := range topics {
-		res["topic_size"] += topic.Size()
-		res["topic_msg_count"] += topic.Messages()
-		res["topic_count"] += 1
-	}
-	return res
-}
-func brokerOverview(res map[string]int) map[string]int {
-	res["broker_count"] = len(config.BrokerUrls)
-	if brokers, err := zookeeper.Brokers(); err == nil {
-		res["online_broker_count"] = len(brokers)
-	}
-	return res
-}
-
-// TODO Show only consumer that consumes from topics that user has permissions for?
-func consumerOverview(ctx context.Context, res map[string]int) map[string]int {
-	res["consumer_count"] = 0
-	if v, err := m.FetchConsumerGroups(ctx); err == nil {
-		res["consumer_count"] = len(v)
-	}
-	return res
-}
-
-func userOverview(p zookeeper.Permissions, res map[string]int) map[string]int {
-	res["user_count"] = 0
-	users, err := zookeeper.Users(p)
-	if err != nil {
-		return res
-	}
-	res["user_count"] = len(users)
-	return res
+type overviewVM struct {
+	Version      string `json:"version"`
+	Uptime       string `json:"uptime"`
+	Brokers      int    `json:"brokers"`
+	Topics       int    `json:"topics"`
+	Partitions   int    `json:"partitions"`
+	TopicSize    string `json:"topic_size"`
+	Messages     int    `json:"messages"`
+	Consumers    int    `json:"consumers"`
+	MessageRates []int  `json:"message_rates"`
+	BytesOut     []int  `json:"bytes_out"`
+	BytesIn      []int  `json:"bytes_in"`
+	ISRExpand    []int  `json:"isr_expand"`
+	ISRShrink    []int  `json:"isr_shrink"`
 }
 
 func Overview(w http.ResponseWriter, r *http.Request) {
-	p := r.Context().Value("permissions").(zookeeper.Permissions)
-	ctx, cancel := context.WithTimeout(r.Context(), config.JMXRequestTimeout)
-	defer cancel()
-	res := make(map[string]int)
-	res = topicOverview(ctx, p, res)
-	res = brokerOverview(res)
-	res = consumerOverview(ctx, res)
-	res = userOverview(p, res)
-	writeAsJson(w, res)
+	var (
+		user      = r.Context().Value("user").(mw.SessionUser)
+		brokers   = store.Brokers()
+		topics    = topics(user.Permissions.DescribeTopic)
+		consumers = store.Consumers()
+	)
+	writeAsJson(w, overviewVM{
+		Version:    config.Version,
+		Uptime:     store.Uptime(),
+		Brokers:    len(brokers),
+		Topics:     len(topics),
+		Consumers:  len(consumers),
+		Partitions: store.Partitions(),
+		TopicSize:  store.TotalTopicSize(),
+		Messages:   store.TotalMessageCount(),
+		BytesOut:   store.SumBrokerSeries("bytes_out").All(),
+		BytesIn:    store.SumBrokerSeries("bytes_in").All(),
+		ISRShrink:  store.SumBrokerSeries("isr_shrink").All(),
+		ISRExpand:  store.SumBrokerSeries("isr_expand").All(),
+	})
 }

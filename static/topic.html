@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Topic | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/favicon.ico"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Topic
+        <small id="name"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <table id="topic" class="stats-table card">
+        <tbody>
+          <tr>
+            <td id="t-partitions"></td>
+            <td id="t-size"></td>
+            <td id="t-messages"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th class="cols-4">Partitions</th>
+            <th class="cols-4">Size</th>
+            <th class="cols-4">Messages</th>
+          </tr>
+        </tfoot>
+      </table>
+      <section class="card cols-6">
+        <h3>Data rates</h3>
+        <div class="chart-container" id="dataChart"></div>
+      </section>
+      <section class="card cols-6">
+        <h3>Config</h3>
+        <table class="table" id="config">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th class="left" >Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan=2>No custom configuration</td>
+              </tr>
+            </tbody>
+        </table>
+      </section>
+      <section class="card cols-12">
+        <h3>
+          Partitions
+          <small id="partitions-count"></small>
+        </h3>
+        <div id="partitions-error"></div>
+        <table class="table" id="partitions">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Leader</th>
+                <th>ISR</th>
+                <th>Replicas</th>
+                <th>Log Start Offset</th>
+                <th>Log End Offset</th>
+                <th>Size</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </section>
+      <section class="card cols-12">
+        <form method="delete" id="deleteTopic" class="form">
+          <label>
+            <input type="submit" class="btn-danger" value="Delete topic"/>
+          </label>
+        </form>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/lib/chart.js"></script>
+    <script src="/js/chart.js"></script>
+    <script src="/js/topic_form.js"></script>
+    <script src="/js/overview.js"></script>
+    <script src="/js/topic.js"></script>
+  </body>
+</html>

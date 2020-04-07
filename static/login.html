@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="google" content="notranslate">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login - CloudKarafka Manager</title>
+    <link rel="apple-touch-icon" href="/img/logo.png">
+    <link rel="stylesheet" href="/css/main.css">
+    <link rel="stylesheet" href="/css/login.css">
+    <meta property="og:title" content="The best management interface for Apache Kafka" />
+    <meta name="author" content="84codes Team" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:description" content="A brand new open source GUI for administrating your Apache kafka cluster" />
+    <meta property="og:site_name" content="CloudKarafka Manager" />
+    <meta property="og:image" content="/assets/og-kafka-mgmt.png" />
+  </head>
+  <body>
+    <main>
+      <div class="card-header">
+        <h1 class="text-center logo-text">
+          <img class="logo" alt="Logo" src="/assets/mgmt-logo.svg"/>
+          Cloudkarafka Manager
+        </h1>
+      </div>
+      <section class="card">
+        <form id="login" action="" class="form">
+          <label for="kafka-username">
+            <span>Username</span>
+            <input type="text" name="username" id="kafka-username">
+          </label>
+          <label>
+            <span>Password</span>
+            <input type="password" name="password" id="kafka-password">
+          </label>
+          <button type="submit" class="btn-primary">Sign in</button>
+        </form>
+      </section>
+    </main>
+    <footer> </footer>
+    <script type="text/javascript" src="/js/footer.js"></script>
+    <script type="text/javascript" src="/js/auth.js"></script>
+    <script type="text/javascript" src="/js/http.js"></script>
+    <script type="text/javascript" src="/js/login.js"></script>
+  </body>
+</html>

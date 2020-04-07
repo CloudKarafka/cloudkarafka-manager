@@ -7,9 +7,6 @@ import (
 	"os"
 	"sort"
 	"time"
-
-	"github.com/cloudkarafka/cloudkarafka-manager/db"
-	bolt "go.etcd.io/bbolt"
 )
 
 type Level int
@@ -66,8 +63,8 @@ func List(ctx context.Context) []Notification {
 	)
 	defer close(ch)
 	checkers := []func(chan []Notification){
-		CheckURP, CheckPluginVersion,
-		CheckBalancedLeaders, CheckISRDelta,
+		//CheckURP, CheckPluginVersion,
+		//CheckBalancedLeaders, CheckISRDelta,
 	}
 	for _, fn := range checkers {
 		go fn(ch)
@@ -85,34 +82,4 @@ func List(ctx context.Context) []Notification {
 		return res[i].Level < res[j].Level
 	})
 	return res
-}
-
-func Trigger(n Notification) error {
-	return db.Update(func(tx *bolt.Tx) error {
-		root := tx.Bucket([]byte("notifications"))
-		b, err := root.CreateBucketIfNotExists([]byte(n.Key))
-		if err != nil {
-			return err
-		}
-		d := map[string]string{
-			"title":     n.Title,
-			"level":     n.Level.String(),
-			"message":   n.Message,
-			"timestamp": n.Timestamp.Format(time.RFC3339),
-		}
-		for k, v := range d {
-			if err := b.Put([]byte(k), []byte(v)); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-func Resolve(notificationKey string) error {
-	return db.Update(func(tx *bolt.Tx) error {
-		root := tx.Bucket([]byte("notifications"))
-		return root.Delete([]byte(notificationKey))
-
-	})
 }

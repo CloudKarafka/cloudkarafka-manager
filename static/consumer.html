@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Consumer group | CloudKarafka Manager</title>
+    <link href="/css/main.css" rel="stylesheet">
+    <meta name="google" content="notranslate">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" type="image/png" href="/img/favicon.png"/>
+    <link rel="apple-touch-icon" href="/img/apple-touch-icon-iphone.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/img/apple-touch-icon-ipad.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/img/apple-touch-icon-iphone4.png" />
+  </head>
+  <body>
+    <header>
+      <h2>
+        Consumer group
+        <small id="name"></small>
+      </h2>
+    </header>
+    <aside></aside>
+    <main>
+      <table id="cg" class="stats-table card">
+        <tbody>
+          <tr>
+            <td id="c-clients"></td>
+            <td id="c-topics"></td>
+            <td id="c-online"></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <th class="cols-6">Clients</th>
+            <th class="cols-6">Topics</th>
+            <th class="cols-6">Online</th>
+          </tr>
+        </tfoot>
+      </table>
+      <section class="card cols-12">
+        <h3>Clients</h3>
+        <table class="table" id="clients">
+            <thead>
+              <tr>
+                <th>Id</th>
+                <th>Consumer Id</th>
+                <th>Host</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </section>
+      <section class="card cols-12">
+        <h3>Topics</h3>
+        <table class="table" id="topics">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Clients</th>
+                <th>Lag</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+      </section>
+    </main>
+    <footer></footer>
+    <script src="/js/layout.js"></script>
+    <script src="/js/footer.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/http.js"></script>
+    <script src="/js/dom.js"></script>
+    <script src="/js/helpers.js"></script>
+    <script src="/js/table.js"></script>
+    <script src="/js/overview.js"></script>
+    <script src="/js/consumer.js"></script>
+  </body>
+</html>

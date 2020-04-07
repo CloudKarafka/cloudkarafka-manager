@@ -12,12 +12,22 @@ import (
 )
 
 var (
-	userAlreadyExists = errors.New("ERROR: user already exists.")
+	userAlreadyExists = errors.New("User already exists")
 )
 
-func Users(p Permissions) ([]string, error) {
+type users []string
+
+func (u users) Get(i int) interface{} {
+	return u[i]
+}
+
+func (u users) Size() int {
+	return len(u)
+}
+
+func Users(username string, p Permissions) (users, error) {
 	users, err := all("/config/users", func(usr string) bool {
-		return p.ClusterRead() || usr == p.Username
+		return p.ReadCluster("kafka-cluster") || usr == username
 	})
 	if err == zk.ErrNoNode {
 		return []string{}, nil
@@ -31,9 +41,6 @@ func User(name string) ([]byte, error) {
 }
 
 func CreateUser(name, password string) error {
-	if name == "" {
-		return fmt.Errorf("Username can not be empty string")
-	}
 	cryptos := []string{"SCRAM-SHA-256"}
 	cfg := make(map[string]string)
 	for _, crypto := range cryptos {
@@ -48,13 +55,16 @@ func CreateUser(name, password string) error {
 	if err == zk.ErrNodeExists {
 		return userAlreadyExists
 	}
+	if err != nil {
+		return err
+	}
 	return createSeq("/config/changes/config_change_", map[string]interface{}{
 		"version":     2,
 		"entity_path": "users/" + name,
 	})
 }
 
-func UserCredentials(name string) (string, string) {
+func userCredentials(name string) (string, string) {
 	data, _, err := conn.Get(fmt.Sprintf("/config/users/%s", name))
 	if err != nil {
 		fmt.Println(err)
@@ -87,7 +97,7 @@ func UserCredentials(name string) (string, string) {
 
 func ValidateScramLogin(user, pass string) bool {
 	enc := base64.StdEncoding.Strict()
-	s, sk := UserCredentials(user)
+	s, sk := userCredentials(user)
 	salt, _ := enc.DecodeString(s)
 	storedKey, _ := auth.CalculateSha256Keys(pass, salt)
 	return storedKey == sk
@@ -103,8 +113,5 @@ func DeleteUser(name string) error {
 		"version":     2,
 		"entity_path": "users/" + name,
 	}
-	if err = createSeq("/config/changes/config_change_", data); err != nil {
-		return err
-	}
-	return DeleteAcls(name)
+	return createSeq("/config/changes/config_change_", data)
 }
