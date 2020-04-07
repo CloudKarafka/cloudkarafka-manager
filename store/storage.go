@@ -104,7 +104,7 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 	me.topics[m.Topic] = t
 }
 
-func (me storage) BrokerToipcStats(brokerId int) (int, int, string) {
+func (me storage) BrokerTopicStats(brokerId int) (int, int, string) {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -287,5 +287,5 @@ func UpdateTopic(name string) bool {
 }
 
 func BrokerToipcStats(brokerId int) (int, int, string) {
-	return store.BrokerToipcStats(brokerId)
+	return store.BrokerTopicStats(brokerId)
 }

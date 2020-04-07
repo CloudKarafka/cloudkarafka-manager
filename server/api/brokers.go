@@ -54,7 +54,7 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	lc, pc, ts := store.BrokerToipcStats(b.Id)
+	pc, lc, ts := store.BrokerToipcStats(b.Id)
 	writeAsJson(w, brokerVM{
 		Id:           b.Id,
 		KafkaVersion: b.KafkaVersion,
@@ -65,8 +65,8 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		BytesOut:     b.BytesOut.Points,
 		ISRExpand:    b.ISRExpand.Points,
 		ISRShrink:    b.ISRShrink.Points,
-		Leader:       lc,
 		Partitions:   pc,
+		Leader:       lc,
 		TopicSize:    ts,
 	})
 }
