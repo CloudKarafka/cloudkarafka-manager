@@ -9,7 +9,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
-	github.com/segmentio/kafka-go v0.3.4
+	github.com/segmentio/kafka-go v0.3.5
 	github.com/zenazn/goji v0.9.1-0.20160507202103-64eb34159fe5
 	go.etcd.io/bbolt v1.3.3
 	goji.io v2.0.2+incompatible
