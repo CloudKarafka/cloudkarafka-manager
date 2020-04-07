@@ -11,7 +11,7 @@ require (
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
 	github.com/segmentio/kafka-go v0.3.4
 	github.com/zenazn/goji v0.9.1-0.20160507202103-64eb34159fe5
-	go.etcd.io/bbolt v1.3.3
+	go.etcd.io/bbolt v1.3.4
 	goji.io v2.0.2+incompatible
 	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e
