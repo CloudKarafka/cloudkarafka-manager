@@ -4,6 +4,8 @@ github.com/confluentinc/confluent-kafka-go v1.1.0 h1:HIW7Nkm8IeKRotC34mGY06DwQMf
 github.com/confluentinc/confluent-kafka-go v1.1.0/go.mod h1:u2zNLny2xq+5rWeTQjFHbDzzNuba4P1vo31r9r4uAdg=
 github.com/confluentinc/confluent-kafka-go v1.3.0 h1:1gJm/SgUqG01jRYJ1pSZ9GldAhXZ0xrFPKxINlVZ3z0=
 github.com/confluentinc/confluent-kafka-go v1.3.0/go.mod h1:MPUvNqmycSJrQZKGPS6LyLZLJH1hmLKkBmHQgQR7Ma0=
+github.com/confluentinc/confluent-kafka-go v1.4.0 h1:GCEMecax8zLZsCVn1cea7Y1uR/lRCdCDednpkc0NLsY=
+github.com/confluentinc/confluent-kafka-go v1.4.0/go.mod h1:u2zNLny2xq+5rWeTQjFHbDzzNuba4P1vo31r9r4uAdg=
 github.com/dustin/go-humanize v1.0.0 h1:VSnTsYCnlFHaM2/igO1h6X3HA71jcobQuxemgkq4zYo=
 github.com/dustin/go-humanize v1.0.0/go.mod h1:HtrtbFcZ19U5GC7JDqmcUSB87Iq5E25KnS6fMYU6eOk=
 github.com/eapache/go-xerial-snappy v0.0.0-20180814174437-776d5712da21 h1:YEetp8/yCZMuEPMUDHG0CW/brkkEp8mzqk2+ODEitlw=

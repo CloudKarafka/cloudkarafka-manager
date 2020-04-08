@@ -1,10 +1,9 @@
 language: go
 go:
 - "1.14"
-install: bash ./scripts/install.sh
 before_script: if ! [[ $TRAVIS_TAG ]]; then export LAST_TAG=$(git tag --list | tail -1); export VERSION=$LAST_TAG-$(git rev-list $LAST_TAG..HEAD --count); else export VERSION=$TRAVIS_TAG; fi
 script:
-- bash ./scripts/package.sh > /dev/null
+- bash ./scripts/package.sh
 - go test -v ./...
 - go build -ldflags "-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$TRAVIS_COMMIT
   -X github.com/cloudkarafka/cloudkarafka-manager/config.Version=$VERSION" -tags static -a
