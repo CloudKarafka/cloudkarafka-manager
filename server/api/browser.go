@@ -1,18 +1,15 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/zookeeper"
-
-	"github.com/segmentio/kafka-go"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"goji.io/pat"
 )
 
@@ -24,31 +21,37 @@ type MessageData struct {
 	Offset    string `json:"offset"`
 }
 
+func consume(config *kafka.ConfigMap, topic string) (*kafka.Consumer, error) {
+	consumer, err := kafka.NewConsumer(config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", err)
+		return nil, fmt.Errorf("Could not connect to Kafka: %s", err)
+	}
+	metadata, err := consumer.GetMetadata(&topic, false, 1000)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", err)
+		return nil, fmt.Errorf("Could not get cluster metadata: %s", err)
+	}
+	parts := metadata.Topics[topic].Partitions
+	toppar := make([]kafka.TopicPartition, len(parts))
+	for i, p := range parts {
+		toppar[i] = kafka.TopicPartition{Topic: &topic, Partition: p.ID, Offset: kafka.OffsetEnd}
+	}
+	err = consumer.Assign(toppar)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", err)
+		return nil, fmt.Errorf("Could not assign topic partitions to consumer: %s", err)
+	}
+	return consumer, nil
+}
+
 func formatter(f string, b []byte) interface{} {
 	switch f {
 	case "byte-array":
 		return b
-	default:
-		// string and json is by default a string
-		return string(b)
 	}
-}
-
-func reader(ctx context.Context, topic string, partition int, fanIn chan interface{}) {
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:     config.BrokerUrls.List(),
-		Topic:       topic,
-		StartOffset: kafka.LastOffset,
-		Partition:   partition,
-	})
-	for {
-		msg, err := reader.FetchMessage(ctx)
-		if err != nil {
-			fanIn <- err
-			break
-		}
-		fanIn <- msg
-	}
+	// string and json is by default a string
+	return string(b)
 }
 
 func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
@@ -60,55 +63,71 @@ func TopicBrowser(rw http.ResponseWriter, r *http.Request) {
 		http.Error(rw, "Streaming unsupported!", http.StatusBadRequest)
 		return
 	}
+	rw.Header().Set("Content-Type", "text/event-stream")
+	rw.Header().Set("Cache-Control", "no-cache")
+	rw.Header().Set("Connection", "keep-alive")
+	rw.Header().Set("Access-Control-Allow-Origin", "*")
+	fmt.Fprint(rw, "\n")
+	fmt.Fprint(rw, ":\n")
+	fmt.Fprint(rw, "retry: 15000\n\n")
 
-	SetupSSE(15000, rw)
-
-	fmt.Fprintf(os.Stdout, "[INFO] %s Topic browser: '%s'\n", rid, name)
-
-	fanIn := make(chan interface{})
-	t, _ := zookeeper.Topic(name)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	for partition, _ := range t.Partitions {
-		p, _ := strconv.Atoi(partition)
-		go reader(ctx, name, p, fanIn)
+	fmt.Fprintf(os.Stderr, "[INFO] %s Topic browser: '%s'\n", rid, name)
+	config := &kafka.ConfigMap{
+		"metadata.broker.list":       strings.Join(config.BrokerUrls.List(), ","),
+		"group.id":                   "kafka-browser",
+		"enable.auto.commit":         false,
+		"enable.auto.offset.store":   false,
+		"go.events.channel.enable":   true,
+		"queued.max.messages.kbytes": 512,
+	}
+	consumer, err := consume(config, name)
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	notify := rw.(http.CloseNotifier).CloseNotify()
 	for {
 		select {
 		case <-notify:
-			fmt.Fprintf(os.Stdout, "[INFO] %s Topic browser: client closed\n", rid)
+			fmt.Fprintf(os.Stderr, "[INFO] %s Topic browser: client closed\n", rid)
+			consumer.Close()
 			return
 		case <-time.After(10 * time.Second):
 			fmt.Fprint(rw, ":\n\n")
 			flusher.Flush()
-		case ev := <-fanIn:
+		case ev := <-consumer.Events():
 			switch e := ev.(type) {
-			case kafka.Message:
-				headers := make(map[string]string)
-				for _, h := range e.Headers {
-					headers[h.Key] = string(h.Value)
-				}
+			case *kafka.Message:
 				msg := map[string]interface{}{
 					"message":   formatter(q.Get("vf"), e.Value),
 					"key":       formatter(q.Get("kf"), e.Key),
-					"partition": e.Partition,
-					"offset":    e.Offset,
-					"timestamp": e.Time,
-					"headers":   headers,
+					"partition": e.TopicPartition.Partition,
+					"offset":    e.TopicPartition.Offset.String(),
+					"timestamp": e.Timestamp,
+					"headers":   []string{},
+				}
+				if e.Headers != nil {
+					for _, h := range e.Headers {
+						msg["headers"] = append(msg["headers"].([]string), h.String())
+					}
 				}
 				json, _ := json.Marshal(msg)
 				fmt.Fprintf(rw, "data: %s\n\n", json)
 				flusher.Flush()
-			case error:
-				fmt.Fprintf(os.Stdout, "[INFO] Kafka browser: %s", e)
-				fmt.Fprint(rw, "event: err\n")
-				json, _ := json.Marshal(map[string]interface{}{
-					"message": e.Error(),
-				})
-				fmt.Fprintf(rw, "data: %s\n\n", json)
-				flusher.Flush()
-				return
+			case kafka.Error:
+				switch e.Code() {
+				case kafka.ErrNotImplemented:
+				default:
+					fmt.Fprintf(os.Stderr, "[INFO] Kafka browser: %s", e)
+					fmt.Fprint(rw, "event: err\n")
+					json, _ := json.Marshal(map[string]interface{}{
+						"message": e.Error(),
+					})
+					fmt.Fprintf(rw, "data: %s\n\n", json)
+					flusher.Flush()
+					consumer.Close()
+					return
+				}
 			}
 		}
 	}
