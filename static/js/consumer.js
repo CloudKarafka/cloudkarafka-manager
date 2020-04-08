@@ -6,6 +6,11 @@
   let data = null
   let updateTimer = null
 
+  const nameEl = document.getElementById('name')
+  if (nameEl) {
+    nameEl.textContent = consumer
+  }
+
   if (raw) {
     try {
       data = JSON.parse(raw)
