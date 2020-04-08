@@ -1,10 +1,10 @@
-(function () {
+(function (ckm) {
   const tableOptions = {
-    url: "/api/topics",
+    url: '/api/topics',
     interval: 5000,
     pagination: true,
     search: false,
-    keyColumns: ["name"]
+    keyColumns: ['name']
   }
   const topicsTable = ckm.table.renderTable('topics', tableOptions, function (tr, item, all) {
     if (all) {
@@ -36,4 +36,6 @@
   })
   const form = ckm.topic.form('POST', {}, topicsTable.fetchAndUpdate)
   document.getElementsByTagName('main')[0].insertAdjacentElement('beforeend', form)
-})()
+  ckm.topic = ckm.topic || {}
+  ckm.topic.table = topicsTable
+})(window.ckm)

@@ -1,5 +1,4 @@
-(function() {
-  window.ckm = window.ckm || {}
+(function(ckm) {
   function form(method, data = {}, cb = null) {
     const form = document.createElement('form')
     let url = ''
@@ -59,12 +58,15 @@
           cb()
         }
         ckm.dom.toast(`Topic ${name} created`)
+        if(ckm.topic.table) {
+          ckm.topic.table.fetchAndUpdate()
+        }
       }).catch(ckm.http.standardErrorHandler).finally(rmLoader)
     })
     return form
   }
 
-  Object.assign(window.ckm, {
+  Object.assign(ckm, {
     topic: { form }
   })
-})()
+})(window.ckm)
