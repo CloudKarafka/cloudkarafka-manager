@@ -123,7 +123,7 @@ func (g ConsumerGroups) NumberConsumers(group string) int {
 		now      = time.Now().Unix()
 	)
 	for _, member := range g[group] {
-		if now-member.LastSeen < 5 {
+		if now-member.LastSeen < 10 {
 			groupMap[member.ConsumerId] = struct{}{}
 		}
 	}
