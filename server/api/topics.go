@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	c "github.com/cloudkarafka/cloudkarafka-manager/config"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/server/validators"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
@@ -79,7 +80,11 @@ func CreateTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if replicationFactor <= 0 {
-		jsonError(w, "Replication factor cannot be zero")
+		jsonError(w, "Replication factor can't be zero")
+		return
+	}
+	if int(replicationFactor) > len(c.BrokerUrls) {
+		jsonError(w, "Replication factor can't be larger than the number of nodes in the cluster")
 		return
 	}
 	if partitions, ok = data["partitions"].(float64); !ok {
