@@ -110,15 +110,16 @@
       ckm.table.renderCell(tr, 2, p.lag, 'right')
       tBody.appendChild(tr)
     })
-    var tBody = document.querySelector('#clients tbody')
+    tBody = document.querySelector('#clients tbody')
     ckm.dom.removeChildren(tBody);
-    response.clients.forEach(c => {
+    response..forEach(c => {
       var tr = document.createElement('tr')
       ckm.table.renderCell(tr, 0, c.id)
       ckm.table.renderCell(tr, 1, c.consumer_id, 'right')
       ckm.table.renderCell(tr, 2, c.host, 'right')
       tBody.appendChild(tr)
     })
+    tBody = document.querySelector('#clients tbody')
   }
   ckm.consumer.start(updateView)
 })()

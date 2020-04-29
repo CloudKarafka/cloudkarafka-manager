@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,17 +27,23 @@ func serverError(w http.ResponseWriter, err error, fn, msg string) {
 }
 
 func checkBrokerURP(brokerId int) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	sleep := 5
+	conn, err := store.DialJMXServer()
+	defer conn.Close()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
+		return
+	}
 	for i := 0; i < sleep*20; i++ {
-		r, err := store.GetMetrics(ctx, store.MetricRequest{
+		r, err := conn.GetMetrics(store.MetricRequest{
 			brokerId,
 			store.BeanBrokerUnderReplicatedPartitions,
 			"Value"})
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
-		} else if len(r) > 0 { // Got a response
+			return
+		}
+		if len(r) > 0 { // Got a response
 			fmt.Fprintf(os.Stderr, "[INFO] URP status: broker=%d, URP=%.0f\n", brokerId, r[0].Value)
 			if r[0].Value == 0 {
 				return

@@ -1,15 +1,16 @@
 package store
 
 import (
-	"context"
-	"encoding/json"
+	"bufio"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
-	"github.com/cloudkarafka/cloudkarafka-manager/log"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -24,10 +25,6 @@ type MetricRequest struct {
 	Attr     string
 }
 
-func (mr MetricRequest) String() string {
-	return fmt.Sprintf("%d:%s/%s", mr.BrokerId, mr.Bean, mr.Attr)
-}
-
 type Metric struct {
 	Broker           int     `json:"broker"`
 	Topic            string  `json:"topic"`
@@ -38,65 +35,82 @@ type Metric struct {
 	Listener         string  `json:"listener"`
 	NetworkProcessor string  `json:"networkProcessor"`
 	Attribute        string  `json:"attribute"`
-	Request          string  `json:"request"`
-	Key              string  `json:"key"`
-	Error            string  `json:"-"`
 }
 
-func doRequest(ctx context.Context, url string) ([]Metric, error) {
-	var v []Metric
-	r, err := http.Get(url)
+func (me MetricRequest) Bytes() []byte {
+	return []byte(fmt.Sprintf("jmx %s\n", me.Bean.String()))
+}
+
+type JMXConn struct {
+	conn    net.Conn
+	scanner *bufio.Scanner
+}
+
+func (me JMXConn) Close() {
+	me.conn.Close()
+}
+
+func DialJMXServer() (JMXConn, error) {
+	conn, err := net.Dial("tcp", "localhost:19500")
 	if err != nil {
-		return nil, err
+		return JMXConn{}, err
 	}
-	defer r.Body.Close()
-	//log.Debug("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
-	if r.StatusCode != 200 {
-		log.Warn("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
-		return nil, fmt.Errorf("URL %s returned %d", url, r.StatusCode)
-	}
-	if err = json.NewDecoder(r.Body).Decode(&v); err != nil {
-		return nil, err
-	}
-	//if len(v) == 0 {
-	//	log.Debug("bean_request", log.MapEntry{"body": "[]", "url": url})
-	//}
-	return v, nil
+	jmx := JMXConn{conn, bufio.NewScanner(conn)}
+	return jmx, nil
 }
 
-func GetMetrics(ctx context.Context, query MetricRequest) ([]Metric, error) {
-	switch query.Attr {
-	case "OneMinuteRate":
-		if r, found := jmxCache1Min.Get(query.String()); found {
-			log.Info("GetMetrics cached", log.MapEntry{"Bean": query.Bean.String(), "Attr": query.Attr})
-			return r.([]Metric), nil
+func (me JMXConn) Write(query MetricRequest) {
+	me.conn.Write(query.Bytes())
+}
+
+var (
+	writes = 0
+	reads  = 0
+)
+
+func (me JMXConn) GetMetrics(query MetricRequest) ([]Metric, error) {
+	_, err := me.conn.Write(query.Bytes())
+	var metrics []Metric
+	if err != nil {
+		return metrics, err
+	}
+	for me.scanner.Scan() {
+		line := me.scanner.Text()
+		if line == "" {
+			break
 		}
-	case "TimeSerie", "Count", "Value":
-		// Never cache
-	default:
-		log.Info("GetMetrics nocache", log.MapEntry{"Attr": query.Attr})
-	}
-	host := config.BrokerUrls.HttpUrl(query.BrokerId)
-	if host == "" {
-		return nil, fmt.Errorf("Broker %d not available", query.BrokerId)
-	}
-	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", host, query.Bean, query.Attr)
-	select {
-	case <-ctx.Done():
-		return []Metric{}, ctx.Err()
-	default:
-		v, err := doRequest(ctx, url)
-		if err == nil {
-			for i, _ := range v {
-				v[i].Broker = query.BrokerId
+		m := Metric{}
+		cols := strings.Split(line, ";;")
+		for _, col := range cols {
+			values := strings.Split(col, "=")
+			if len(values) != 2 {
+				continue
+			}
+			key, val := values[0], values[1]
+			switch strings.ToLower(key) {
+			case "topic":
+				m.Topic = val
+			case "broker":
+				m.Broker, _ = strconv.Atoi(val)
+			case "name":
+				m.Name = val
+			case "partition":
+				m.Partition = val
+			case "type":
+				m.Type = val
+			case "count":
+				m.Value, _ = strconv.ParseFloat(val, 32)
+			case "listener":
+				m.Listener = val
+			case "networkprocessor":
+				m.NetworkProcessor = val
+			case "attribute":
+				m.Attribute = "Count"
 			}
 		}
-		switch query.Attr {
-		case "OneMinuteRate":
-			jmxCache1Min.Set(query.String(), v, cache.DefaultExpiration)
-		}
-		return v, err
+		metrics = append(metrics, m)
 	}
+	return metrics, nil
 }
 
 func getSimpleValue(url string) (string, error) {

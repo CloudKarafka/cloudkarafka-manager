@@ -33,21 +33,24 @@ func buildURPNotification(m store.Metric) Notification {
 
 func CheckURP(out chan []Notification) {
 	res := make([]Notification, 0)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	for brokerId, _ := range config.BrokerUrls {
 		req := store.MetricRequest{
 			brokerId,
 			store.BeanBrokerUnderReplicatedPartitions,
 			"Value",
 		}
-		r, err := store.GetMetrics(ctx, req)
+		conn, err := store.DialJMXServer()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckURP: %s\n", err)
-		} else {
-			if r[0].Value > 0 {
-				res = append(res, buildURPNotification(r[0]))
-			}
+			return
+		}
+		r, err := conn.GetMetrics(req)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[INFO] CheckURP: %s\n", err)
+			return
+		}
+		if r[0].Value > 0 {
+			res = append(res, buildURPNotification(r[0]))
 		}
 	}
 	out <- res
@@ -55,10 +58,10 @@ func CheckURP(out chan []Notification) {
 
 func CheckBalancedLeaders(out chan []Notification) {
 	var (
-		res         = make([]Notification, 0)
-		stat        = make(map[int]int)
-		total       = 0
-		ctx, cancel = context.WithCancel(context.Background())
+		res       = make([]Notification, 0)
+		stat      = make(map[int]int)
+		total     = 0
+		_, cancel = context.WithCancel(context.Background())
 	)
 	defer cancel()
 	if len(config.BrokerUrls) == 1 {
@@ -71,7 +74,12 @@ func CheckBalancedLeaders(out chan []Notification) {
 			store.BeanBrokerLeaderCount,
 			"Value",
 		}
-		r, err := store.GetMetrics(ctx, req)
+		conn, err := store.DialJMXServer()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "[INFO] CheckURP: %s\n", err)
+			return
+		}
+		r, err := conn.GetMetrics(req)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[INFO] CheckBalancedLeader: %s\n", err)
 		} else {

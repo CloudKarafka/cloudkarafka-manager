@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -13,27 +14,29 @@ import (
 
 const (
 	MaxPoints  int           = 500
-	Timeout    time.Duration = 5 * time.Second
-	SampleTime time.Duration = 10 * time.Second
+	Timeout    time.Duration = 10 * time.Second
+	SampleTime time.Duration = 2 * time.Second
 )
 
-func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest) {
-	ctx, cancel := context.WithTimeout(ctx, Timeout)
-	defer cancel()
+type MetricsFetcher struct {
+	Conn JMXConn
+	Out  chan Metric
+}
+
+func (me MetricsFetcher) Stop() {
+	close(me.Out)
+	me.Conn.Close()
+}
+
+func (me MetricsFetcher) Run(ctx context.Context, reqs []MetricRequest) {
 	for _, r := range reqs {
-		select {
-		case <-ctx.Done():
-			log.Error("fetch_metrics", log.ErrorEntry{ctx.Err()})
-			break
-		default:
-			resp, err := GetMetrics(ctx, r)
-			if err != nil {
-				log.Error("fetch_metrics", log.ErrorEntry{err})
-				continue
-			}
-			for _, r := range resp {
-				metrics <- r
-			}
+		resp, err := me.Conn.GetMetrics(r)
+		if err != nil {
+			log.Error("fetch_metrics", log.ErrorEntry{err})
+			continue
+		}
+		for _, r := range resp {
+			me.Out <- r
 		}
 	}
 }
@@ -85,20 +88,32 @@ func Start() {
 
 		topicChanges  = make(chan []zookeeper.T)
 		brokerChanges = make(chan []zookeeper.HostPort)
-		bMetrics      = make(chan Metric)
-		tMetrics      = make(chan Metric)
 		cMetrics      = make(chan ConsumerGroups)
 		ticker        = time.NewTicker(SampleTime)
 	)
+	defer ticker.Stop()
+	defer close(topicChanges)
+	defer close(brokerChanges)
+
+	conn, err := DialJMXServer()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	bMetrics := MetricsFetcher{conn, make(chan Metric)}
+	defer bMetrics.Stop()
+
+	conn, err = DialJMXServer()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	tMetrics := MetricsFetcher{conn, make(chan Metric)}
+	defer tMetrics.Stop()
 
 	zookeeper.WatchTopics(topicChanges)
 	zookeeper.WatchBrokers(brokerChanges)
-
-	defer ticker.Stop()
-	defer close(bMetrics)
-	defer close(tMetrics)
-	defer close(topicChanges)
-	defer close(brokerChanges)
+	fmt.Println(brokerRequests)
 	for {
 		select {
 		case <-ticker.C:
@@ -106,16 +121,16 @@ func Start() {
 				cancel()
 			}
 			ctx, cancel = context.WithCancel(context.Background())
-			go FetchMetrics(ctx, bMetrics, brokerRequests)
-			go FetchMetrics(ctx, tMetrics, topicRequests)
+			go bMetrics.Run(ctx, brokerRequests)
+			go tMetrics.Run(ctx, topicRequests)
 			go FetchConsumerGroups(ctx, cMetrics)
 		case hps := <-brokerChanges:
 			brokerRequests = handleBrokerChanges(hps)
 		case topics := <-topicChanges:
 			topicRequests = handleTopicChanges(topics)
-		case metric := <-bMetrics:
+		case metric := <-bMetrics.Out:
 			store.UpdateBrokerMetrics(metric)
-		case metric := <-tMetrics:
+		case metric := <-tMetrics.Out:
 			store.UpdateTopicMetric(metric)
 		case cgs := <-cMetrics:
 			store.UpdateConsumers(cgs)
