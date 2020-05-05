@@ -1,4 +1,4 @@
-(function() {
+(function () {
   document.querySelector('#login').addEventListener('submit', function (evt) {
     evt.preventDefault()
     const user = document.querySelector('#kafka-username').value

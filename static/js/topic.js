@@ -103,7 +103,7 @@
     url: `${ckm.topic.url}/partitions`,
     interval: 5000,
     pagination: true,
-    keyColumns: ["number"],
+    keyColumns: ['number'],
     baseQuery: `name=${ckm.topic.name}`
   }
   const partitionsTable = ckm.table.renderTable('partitions', tableOptions, function (tr, p, all) {
@@ -113,20 +113,20 @@
     ckm.table.renderCell(tr, 1, p.leader, 'center')
     ckm.table.renderCell(tr, 2, p.isr, 'center')
     ckm.table.renderCell(tr, 3, p.replicas, 'center')
-    ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
-    ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
-    ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
+    ckm.table.renderCell(tr, 4, p.metrics.LogStartOffset, 'center')
+    ckm.table.renderCell(tr, 5, p.metrics.LogEndOffset, 'center')
+    ckm.table.renderCell(tr, 6, p.metrics.Size, 'center')
   })
 
   function updateView (response) {
-    let dataStats = {
+    const dataStats = {
       send_details: response.bytes_out,
       receive_details: response.bytes_in
     }
     ckm.chart.update(dataChart, dataStats)
 
     var tBody = document.querySelector('#config tbody')
-    ckm.dom.removeChildren(tBody);
+    ckm.dom.removeChildren(tBody)
     if (response.config !== undefined) {
       const keys = Object.keys(response.config)
       if (keys.length == 0) {
@@ -146,8 +146,8 @@
     }
   }
 
-  document.querySelector("#deleteTopic").addEventListener('submit', function(evt) {
-    evt.preventDefault();
+  document.querySelector('#deleteTopic').addEventListener('submit', function (evt) {
+    evt.preventDefault()
     if (window.confirm('Are you sure? The topic is going to be deleted. Messages cannot be recovered after deletion.')) {
       showLoader()
       ckm.http.request('DELETE', ckm.topic.url)

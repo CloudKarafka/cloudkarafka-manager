@@ -36,7 +36,7 @@
           intersect: false,
           position: 'nearest',
           callbacks: {
-            label: function(tooltipItem, data) {
+            label: function (tooltipItem, data) {
               var label = data.datasets[tooltipItem.datasetIndex].label || ''
               label += ': ' + ckm.helpers.formatNumber(tooltipItem.yLabel)
               return label
@@ -81,28 +81,28 @@
           }]
         },
         legendCallback: function (chart) {
-          let asdf = []
+          const asdf = []
           for (let i = 0; i < chart.data.datasets.length; i++) {
-            let base = document.createElement('div')
+            const base = document.createElement('div')
             base.classList.add('legend-item', 'checked')
-            let dataSet = chart.data.datasets[i]
-            let value = dataSet.data[-1] ? dataSet.data[-1].y : ''
-            let toggle = document.createElement('div')
+            const dataSet = chart.data.datasets[i]
+            const value = dataSet.data[-1] ? dataSet.data[-1].y : ''
+            const toggle = document.createElement('div')
             toggle.classList.add('toggle')
             base.append(toggle)
 
-            let bg = document.createElement('div')
+            const bg = document.createElement('div')
             bg.classList.add('color-ref')
             bg.style.backgroundColor = dataSet.backgroundColor
             base.append(bg)
 
-            let label = document.createElement('div')
+            const label = document.createElement('div')
             label.classList.add('legend-label')
             label.innerText = dataSet.label
-            let valueLegend = document.createElement('div')
+            const valueLegend = document.createElement('div')
             valueLegend.classList.add('legend-value')
             valueLegend.innerText = ckm.helpers.formatNumber(value)
-            let legends = document.createElement('div')
+            const legends = document.createElement('div')
             legends.append(label)
             legends.append(valueLegend)
             base.append(legends)
@@ -125,10 +125,10 @@
       while (!target.classList.contains('legend-item')) {
         target = target.parentElement
       }
-      let parent = target.parentElement
-      let chartId = parseInt(parent.classList[1].split('-')[0], 10)
-      let chart = Chart.instances[chartId]
-      let index = Array.prototype.slice.call(parent.children).indexOf(target)
+      const parent = target.parentElement
+      const chartId = parseInt(parent.classList[1].split('-')[0], 10)
+      const chart = Chart.instances[chartId]
+      const index = Array.prototype.slice.call(parent.children).indexOf(target)
 
       chart.legend.options.onClick.call(chart, e, chart.legend.legendItems[index])
       if (chart.isDatasetVisible(index)) {
@@ -163,7 +163,7 @@
   }
 
   function formatLabel (key) {
-    let label = key.replace(/_/g, ' ').replace(/(rate|details|unroutable|messages)/ig, '').trim()
+    const label = key.replace(/_/g, ' ').replace(/(rate|details|unroutable|messages)/ig, '').trim()
       .replace(/^\w/, c => c.toUpperCase())
     return label || 'Total'
   }
@@ -173,7 +173,7 @@
   }
 
   function createDataset (key, color) {
-    let label = formatLabel(key)
+    const label = formatLabel(key)
     return {
       key,
       label,
@@ -189,7 +189,7 @@
   }
 
   function addToDataset (dataset, data, date, maxY) {
-    let point = {
+    const point = {
       x: date,
       y: value(data)
     }
@@ -204,21 +204,21 @@
     const maxY = ticks(chart.ctx.canvas)
     const keys = Object.keys(data)
     const legend = chart.ctx.canvas.closest('.chart-container').querySelector('.legend')
-    for (let key in data) {
+    for (const key in data) {
       if (key.match(/_log$/)) continue
       let dataset = chart.data.datasets.find(dataset => dataset.key === key)
-      let i = keys.indexOf(key)
+      const i = keys.indexOf(key)
       if (dataset === undefined) {
-        let color = chartColors[Math.floor((i / keys.length) * chartColors.length)]
+        const color = chartColors[Math.floor((i / keys.length) * chartColors.length)]
         dataset = createDataset(key, color)
         chart.data.datasets.push(dataset)
         while (legend.lastChild) {
-            legend.removeChild(legend.lastChild);
+          legend.removeChild(legend.lastChild)
         }
         chart.generateLegend().forEach((l) => { legend.appendChild(l) })
-        let log = data[key] || []
+        const log = data[key] || []
         log.forEach((p, i) => {
-          let pDate = new Date(date.getTime() - 5000 * (log.length - i))
+          const pDate = new Date(date.getTime() - 5000 * (log.length - i))
           addToDataset(dataset, p, pDate, maxY)
         })
       }

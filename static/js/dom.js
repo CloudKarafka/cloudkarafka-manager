@@ -66,7 +66,7 @@
 
   function toast (text) {
     removeNodes('.toast')
-    let d = document.createElement('div')
+    const d = document.createElement('div')
     d.classList.add('toast')
     d.textContent = text
     document.body.appendChild(d)
@@ -79,14 +79,14 @@
     }, 7000)
   }
 
-  function formInput(element, name, options) {
+  function formInput (element, name, options) {
     const label = document.createElement('label')
     const span = document.createElement('span')
     span.innerText = name
     label.appendChild(span)
     const elem = document.createElement(element)
     elem.name = name.toLowerCase().replace(' ', '_')
-    if (element == "select") {
+    if (element == 'select') {
       options.forEach((txt) => {
         var opt = document.createElement('option')
         opt.innerText = txt
@@ -102,19 +102,19 @@
     return label
   }
 
-  function createLink(href, linkText) {
+  function createLink (href, linkText) {
     const queueLink = document.createElement('a')
     queueLink.href = href
     queueLink.textContent = linkText
     return queueLink
   }
 
-  function createBadge(text, title, badgeType) {
+  function createBadge (text, title, badgeType) {
     const abbr = document.createElement('abbr')
     abbr.setAttribute('title', title)
     abbr.innerText = text
-    abbr.classList.add('badge');
-    abbr.classList.add('badge-' + badgeType);
+    abbr.classList.add('badge')
+    abbr.classList.add('badge-' + badgeType)
     return abbr
   }
 

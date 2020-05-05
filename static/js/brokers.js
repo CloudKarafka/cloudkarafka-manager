@@ -1,9 +1,9 @@
-(function() {
+(function () {
   const tableOptions = {
-    url: "/api/brokers",
+    url: '/api/brokers',
     keyColumns: ['id'],
     interval: 5000,
-    pagination: false,
+    pagination: false
   }
   const queuesTable = ckm.table.renderTable('brokers', tableOptions, function (tr, item, all) {
     if (all) {

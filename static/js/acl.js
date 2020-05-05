@@ -93,7 +93,7 @@
     url: `${ckm.acl.url}/users`,
     interval: 5000,
     pagination: true,
-    keyColumns: ["principal"],
+    keyColumns: ['principal'],
     baseQuery: `name=${ckm.acl.name}&type=${ckm.acl.resource_type}`
   }
   const usersTable = ckm.table.renderTable('users', tableOptions, function (tr, p, all) {
@@ -106,15 +106,15 @@
     const btn = document.createElement('button')
     btn.classList.add('btn-danger')
     btn.innerHTML = 'Delete'
-    btn.addEventListener('click', function(evt) {
-      const url = `/api/acls`
+    btn.addEventListener('click', function (evt) {
+      const url = '/api/acls'
       const body = {
         resource_type: ckm.acl.resource_type,
         pattern_type: ckm.acl.pattern_type,
         name: ckm.acl.name,
         principal: p.principal,
         permission: p.operation,
-        permission_type: p.permission_type,
+        permission_type: p.permission_type
       }
       if (window.confirm('Are you sure? The ACL rule will be deleted and all principals authorized with this rule will be unable to access the resource.')) {
         ckm.http.request('DELETE', url, { body }).then(() => {
@@ -123,7 +123,6 @@
       }
     })
     ckm.table.renderCell(tr, 4, btn, 'right')
-
   })
   ckm.acl.start()
 })()

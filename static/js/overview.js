@@ -29,7 +29,6 @@
     return url + '#' + user
   }
 
-
   function update (cb) {
     const headers = new window.Headers()
     ckm.http.request('GET', url, { headers }).then(function (response) {

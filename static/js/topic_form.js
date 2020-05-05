@@ -1,5 +1,5 @@
-(function(ckm) {
-  function form(method, data = {}, cb = null) {
+(function (ckm) {
+  function form (method, data = {}, cb = null) {
     const form = document.createElement('form')
     let url = ''
     form.classList.add('form', 'card')
@@ -7,7 +7,7 @@
     const h3 = document.createElement('h3')
     if (method === 'POST') {
       h3.innerText = 'Create topic'
-      url = `/api/topics`
+      url = '/api/topics'
     } else {
       h3.innerText = 'Edit topic'
       url = `/api/topics/${data.name}`
@@ -37,14 +37,14 @@
     btn.type = 'submit'
     btn.innerText = h3.innerText
     form.appendChild(btn)
-    form.addEventListener('submit', function(evt) {
+    form.addEventListener('submit', function (evt) {
       evt.preventDefault()
       const data = new window.FormData(this)
       const name = encodeURIComponent(data.get('name'))
       const body = {
         name: name,
-        partitions: parseInt(data.get("partitions")),
-        replication_factor: parseInt(data.get("replication_factor")),
+        partitions: parseInt(data.get('partitions')),
+        replication_factor: parseInt(data.get('replication_factor'))
       }
       if (data.get('config') !== '') {
         var config = ckm.dom.parseJSON(data.get('config'))
@@ -58,7 +58,7 @@
           cb()
         }
         ckm.dom.toast(`Topic ${name} created`)
-        if(ckm.topic.table) {
+        if (ckm.topic.table) {
           ckm.topic.table.fetchAndUpdate()
         }
       }).catch(ckm.http.standardErrorHandler).finally(rmLoader)

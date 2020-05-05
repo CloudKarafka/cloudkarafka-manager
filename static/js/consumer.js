@@ -1,5 +1,4 @@
-(function () {
-  window.ckm = window.ckm || {}
+(function (ckm) {
   const consumer = new URLSearchParams(window.location.search).get('name')
   const url = '/api/consumers/' + consumer
   const raw = window.sessionStorage.getItem(cacheKey())
@@ -35,24 +34,28 @@
 
   function update (cb) {
     const headers = new window.Headers()
-    ckm.http.request('GET', url, { headers }).then(function (response) {
-      data = response
-      try {
-        window.sessionStorage.setItem(cacheKey(), JSON.stringify(response))
-      } catch (e) {
-        console.error('Saving sessionStorage', e)
-      }
-      render(response)
-      if (cb) {
-        cb(response)
-      }
-    }).catch(ckm.http.standardErrorHandler).catch(stop)
+    ckm.http
+      .request('GET', url, { headers })
+      .then(function (response) {
+        data = response
+        try {
+          window.sessionStorage.setItem(cacheKey(), JSON.stringify(response))
+        } catch (e) {
+          console.error('Saving sessionStorage', e)
+        }
+        render(response)
+        if (cb) {
+          cb(response)
+        }
+      })
+      .catch(ckm.http.standardErrorHandler)
+      .catch(stop)
   }
 
   function render (data) {
     const table = document.querySelector('#cg')
     if (table) {
-      table.querySelector('#c-clients').innerText = data.clients.length
+      table.querySelector('#c-clients').innerText = data.unique_clients.length
       if (data.online === undefined) {
         table.querySelector('#c-online').innerText = '-'
       } else {
@@ -61,7 +64,9 @@
       if (data.topics === undefined) {
         table.querySelector('#c-topics').innerText = '-'
       } else {
-        table.querySelector('#c-topics').innerText = ckm.helpers.formatNumber(data.topics.length)
+        table.querySelector('#c-topics').innerText = ckm.helpers.formatNumber(
+          data.topics.length
+        )
       }
     }
   }
@@ -96,31 +101,41 @@
 
   Object.assign(window.ckm, {
     consumer: {
-      update, start, stop, render, get
+      update,
+      start,
+      stop,
+      render,
+      get
     }
   })
+
   function updateView (response) {
     var tBody = document.querySelector('#topics tbody')
-    ckm.dom.removeChildren(tBody);
+    ckm.dom.removeChildren(tBody)
     response.topics.forEach(p => {
       var tr = document.createElement('tr')
-      var link = ckm.dom.createLink('/topic?name=' + encodeURIComponent(p.name), p.name)
+      var link = ckm.dom.createLink(
+        '/topic?name=' + encodeURIComponent(p.name),
+        p.name
+      )
       ckm.table.renderCell(tr, 0, link)
       ckm.table.renderCell(tr, 1, p.clients, 'right')
       ckm.table.renderCell(tr, 2, p.lag, 'right')
       tBody.appendChild(tr)
     })
     tBody = document.querySelector('#clients tbody')
-    ckm.dom.removeChildren(tBody);
-    response..forEach(c => {
+    ckm.dom.removeChildren(tBody)
+    response.clients.forEach(c => {
       var tr = document.createElement('tr')
       ckm.table.renderCell(tr, 0, c.id)
       ckm.table.renderCell(tr, 1, c.consumer_id, 'right')
-      ckm.table.renderCell(tr, 2, c.host, 'right')
+      ckm.table.renderCell(tr, 2, c.offset, 'right')
+      ckm.table.renderCell(tr, 3, c.topic + '[' + c.partition + ']', 'right')
+      ckm.table.renderCell(tr, 4, c.log_end, 'right')
+      ckm.table.renderCell(tr, 5, Math.max(0, c.log_end - c.offset), 'right')
       tBody.appendChild(tr)
     })
     tBody = document.querySelector('#clients tbody')
   }
   ckm.consumer.start(updateView)
-})()
-
+})(window.ckm)

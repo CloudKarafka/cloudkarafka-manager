@@ -73,7 +73,7 @@
     }, 15)
   }
   window.showLoader = showLoader
-  function rmLoader() {
+  function rmLoader () {
     document.querySelector('.loader').remove()
   }
   window.rmLoader = rmLoader

@@ -24,8 +24,8 @@
     clearCookieValue('username')
 
     var b64 = window.btoa(userInfo)
-    storeCookie({ 'auth': encodeURIComponent(b64) })
-    storeCookie({ 'username': userInfo.split(':')[0] })
+    storeCookie({ auth: encodeURIComponent(b64) })
+    storeCookie({ username: userInfo.split(':')[0] })
   }
 
   function storeCookie (dict) {
