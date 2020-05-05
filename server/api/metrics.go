@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
 	//"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
@@ -20,29 +21,31 @@ func KafkaMetrics(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not parse request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-	brokers := config.BrokerUrls
+	//brokers := config.BrokerUrls
 	var all []store.Metric
-	conn, err := store.DialJMXServer()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	}
-	defer conn.Close()
-	for _, m := range wanted {
-		for brokerId, _ := range brokers {
-			//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			//defer cancel()
-			metrics, err := conn.GetMetrics(store.MetricRequest{
-				brokerId,
-				store.BeanFromString(m[0]),
-				m[1],
-			})
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			all = append(all, metrics...)
+	/*
+		conn, err := store.DialJMXServer()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	}
+		defer conn.Close()
+		for _, m := range wanted {
+			for brokerId, _ := range brokers {
+				//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				//defer cancel()
+				metrics, err := conn.GetMetrics(store.MetricRequest{
+					brokerId,
+					store.BeanFromString(m[0]),
+					m[1],
+				})
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				all = append(all, metrics...)
+			}
+		}
+	*/
 	writeAsJson(w, all)
 }
 

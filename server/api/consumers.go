@@ -15,7 +15,7 @@ func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	consumers := store.Consumers()
+	consumers := store.DB.Consumers()
 	ps, p, err := pageInfo(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -34,7 +34,7 @@ func ViewConsumerGroup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	g, ok := store.Consumer(group)
+	g, ok := store.DB.Consumer(group)
 	if !ok {
 		http.NotFound(w, r)
 		return

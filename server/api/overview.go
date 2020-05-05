@@ -28,9 +28,9 @@ type overviewVM struct {
 func Overview(w http.ResponseWriter, r *http.Request) {
 	var (
 		user      = r.Context().Value("user").(mw.SessionUser)
-		brokers   = store.Brokers()
+		brokers   = store.DB.Brokers()
 		topics    = topics(user.Permissions.DescribeTopic)
-		consumers = store.Consumers()
+		consumers = store.DB.Consumers()
 	)
 	writeAsJson(w, overviewVM{
 		Version:    config.Version,
@@ -41,9 +41,9 @@ func Overview(w http.ResponseWriter, r *http.Request) {
 		Partitions: store.Partitions(),
 		TopicSize:  store.TotalTopicSize(),
 		Messages:   store.TotalMessageCount(),
-		BytesOut:   store.SumBrokerSeries("bytes_out").All(),
-		BytesIn:    store.SumBrokerSeries("bytes_in").All(),
-		ISRShrink:  store.SumBrokerSeries("isr_shrink").All(),
-		ISRExpand:  store.SumBrokerSeries("isr_expand").All(),
+		BytesOut:   store.DB.SumBrokerSeries("bytes_out").All(),
+		BytesIn:    store.DB.SumBrokerSeries("bytes_in").All(),
+		ISRShrink:  store.DB.SumBrokerSeries("isr_shrink").All(),
+		ISRExpand:  store.DB.SumBrokerSeries("isr_expand").All(),
 	})
 }

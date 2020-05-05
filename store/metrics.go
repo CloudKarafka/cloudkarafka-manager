@@ -2,15 +2,13 @@ package store
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"net"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/patrickmn/go-cache"
 )
 
@@ -19,10 +17,14 @@ var (
 	plainCache   = cache.New(1*time.Hour, 1*time.Hour)
 )
 
+type PluginRequest interface {
+	BrokerId() int
+	Query() []byte
+}
+
 type MetricRequest struct {
-	BrokerId int
+	brokerId int
 	Bean     JMXBean
-	Attr     string
 }
 
 type Metric struct {
@@ -37,8 +39,46 @@ type Metric struct {
 	Attribute        string  `json:"attribute"`
 }
 
-func (me MetricRequest) Bytes() []byte {
+func (me MetricRequest) BrokerId() int {
+	return me.brokerId
+}
+
+func (me MetricRequest) Query() []byte {
 	return []byte(fmt.Sprintf("jmx %s\n", me.Bean.String()))
+}
+
+type GroupRequest struct {
+	brokerId int
+	group    string
+}
+
+func (me GroupRequest) BrokerId() int {
+	return me.brokerId
+}
+
+func (me GroupRequest) Query() []byte {
+	if me.group == "" {
+		return []byte("groups")
+	}
+	return []byte(fmt.Sprintf("grouops %s\n", me.group))
+}
+
+type Version struct {
+	Broker  int
+	Name    string
+	Version string
+}
+type VersionRequest struct {
+	brokerId int
+	name     string
+}
+
+func (me VersionRequest) BrokerId() int {
+	return me.brokerId
+}
+
+func (me VersionRequest) Query() []byte {
+	return []byte(fmt.Sprintf("v %s\n", me.name))
 }
 
 type JMXConn struct {
@@ -46,52 +86,86 @@ type JMXConn struct {
 	scanner *bufio.Scanner
 }
 
-func (me JMXConn) Close() {
-	me.conn.Close()
+type JMXBroker struct {
+	conns map[int]JMXConn
 }
 
-func DialJMXServer() (JMXConn, error) {
-	conn, err := net.Dial("tcp", "localhost:19500")
+func (jb *JMXBroker) Connect(brokerId int, uri string) error {
+	conn, err := net.Dial("tcp", uri)
 	if err != nil {
-		return JMXConn{}, err
+		return err
 	}
-	jmx := JMXConn{conn, bufio.NewScanner(conn)}
-	return jmx, nil
+	jb.conns[brokerId] = JMXConn{conn, bufio.NewScanner(conn)}
+	return err
 }
 
-func (me JMXConn) Write(query MetricRequest) {
-	me.conn.Write(query.Bytes())
+func (jb *JMXBroker) CloseAll() {
+	for i, _ := range jb.conns {
+		jb.Close(i)
+	}
 }
 
-var (
-	writes = 0
-	reads  = 0
-)
+func (jb *JMXBroker) Close(brokerId int) {
+	if c, ok := jb.conns[brokerId]; ok {
+		c.conn.Close()
+	}
+	delete(jb.conns, brokerId)
+}
 
-func (me JMXConn) GetMetrics(query MetricRequest) ([]Metric, error) {
-	_, err := me.conn.Write(query.Bytes())
-	var metrics []Metric
+func (jb *JMXBroker) Write(query PluginRequest) ([]map[string]string, error) {
+	var (
+		c  JMXConn
+		ok bool
+	)
+	if query.BrokerId() == -1 {
+		ok = false
+		for _, c1 := range jb.conns {
+			c = c1
+			ok = true
+			break
+		}
+		if !ok {
+			return nil, errors.New("No jmx connections available")
+		}
+	} else {
+		c, ok = jb.conns[query.BrokerId()]
+		if !ok {
+			return nil, fmt.Errorf("No jmx connection for broker %d", query.BrokerId)
+		}
+	}
+	_, err := c.conn.Write(query.Query())
 	if err != nil {
-		return metrics, err
+		return nil, err
 	}
-	for me.scanner.Scan() {
-		line := me.scanner.Text()
+	var res []map[string]string
+	for c.scanner.Scan() {
+		line := c.scanner.Text()
 		if line == "" {
 			break
 		}
-		m := Metric{}
 		cols := strings.Split(line, ";;")
+		row := make(map[string]string)
 		for _, col := range cols {
 			values := strings.Split(col, "=")
-			if len(values) != 2 {
-				continue
-			}
-			key, val := values[0], values[1]
+			row[values[0]] = values[1]
+		}
+		res = append(res, row)
+	}
+	return res, nil
+}
+
+func GetMetrics(b *JMXBroker, query MetricRequest, out chan Metric) error {
+	res, err := b.Write(query)
+	if err != nil {
+		return err
+	}
+	for _, row := range res {
+		var m Metric
+		m.Broker = query.BrokerId()
+		for key, val := range row {
 			switch strings.ToLower(key) {
 			case "topic":
 				m.Topic = val
-			case "broker":
-				m.Broker, _ = strconv.Atoi(val)
 			case "name":
 				m.Name = val
 			case "partition":
@@ -99,6 +173,8 @@ func (me JMXConn) GetMetrics(query MetricRequest) ([]Metric, error) {
 			case "type":
 				m.Type = val
 			case "count":
+				m.Value, _ = strconv.ParseFloat(val, 32)
+			case "value":
 				m.Value, _ = strconv.ParseFloat(val, 32)
 			case "listener":
 				m.Listener = val
@@ -108,46 +184,56 @@ func (me JMXConn) GetMetrics(query MetricRequest) ([]Metric, error) {
 				m.Attribute = "Count"
 			}
 		}
-		metrics = append(metrics, m)
+		out <- m
 	}
-	return metrics, nil
+	return nil
 }
 
-func getSimpleValue(url string) (string, error) {
-	r, err := http.Get(url)
+func GetVersion(b *JMXBroker, query VersionRequest, out chan Version) error {
+	var (
+		err error
+		res []map[string]string
+		m   Version
+	)
+	res, err = b.Write(query)
 	if err != nil {
-		return "", err
+		return err
 	}
-	if r.StatusCode != 200 {
-		return "", nil
-	}
-	body, err := ioutil.ReadAll(r.Body)
-	return string(body), err
+	m.Broker = query.BrokerId()
+	m.Name = query.name
+	m.Version = res[0][query.name]
+	out <- m
+	return nil
 }
 
-func KafkaVersion(brokerId int) (string, error) {
-	key := fmt.Sprintf("kafka_version_%d", brokerId)
-	if r, found := plainCache.Get(key); found {
-		return r.(string), nil
-	}
-	res, err := getSimpleValue(fmt.Sprintf("%s/kafka-version", config.BrokerUrls.HttpUrl(brokerId)))
+func GetGroups(b *JMXBroker, out chan ConsumerGroup) error {
+	var (
+		err    error
+		res    []map[string]string
+		query  = GroupRequest{-1, ""}
+		groups = make(map[string][]ConsumerGroupClient)
+	)
+	res, err = b.Write(query)
 	if err != nil {
-		return "", nil
+		return err
 	}
-	plainCache.Set(key, res, cache.DefaultExpiration)
-	return res, nil
-}
+	for _, row := range res {
+		name := row["group"]
+		partition, _ := strconv.Atoi(row["partition"])
+		offset, _ := strconv.Atoi(row["current_offset"])
+		m := ConsumerGroupClient{
+			Topic:         row["topic"],
+			ClientId:      row["clientid"],
+			ConsumerId:    row["consumerid"],
+			Host:          row["Host"],
+			Partition:     partition,
+			CurrentOffset: offset,
+		}
+		groups[name] = append(groups[name], m)
 
-func PluginVersion(brokerId int) (string, error) {
-	key := fmt.Sprintf("plugin_version_%d", brokerId)
-	if r, found := plainCache.Get(key); found {
-		return r.(string), nil
 	}
-	res, err := getSimpleValue(fmt.Sprintf("%s/plugin-version", config.BrokerUrls.HttpUrl(brokerId)))
-	if err != nil {
-		return "", nil
+	for name, clients := range groups {
+		out <- ConsumerGroup{name, time.Now().Unix(), clients}
 	}
-	plainCache.Set(key, res, cache.DefaultExpiration)
-	return res, nil
-
+	return nil
 }

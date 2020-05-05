@@ -12,7 +12,6 @@ import (
 
 	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
-	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
 )
 
@@ -27,31 +26,32 @@ func serverError(w http.ResponseWriter, err error, fn, msg string) {
 }
 
 func checkBrokerURP(brokerId int) {
-	sleep := 5
-	conn, err := store.DialJMXServer()
-	defer conn.Close()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
-		return
-	}
-	for i := 0; i < sleep*20; i++ {
-		r, err := conn.GetMetrics(store.MetricRequest{
-			brokerId,
-			store.BeanBrokerUnderReplicatedPartitions,
-			"Value"})
+	/*
+		sleep := 5
+		conn, err := store.DialJMXServer()
+		defer conn.Close()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
 			return
 		}
-		if len(r) > 0 { // Got a response
-			fmt.Fprintf(os.Stderr, "[INFO] URP status: broker=%d, URP=%.0f\n", brokerId, r[0].Value)
-			if r[0].Value == 0 {
+		for i := 0; i < sleep*20; i++ {
+			r, err := conn.GetMetrics(store.MetricRequest{
+				brokerId,
+				store.BeanBrokerUnderReplicatedPartitions,
+				"Value"})
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "[WARN] CheckURP: %s\n", err)
 				return
 			}
+			if len(r) > 0 { // Got a response
+				fmt.Fprintf(os.Stderr, "[INFO] URP status: broker=%d, URP=%.0f\n", brokerId, r[0].Value)
+				if r[0].Value == 0 {
+					return
+				}
+			}
+			time.Sleep(time.Duration(sleep) * time.Second)
 		}
-		time.Sleep(time.Duration(sleep) * time.Second)
-	}
-
+	*/
 }
 
 func GetKafkaConfig(w http.ResponseWriter, r *http.Request) {

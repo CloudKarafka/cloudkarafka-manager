@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/cloudkarafka/cloudkarafka-manager/log"
@@ -21,7 +22,7 @@ func handleBrokerChanges() {
 		hash := make(map[int]zookeeper.HostPort)
 		for _, hp := range hps {
 			le := make(log.MapEntry)
-			le[string(hp.Id)] = hp
+			le[strconv.Itoa(hp.Id)] = hp
 			if len(le) > 0 {
 				log.Info("broker_change", le)
 			}

@@ -37,7 +37,7 @@ func Topic(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	topic, ok := store.Topic(topicName)
+	topic, ok := store.DB.Topic(topicName)
 	if !ok {
 		http.NotFound(w, r)
 		return
@@ -141,7 +141,7 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if data["partitions"] != nil {
-		topic, ok := store.Topic(name)
+		topic, ok := store.DB.Topic(name)
 		if !ok {
 			http.NotFound(w, r)
 			return
@@ -207,7 +207,7 @@ func Partitions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	topic, ok := store.Topic(name)
+	topic, ok := store.DB.Topic(name)
 	if !ok {
 		http.NotFound(w, r)
 		return

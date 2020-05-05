@@ -18,36 +18,35 @@ type storage struct {
 	consumers ConsumerGroups
 }
 
-var store = storage{
-	brokers:   make(brokers),
-	topics:    make(topics),
-	consumers: make(ConsumerGroups),
+var DB = &storage{
+	brokers: make(brokers),
+	topics:  make(topics),
 }
 
-func (me storage) DeleteTopic(name string) {
+func (me *storage) DeleteTopic(name string) {
 	delete(me.topics, name)
 }
 
-func (me storage) UpdateBroker(b broker) {
+func (me *storage) UpdateBroker(b broker) {
 	me.Lock()
 	defer me.Unlock()
-	me.brokers[strconv.Itoa(b.Id)] = b
+	me.brokers[b.Id] = b
 }
 
-func (me storage) Brokers() brokers {
+func (me *storage) Brokers() brokers {
 	me.RLock()
 	defer me.RUnlock()
 	return me.brokers
 }
 
-func (me storage) Broker(id string) (broker, bool) {
+func (me *storage) Broker(id int) (broker, bool) {
 	me.RLock()
 	defer me.RUnlock()
 	b, ok := me.brokers[id]
 	return b, ok
 }
 
-func (me storage) Topics() TopicSlice {
+func (me *storage) Topics() TopicSlice {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -60,16 +59,16 @@ func (me storage) Topics() TopicSlice {
 	}
 	return topics
 }
-func (me storage) Topic(name string) (topic, bool) {
+func (me *storage) Topic(name string) (topic, bool) {
 	me.RLock()
 	defer me.RUnlock()
 	t, ok := me.topics[name]
 	return t, ok
 }
-func (me storage) UpdateTopic(t topic) {
+func (me *storage) UpdateTopic(t topic) {
 	me.Lock()
 	defer me.Unlock()
-	me.topics[string(t.Name)] = t
+	me.topics[t.Name] = t
 }
 func (me *storage) UpdateTopicMetric(m Metric) {
 	me.Lock()
@@ -92,8 +91,11 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 			p.Metrics = make(map[string]int)
 		}
 		p.Metrics[m.Name] = int(m.Value)
-		t.Partitions[number] = p
+		for _, cg := range me.consumers {
+			cg.UpdateTopic(m.Topic, number, m.Name, int(m.Value))
+		}
 	} else {
+		fmt.Println(t.Name, m.Name, m.Value, m)
 		switch m.Name {
 		case "BytesInPerSec":
 			t.BytesIn.Add(int(m.Value))
@@ -101,10 +103,10 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 			t.BytesOut.Add(int(m.Value))
 		}
 	}
-	me.topics[m.Topic] = t
+	//me.topics[m.Topic] = t
 }
 
-func (me storage) BrokerTopicStats(brokerId int) (int, int, string) {
+func (me *storage) BrokerTopicStats(brokerId int) (int, int, string) {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -127,10 +129,20 @@ func (me storage) BrokerTopicStats(brokerId int) (int, int, string) {
 	return partitionCount, leaderCount, humanize.Bytes(uint64(size))
 }
 
+func (me *storage) UpdateBrokerVersion(v Version) {
+	me.Lock()
+	defer me.Unlock()
+	b, ok := me.brokers[v.Broker]
+	if !ok {
+		return
+	}
+	b.KafkaVersion = v.Version
+}
+
 func (me *storage) UpdateBrokerMetrics(m Metric) {
 	me.Lock()
 	defer me.Unlock()
-	b, ok := me.brokers[strconv.Itoa(m.Broker)]
+	b, ok := me.brokers[m.Broker]
 	if !ok {
 		return
 	}
@@ -145,7 +157,7 @@ func (me *storage) UpdateBrokerMetrics(m Metric) {
 		b.ISRExpand.Add(int(m.Value))
 	}
 }
-func (me storage) SumBrokerSeries(metric string) TimeSerie {
+func (me *storage) SumBrokerSeries(metric string) TimeSerie {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -173,50 +185,43 @@ func (me storage) SumBrokerSeries(metric string) TimeSerie {
 	return NewSumTimeSerie(series)
 }
 
-func (me storage) Consumers() consumers {
+func (me *storage) Consumers() ConsumerGroups {
 	me.RLock()
 	defer me.RUnlock()
-	var (
-		cs = make(consumers, len(me.consumers))
-		i  = 0
-	)
-	for c, _ := range me.consumers {
-		consumer, _ := me.Consumer(c)
-		cs[i] = consumer
-		i += 1
-	}
-	return cs
+	return me.consumers
 }
 
-func (me storage) Consumer(name string) (ConsumerGroup, bool) {
+func (me *storage) Consumer(name string) (ConsumerGroup, bool) {
 	me.RLock()
 	defer me.RUnlock()
-	members, ok := me.consumers[name]
-	cg := ConsumerGroup{
-		Name:               name,
-		Topics:             me.consumers.Topics(name),
-		Clients:            me.consumers.Clients(name),
-		ConsumedPartitions: members,
-		Online:             me.consumers.Online(name),
+	for _, cg := range me.consumers {
+		if cg.Name == name {
+			return cg, true
+		}
 	}
-	return cg, ok
+	return ConsumerGroup{}, false
 }
 
-func (me storage) UpdateConsumers(cgs ConsumerGroups) {
+func (me *storage) UpdateConsumer(cg ConsumerGroup) {
 	me.Lock()
 	defer me.Unlock()
-	for name, cg := range cgs {
-		for i, cgm := range cg {
-			cgm.LastSeen = time.Now().Unix()
-			cg[i] = cgm
+	cg.LastSeen = time.Now().Unix()
+	for i, scg := range me.consumers {
+		if scg.Name == cg.Name {
+			for _, c := range scg.Clients {
+				cg.UpdateTopic(c.Topic, c.Partition, "LogEndOffset", c.LogEnd)
+				cg.UpdateTopic(c.Topic, c.Partition, "LogStartOffset", c.LogStart)
+			}
+			me.consumers[i] = cg
+			return
 		}
-		me.consumers[name] = cg
 	}
+	me.consumers = append(me.consumers, cg)
 }
 
 func Uptime() string {
 	var ts int64
-	for _, b := range store.Brokers() {
+	for _, b := range DB.Brokers() {
 		tnew, err := strconv.ParseInt(b.Timestamp, 10, 64)
 		if err != nil {
 			continue
@@ -231,50 +236,26 @@ func Uptime() string {
 	return strings.TrimSpace(humanize.RelTime(time.Now(), time.Unix(ts/1000, 0), "", ""))
 }
 
-func Brokers() brokers {
-	return store.Brokers()
-}
-func Topics() TopicSlice {
-	return store.Topics()
-}
-func Consumers() consumers {
-	return store.Consumers()
-}
 func Partitions() int {
 	count := 0
-	for _, t := range store.Topics() {
+	for _, t := range DB.Topics() {
 		count += len(t.Partitions)
 	}
 	return count
 }
 func TotalTopicSize() string {
 	size := 0
-	for _, t := range store.Topics() {
+	for _, t := range DB.Topics() {
 		size += t.Size()
 	}
 	return humanize.Bytes(uint64(size))
 }
 func TotalMessageCount() int {
 	msgs := 0
-	for _, t := range store.Topics() {
+	for _, t := range DB.Topics() {
 		msgs += t.Messages()
 	}
 	return msgs
-}
-
-func Broker(id string) (broker, bool) {
-	return store.Broker(id)
-}
-func Topic(name string) (topic, bool) {
-	return store.Topic(name)
-}
-
-func SumBrokerSeries(m string) TimeSerie {
-	return store.SumBrokerSeries(m)
-}
-
-func Consumer(name string) (ConsumerGroup, bool) {
-	return store.Consumer(name)
 }
 
 func UpdateTopic(name string) bool {
@@ -282,10 +263,6 @@ func UpdateTopic(name string) bool {
 	if err != nil {
 		return false
 	}
-	store.UpdateTopic(t)
+	DB.UpdateTopic(t)
 	return true
-}
-
-func BrokerToipcStats(brokerId int) (int, int, string) {
-	return store.BrokerTopicStats(brokerId)
 }

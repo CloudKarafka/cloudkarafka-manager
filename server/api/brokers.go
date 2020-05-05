@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
@@ -29,8 +30,9 @@ func Brokers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	brokers := make([]brokerVM, len(store.Brokers()))
-	for _, b := range store.Brokers() {
+	dbBrokers := store.DB.Brokers()
+	brokers := make([]brokerVM, len(dbBrokers))
+	for _, b := range dbBrokers {
 		brokers[b.Id] = brokerVM{
 			Id:           b.Id,
 			KafkaVersion: b.KafkaVersion,
@@ -48,13 +50,13 @@ func Broker(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	id := pat.Param(r, "id")
-	b, ok := store.Broker(id)
+	id, _ := strconv.Atoi(pat.Param(r, "id"))
+	b, ok := store.DB.Broker(id)
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
-	pc, lc, ts := store.BrokerToipcStats(b.Id)
+	pc, lc, ts := store.DB.BrokerTopicStats(b.Id)
 	writeAsJson(w, brokerVM{
 		Id:           b.Id,
 		KafkaVersion: b.KafkaVersion,

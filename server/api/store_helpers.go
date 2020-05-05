@@ -7,7 +7,7 @@ import (
 
 func topics(fn zookeeper.PermissionFunc) store.TopicSlice {
 	var (
-		topics = store.Topics()
+		topics = store.DB.Topics()
 		i      = 0
 	)
 	for i < len(topics) {

@@ -11,7 +11,7 @@ import (
 	humanize "github.com/dustin/go-humanize"
 )
 
-type brokers map[string]broker
+type brokers map[int]broker
 
 type broker struct {
 	Version      int            `json:"-"`
@@ -68,10 +68,5 @@ func fetchBroker(id int) (broker, error) {
 	} else {
 		b.Controller = controller.BrokerId == id
 	}
-	version, err := KafkaVersion(id)
-	if err != nil {
-		return b, err
-	}
-	b.KafkaVersion = version
 	return b, nil
 }

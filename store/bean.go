@@ -2,6 +2,7 @@ package store
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 )
 
@@ -100,46 +101,28 @@ var (
 			"topic": topic}}
 	}
 
-	BeanAllTopicsLogStart = JMXBean{"kafka.log", map[string]string{
-		"type":      "Log",
-		"name":      "LogStartOffset",
-		"topic":     "*",
-		"partition": "*"}}
-
-	BeanAllTopicsLogEnd = JMXBean{"kafka.log", map[string]string{
-		"type":      "Log",
-		"name":      "LogEndOffset",
-		"topic":     "*",
-		"partition": "*"}}
-
-	BeanAllTopicsLogSize = JMXBean{"kafka.log", map[string]string{
-		"type":      "Log",
-		"name":      "Size",
-		"topic":     "*",
-		"partition": "*"}}
-
-	BeanTopicLogStart = func(topic string) JMXBean {
+	BeanTopicLogStart = func(topic string, partition int) JMXBean {
 		return JMXBean{"kafka.log", map[string]string{
 			"type":      "Log",
 			"name":      "LogStartOffset",
 			"topic":     topic,
-			"partition": "*"}}
+			"partition": strconv.Itoa(partition)}}
 
 	}
-	BeanTopicLogEnd = func(topic string) JMXBean {
+	BeanTopicLogEnd = func(topic string, partition int) JMXBean {
 		return JMXBean{"kafka.log", map[string]string{
 			"type":      "Log",
 			"name":      "LogEndOffset",
 			"topic":     topic,
-			"partition": "*"}}
+			"partition": strconv.Itoa(partition)}}
 
 	}
-	BeanTopicLogSize = func(topic string) JMXBean {
+	BeanTopicLogSize = func(topic string, partition int) JMXBean {
 		return JMXBean{"kafka.log", map[string]string{
 			"type":      "Log",
 			"name":      "Size",
 			"topic":     topic,
-			"partition": "*"}}
+			"partition": strconv.Itoa(partition)}}
 
 	}
 )

@@ -247,6 +247,6 @@ func DeleteTopic(name string) error {
 			return result.Error
 		}
 	}
-	store.DeleteTopic(name)
+	DB.DeleteTopic(name)
 	return nil
 }
