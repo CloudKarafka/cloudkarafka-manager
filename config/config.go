@@ -38,7 +38,7 @@ var (
 	Port              string
 	Retention         int64
 	AuthType          string
-	Version           string = "0.2.0"
+	Version           string = "0.2.1"
 	GitCommit         string = "HEAD"
 	JMXRequestTimeout time.Duration
 	KafkaDir          string
