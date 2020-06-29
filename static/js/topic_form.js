@@ -3,9 +3,9 @@
     const form = document.createElement('form')
     let url = ''
     form.classList.add('form', 'card')
-
+    createAction = method === 'POST'
     const h3 = document.createElement('h3')
-    if (method === 'POST') {
+    if (createAction) {
       h3.innerText = 'Create topic'
       url = `/api/topics`
     } else {
@@ -24,11 +24,13 @@
       value: data.partitions || 10,
       min: data.partitions || 1
     }))
-    form.appendChild(ckm.dom.formInput('input', 'Replication factor', {
-      type: 'number',
-      value: data.replication_factor || 1,
-      min: data.replication_factor || 1
-    }))
+    if (createAction) {
+      form.appendChild(ckm.dom.formInput('input', 'Replication factor', {
+        type: 'number',
+        value: data.replication_factor || 1,
+        min: data.replication_factor || 1
+      }))
+    }
     form.appendChild(ckm.dom.formInput('textarea', 'Config', {
       value: ckm.dom.jsonToText(data.config), placeholder: '{"key": "value"}'
     }))
@@ -57,7 +59,11 @@
           evt.target.reset()
           cb()
         }
-        ckm.dom.toast(`Topic ${name} created`)
+        if (createAction) {
+          ckm.dom.toast(`Topic ${name} created`)
+        } else {
+          ckm.dom.toast(`Topic ${name} updated`)
+        }
         if(ckm.topic.table) {
           ckm.topic.table.fetchAndUpdate()
         }

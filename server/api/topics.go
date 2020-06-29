@@ -140,6 +140,10 @@ func UpdateTopic(w http.ResponseWriter, r *http.Request) {
 		jsonError(w, err.Error())
 		return
 	}
+	if data["replication_factor"] != nil {
+		jsonError(w, "Increasing replication factor is currently not supported")
+		return
+	}
 	if data["partitions"] != nil {
 		topic, ok := store.Topic(name)
 		if !ok {
