@@ -133,7 +133,7 @@ func aclRequestFromHttpRequest(r *http.Request, checkKeys bool) (zookeeper.AclRe
 		ResourceType:   resource,
 		PatternType:    pattern,
 		Name:           acl["name"],
-		Principal:      acl["principal"],
+		Principal:      fmt.Sprintf("User:%s", acl["principal"]),
 		Permission:     strings.ToUpper(acl["permission"]),
 		PermissionType: strings.ToUpper(acl["permission_type"]),
 		Host:           acl["host"],
