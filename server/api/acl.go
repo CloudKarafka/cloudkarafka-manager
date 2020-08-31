@@ -129,11 +129,15 @@ func aclRequestFromHttpRequest(r *http.Request, checkKeys bool) (zookeeper.AclRe
 			}
 		}
 	}
+	principal := acl["principal"]
+	if !strings.HasPrefix(principal, "User:") {
+		principal = fmt.Sprintf("User:%s", principal)
+	}
 	req := zookeeper.AclRequest{
 		ResourceType:   resource,
 		PatternType:    pattern,
 		Name:           acl["name"],
-		Principal:      acl["principal"],
+		Principal:      principal,
 		Permission:     strings.ToUpper(acl["permission"]),
 		PermissionType: strings.ToUpper(acl["permission_type"]),
 		Host:           acl["host"],
