@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -165,20 +166,23 @@ func FetchConsumerGroups(ctx context.Context, out chan ConsumerGroups) {
 		log.Error("fetch_consumer_groups", log.StringEntry("No brokers to request consumer group metrics from"))
 		return
 	}
-	url := fmt.Sprintf("%s/consumer-groups", config.BrokerUrls.Rand())
+	url := fmt.Sprintf("%s/consumer-groups", host)
 	select {
 	case <-ctx.Done():
-		log.Error("fetch_consumer_groups", log.ErrorEntry{ctx.Err()})
+		log.Warn("fetch_consumer_groups", log.ErrorEntry{ctx.Err()})
 		return
 	default:
 		r, err = http.Get(url)
 		if err != nil {
-			log.Error("fetch_consumer_groups", log.ErrorEntry{err})
+			log.Warn("fetch_consumer_groups", log.ErrorEntry{err})
 			return
 		}
 		err = json.NewDecoder(r.Body).Decode(&v)
 		if err != nil {
-			log.Error("fetch_consumer_groups", log.ErrorEntry{err})
+			b, err := ioutil.ReadAll(r.Body)
+			if err == nil {
+				log.Error("fetch_consumer_groups", log.MapEntry{"err": "could_not_parse", "body": string(b)})
+			}
 			return
 		}
 		out <- v
