@@ -98,7 +98,6 @@
     update, start, stop, render, get, url, name
   })
 
-  const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
   const tableOptions = {
     url: `${ckm.topic.url}/partitions`,
     interval: 5000,
@@ -113,18 +112,9 @@
     ckm.table.renderCell(tr, 1, p.leader, 'center')
     ckm.table.renderCell(tr, 2, p.isr, 'center')
     ckm.table.renderCell(tr, 3, p.replicas, 'center')
-    ckm.table.renderCell(tr, 4, p.metrics["LogStartOffset"], 'center')
-    ckm.table.renderCell(tr, 5, p.metrics["LogEndOffset"], 'center')
-    ckm.table.renderCell(tr, 6, p.metrics["Size"], 'center')
   })
 
   function updateView (response) {
-    let dataStats = {
-      send_details: response.bytes_out,
-      receive_details: response.bytes_in
-    }
-    ckm.chart.update(dataChart, dataStats)
-
     var tBody = document.querySelector('#config tbody')
     ckm.dom.removeChildren(tBody);
     if (response.config !== undefined) {

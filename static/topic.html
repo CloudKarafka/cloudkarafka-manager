@@ -21,25 +21,23 @@
     </header>
     <aside></aside>
     <main>
-      <table id="topic" class="stats-table card">
-        <tbody>
-          <tr>
-            <td id="t-partitions"></td>
-            <td id="t-size"></td>
-            <td id="t-messages"></td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr>
-            <th class="cols-4">Partitions</th>
-            <th class="cols-4">Size</th>
-            <th class="cols-4">Messages</th>
-          </tr>
-        </tfoot>
-      </table>
       <section class="card cols-6">
-        <h3>Data rates</h3>
-        <div class="chart-container" id="dataChart"></div>
+        <h3>
+          Partitions
+          <small id="partitions-count"></small>
+        </h3>
+        <div id="partitions-error"></div>
+        <table class="table" id="partitions">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Leader</th>
+                <th>ISR</th>
+                <th>Replicas</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
       </section>
       <section class="card cols-6">
         <h3>Config</h3>
@@ -55,27 +53,6 @@
                 <td colspan=2>No custom configuration</td>
               </tr>
             </tbody>
-        </table>
-      </section>
-      <section class="card cols-12">
-        <h3>
-          Partitions
-          <small id="partitions-count"></small>
-        </h3>
-        <div id="partitions-error"></div>
-        <table class="table" id="partitions">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Leader</th>
-                <th>ISR</th>
-                <th>Replicas</th>
-                <th>Log Start Offset</th>
-                <th>Log End Offset</th>
-                <th>Size</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
         </table>
       </section>
       <section class="card cols-12">

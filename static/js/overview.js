@@ -53,8 +53,6 @@
       table.querySelector('.brokers').innerText = data.brokers
       table.querySelector('.topics').innerText = data.topics
       table.querySelector('.partitions').innerText = data.partitions
-      table.querySelector('.topic_size').innerText = ckm.helpers.formatNumber(data.topic_size)
-      table.querySelector('.messages').innerText = ckm.helpers.formatNumber(data.messages)
       table.querySelector('.consumers').innerText = data.consumers
       table.querySelector('.uptime').innerText = data.uptime
     }

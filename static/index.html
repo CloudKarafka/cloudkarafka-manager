@@ -24,8 +24,6 @@
             <td class="brokers"></td>
             <td class="topics"></td>
             <td class="partitions"></td>
-            <td class="topic_size"></td>
-            <td class="messages"></td>
             <td class="consumers"></td>
             <td class="uptime"></td>
           </tr>
@@ -35,21 +33,11 @@
             <th><a href="/brokers">Brokers</a></th>
             <th><a href="/topics">Topics</a></th>
             <th>Partitions</th>
-            <th>Topic size</th>
-            <th>Messages</th>
             <th><a href="/consumers">Consumers</a></th>
             <th>Uptime</th>
           </tr>
         </tfoot>
       </table>
-      <section class="card cols-6 cols-6-md">
-        <h3>Data rates</h3>
-        <div class="chart-container" id="dataChart"></div>
-      </section>
-      <section class="card cols-6 cols-6-md">
-        <h3>ISR</h3>
-        <div class="chart-container" id="isrChart"></div>
-      </section>
     </main>
     <footer></footer>
     <script src="/js/layout.js"></script>
@@ -59,8 +47,6 @@
     <script src="/js/helpers.js"></script>
     <script src="/js/overview.js"></script>
     <script src="/js/table.js"></script>
-    <script src="/js/lib/chart.js"></script>
-    <script src="/js/chart.js"></script>
     <script src="/js/index.js"></script>
   </body>
 </html>
