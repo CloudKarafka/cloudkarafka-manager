@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest
 			log.Error("fetch_metrics", log.ErrorEntry{ctx.Err()})
 			break
 		default:
+			fmt.Println("metrics req", r)
 			resp, err := GetMetrics(ctx, r)
 			if err != nil {
 				log.Error("fetch_metrics", log.ErrorEntry{err})
@@ -67,8 +69,8 @@ func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 					MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
 					MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
 					MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
-					MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
-					MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
+					// MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
+					// MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
 				}...)
 			}
 		}
@@ -78,10 +80,10 @@ func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 
 func Start() {
 	var (
-		brokerRequests []MetricRequest
-		topicRequests  []MetricRequest
-		ctx            context.Context
-		cancel         context.CancelFunc
+		// brokerRequests []MetricRequest
+		// topicRequests  []MetricRequest
+		ctx    context.Context
+		cancel context.CancelFunc
 
 		topicChanges  = make(chan []zookeeper.T)
 		brokerChanges = make(chan []zookeeper.HostPort)
@@ -106,13 +108,13 @@ func Start() {
 				cancel()
 			}
 			ctx, cancel = context.WithCancel(context.Background())
-			go FetchMetrics(ctx, bMetrics, brokerRequests)
-			go FetchMetrics(ctx, tMetrics, topicRequests)
+			// go FetchMetrics(ctx, bMetrics, brokerRequests)
+			// go FetchMetrics(ctx, tMetrics, topicRequests)
 			go FetchConsumerGroups(ctx, cMetrics)
 		case hps := <-brokerChanges:
-			brokerRequests = handleBrokerChanges(hps)
+			handleBrokerChanges(hps)
 		case topics := <-topicChanges:
-			topicRequests = handleTopicChanges(topics)
+			handleTopicChanges(topics)
 		case metric := <-bMetrics:
 			store.UpdateBrokerMetrics(metric)
 		case metric := <-tMetrics:
