@@ -41,47 +41,23 @@ func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest
 }
 
 func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
-	reqs := make([]MetricRequest, len(hps)*4)
-	for i, hp := range hps {
-		copy(reqs[i*4:], []MetricRequest{
-			MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
-			MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
-			MetricRequest{hp.Id, BeanBrokerIsrExpands, "Count"},
-			MetricRequest{hp.Id, BeanBrokerIsrShrinks, "Count"},
-		})
+	for _, hp := range hps {
 		broker, _ := fetchBroker(hp.Id)
 		store.UpdateBroker(broker)
 	}
-	return reqs
+	return nil
 }
 
 func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
-	reqs := make([]MetricRequest, 0, 5*len(topics))
 	for _, t := range topics {
 		topic, _ := FetchTopic(t.Name)
 		store.UpdateTopic(topic)
-		if 200 < len(topic.Partitions) {
-			continue
-		}
-		for _, p := range topic.Partitions {
-			if p.Leader != -1 {
-				reqs = append(reqs, []MetricRequest{
-					MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
-					MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
-					MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
-					// MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
-					// MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
-				}...)
-			}
-		}
 	}
-	return reqs
+	return nil
 }
 
 func Start() {
 	var (
-		// brokerRequests []MetricRequest
-		// topicRequests  []MetricRequest
 		ctx    context.Context
 		cancel context.CancelFunc
 
@@ -108,8 +84,6 @@ func Start() {
 				cancel()
 			}
 			ctx, cancel = context.WithCancel(context.Background())
-			// go FetchMetrics(ctx, bMetrics, brokerRequests)
-			// go FetchMetrics(ctx, tMetrics, topicRequests)
 			go FetchConsumerGroups(ctx, cMetrics)
 		case hps := <-brokerChanges:
 			handleBrokerChanges(hps)
