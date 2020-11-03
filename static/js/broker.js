@@ -49,7 +49,6 @@
     if (table) {
       table.querySelector('#leader_count').innerText = data.leader
       table.querySelector('#partition_count').innerText = data.partitions
-      //table.querySelector('#size').innerText = data.topic_size
       table.querySelector('#uptime').innerText = data.uptime
     }
   }
