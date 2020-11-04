@@ -19,8 +19,6 @@ func Version(w http.ResponseWriter, r *http.Request) {
 
 func Router() *goji.Mux {
 	mux := goji.SubMux()
-	mux.Use(m.RequestId)
-	mux.Use(m.Logger)
 	mux.Use(m.HostnameToResponse)
 	mux.Use(m.SecureApi)
 
