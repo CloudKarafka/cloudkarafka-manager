@@ -14,7 +14,7 @@ import (
 const (
 	MaxPoints  int           = 500
 	Timeout    time.Duration = 5 * time.Second
-	SampleTime time.Duration = 10 * time.Second
+	SampleTime time.Duration = 30 * time.Second
 )
 
 func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest) {
@@ -39,13 +39,11 @@ func FetchMetrics(ctx context.Context, metrics chan Metric, reqs []MetricRequest
 }
 
 func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
-	reqs := make([]MetricRequest, len(hps)*4)
+	reqs := make([]MetricRequest, len(hps)*2)
 	for i, hp := range hps {
-		copy(reqs[i*4:], []MetricRequest{
+		copy(reqs[i*2:], []MetricRequest{
 			MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
 			MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
-			MetricRequest{hp.Id, BeanBrokerIsrExpands, "Count"},
-			MetricRequest{hp.Id, BeanBrokerIsrShrinks, "Count"},
 		})
 		broker, _ := fetchBroker(hp.Id)
 		store.UpdateBroker(broker)
@@ -54,11 +52,11 @@ func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
 }
 
 func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
-	reqs := make([]MetricRequest, 0, 5*len(topics))
+	reqs := make([]MetricRequest, 0, 3*len(topics))
 	for _, t := range topics {
 		topic, _ := FetchTopic(t.Name)
 		store.UpdateTopic(topic)
-		if 200 < len(topic.Partitions) {
+		if 50 < len(topic.Partitions) {
 			continue
 		}
 		for _, p := range topic.Partitions {
@@ -67,8 +65,6 @@ func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 					MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
 					MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
 					MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
-					MetricRequest{p.Leader, BeanTopicBytesOutPerSec(t.Name), "Count"},
-					MetricRequest{p.Leader, BeanTopicBytesInPerSec(t.Name), "Count"},
 				}...)
 			}
 		}

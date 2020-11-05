@@ -98,7 +98,6 @@
     update, start, stop, render, get, url, name
   })
 
-  const dataChart = ckm.chart.render('dataChart', 'bytes/s', { aspectRatio: 2 })
   const tableOptions = {
     url: `${ckm.topic.url}/partitions`,
     interval: 5000,
@@ -123,7 +122,6 @@
       send_details: response.bytes_out,
       receive_details: response.bytes_in
     }
-    ckm.chart.update(dataChart, dataStats)
 
     var tBody = document.querySelector('#config tbody')
     ckm.dom.removeChildren(tBody);
