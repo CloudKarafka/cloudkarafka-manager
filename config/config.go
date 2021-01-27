@@ -21,7 +21,7 @@ func handleBrokerChanges() {
 		hash := make(map[int]zookeeper.HostPort)
 		for _, hp := range hps {
 			le := make(log.MapEntry)
-			le[string(hp.Id)] = hp
+			le[fmt.Sprint(hp.Id)] = hp
 			if len(le) > 0 {
 				log.Info("broker_change", le)
 			}
@@ -38,7 +38,7 @@ var (
 	Port              string
 	Retention         int64
 	AuthType          string
-	Version           string = "0.2.1"
+	Version           string = "0.3.7"
 	GitCommit         string = "HEAD"
 	JMXRequestTimeout time.Duration
 	KafkaDir          string
