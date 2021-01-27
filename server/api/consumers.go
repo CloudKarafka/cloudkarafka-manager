@@ -15,15 +15,13 @@ func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	consumers := store.Consumers()
 	ps, p, err := pageInfo(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	sort.Slice(consumers, func(i, j int) bool {
-		return consumers[i].Name < consumers[j].Name
-	})
+	consumers := consumers(user.Permissions.DescribeGroup)
+	sort.Slice(consumers, func(i, j int) bool { return consumers[i].Name < consumers[j].Name })
 	writeAsJson(w, Page(ps, p, consumers))
 }
 

@@ -20,13 +20,13 @@ type client struct {
 
 type ConsumerGroups map[string][]ConsumedPartition
 
-type consumers []ConsumerGroup
+type ConsumerSlice []ConsumerGroup
 
-func (me consumers) Get(i int) interface{} {
+func (me ConsumerSlice) Get(i int) interface{} {
 	return me[i]
 }
 
-func (me consumers) Size() int {
+func (me ConsumerSlice) Size() int {
 	return len(me)
 }
 

@@ -30,7 +30,7 @@ func Overview(w http.ResponseWriter, r *http.Request) {
 		user      = r.Context().Value("user").(mw.SessionUser)
 		brokers   = store.Brokers()
 		topics    = topics(user.Permissions.DescribeTopic)
-		consumers = store.Consumers()
+		consumers = consumers(user.Permissions.DescribeGroup)
 	)
 	writeAsJson(w, overviewVM{
 		Version:    config.Version,

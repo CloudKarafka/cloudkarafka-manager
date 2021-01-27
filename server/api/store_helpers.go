@@ -19,3 +19,18 @@ func topics(fn zookeeper.PermissionFunc) store.TopicSlice {
 	}
 	return topics
 }
+
+func consumers(fn zookeeper.PermissionFunc) store.ConsumerSlice {
+	var (
+		consumers = store.Consumers()
+		i         = 0
+	)
+	for i < len(consumers) {
+		if !fn(consumers[i].Name) {
+			consumers = append(consumers[:i], consumers[i+1:]...)
+		} else {
+			i += 1
+		}
+	}
+	return consumers
+}
