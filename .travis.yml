@@ -1,6 +1,6 @@
 language: go
 go:
-- "1.14"
+- "1.15"
 before_script: if ! [[ $TRAVIS_TAG ]]; then export LAST_TAG=$(git tag --list | tail -1); export VERSION=$LAST_TAG-$(git rev-list $LAST_TAG..HEAD --count); else export VERSION=$TRAVIS_TAG; fi
 script:
 - bash ./scripts/package.sh
