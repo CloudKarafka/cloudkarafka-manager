@@ -4,7 +4,6 @@
   const name = new URLSearchParams(window.location.search).get('name')
   const url = `/api/acls/${resource_type}/${name}`
   const raw = window.sessionStorage.getItem(cacheKey())
-  let pattern_type = null
   let data = null
   let updateTimer = null
 
@@ -48,7 +47,6 @@
 
   function render (data) {
     const table = document.querySelector('#acl')
-    pattern_type = data.pattern_type
     if (table) {
       table.querySelector('#a-name').innerText = data.name
       table.querySelector('#a-resource_type').innerText = data.resource_type
@@ -84,6 +82,7 @@
     })
   }
 
+  const pattern_type = get("pattern_type").then((pt) => { return pt});
   Object.assign(window.ckm, {
     acl: {
       update, start, stop, render, get, url, name, pattern_type, resource_type
@@ -107,23 +106,25 @@
     btn.classList.add('btn-danger')
     btn.innerHTML = 'Delete'
     btn.addEventListener('click', function(evt) {
-      const url = `/api/acls`
-      const body = {
-        resource_type: ckm.acl.resource_type,
-        pattern_type: ckm.acl.pattern_type,
-        name: ckm.acl.name,
-        principal: p.principal,
-        permission: p.operation,
-        permission_type: p.permission_type,
-      }
-      if (window.confirm('Are you sure? The ACL rule will be deleted and all principals authorized with this rule will be unable to access the resource.')) {
-        ckm.http.request('DELETE', url, { body }).then(() => {
-          ckm.dom.removeNodes(tr)
-        }).catch(ckm.http.standardErrorHandler)
-      }
+      ckm.acl.pattern_type.then((pt) => {
+        const url = `/api/acls`
+        const body = {
+          resource_type: ckm.acl.resource_type,
+          pattern_type: pt,
+          name: ckm.acl.name,
+          principal: p.principal,
+          permission: p.operation,
+          permission_type: p.permission_type,
+        }
+        console.log(pt)
+        if (window.confirm('Are you sure? The ACL rule will be deleted and all principals authorized with this rule will be unable to access the resource.')) {
+          ckm.http.request('DELETE', url, { body }).then(() => {
+            ckm.dom.removeNodes(tr)
+          }).catch(ckm.http.standardErrorHandler)
+        }
+      })
     })
     ckm.table.renderCell(tr, 4, btn, 'right')
-
   })
   ckm.acl.start()
 })()
