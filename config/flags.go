@@ -14,6 +14,7 @@ var (
 	zk             = flag.String("zookeeper", "localhost:2181", "The connection string for the zookeeper connection in the form host:port. Multiple hosts can be given to allow fail-over.")
 	kafkaDir       = flag.String("kafkadir", "/opt/kafka", "The directory where kafka lives")
 	devMode        = flag.Bool("dev", false, "Devmode add more logging and reloadable assets")
+	noConsumers    = flag.Bool("no-consumers", false, "Disable listing of consumer groups")
 )
 
 func Parse() {
@@ -25,5 +26,6 @@ func Parse() {
 	KafkaDir = *kafkaDir
 	ZookeeperURL = strings.Split(*zk, ",")
 	DevMode = *devMode
+	NoConsumers = *noConsumers
 	PrintConfig()
 }
