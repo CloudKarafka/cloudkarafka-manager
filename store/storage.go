@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	humanize "github.com/dustin/go-humanize"
 )
 
@@ -174,6 +175,9 @@ func (me storage) SumBrokerSeries(metric string) TimeSerie {
 }
 
 func (me storage) Consumers() ConsumerSlice {
+	if config.NoConsumers {
+		return ConsumerSlice{}
+	}
 	me.RLock()
 	defer me.RUnlock()
 	var (

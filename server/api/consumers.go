@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/cloudkarafka/cloudkarafka-manager/config"
 	mw "github.com/cloudkarafka/cloudkarafka-manager/server/middleware"
 	"github.com/cloudkarafka/cloudkarafka-manager/store"
 	"goji.io/pat"
@@ -14,10 +13,6 @@ func ListConsumerGroups(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value("user").(mw.SessionUser)
 	if !user.Permissions.ListGroups() {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
-		return
-	}
-	if config.NoConsumers {
-		writeAsJson(w, Page(1, 1, store.ConsumerSlice{}))
 		return
 	}
 	ps, p, err := pageInfo(r)
