@@ -132,15 +132,14 @@ func DeleteAcl(req AclRequest) error {
 		return err
 	}
 	var a struct {
-		version int
-		acls    []map[string]string
+		Version int                 `json:"version"`
+		Acls    []map[string]string `json:"acls"`
 	}
-	err = json.Unmarshal(node, &a)
-	if err != nil {
+	if err = json.Unmarshal(node, &a); err != nil {
 		return err
 	}
-	n := make([]map[string]string, 0)
-	for _, acl := range a.acls {
+	var n []map[string]string
+	for _, acl := range a.Acls {
 		if !req.Equal(acl) {
 			n = append(n, acl)
 		}
