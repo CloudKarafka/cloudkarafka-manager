@@ -108,7 +108,7 @@
     btn.classList.add('btn-danger')
     btn.innerHTML = 'Delete'
     btn.addEventListener('click', function(evt) {
-      if pattern_type === null {
+      if (pattern_type === null) {
         pattern_type = data.pattern_type;
       }
       const url = `/api/acls`
