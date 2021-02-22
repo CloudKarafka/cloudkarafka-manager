@@ -8,7 +8,7 @@
   const aclTable = ckm.table.renderTable('acls', tableOptions, function (tr, item, all) {
     if (all) {
       const queueLink = document.createElement('a')
-      queueLink.href = `/acl?name=${encodeURIComponent(item.name)}&type=${encodeURIComponent(item.resource_type)}`
+      queueLink.href = `/acl?name=${encodeURIComponent(item.name)}&type=${encodeURIComponent(item.resource_type)}&pattern_type=${encodeURIComponent(item.pattern_type)}`
       queueLink.textContent = item.name
       ckm.table.renderCell(tr, 0, queueLink)
     }

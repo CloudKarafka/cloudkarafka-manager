@@ -275,13 +275,13 @@ func ClusterAcls(p Permissions) (ACLRules, error) {
 	return childAcls("Cluster", p.ReadCluster)
 }
 
-func Acl(p Permissions, resourceType, name string) (ACLRule, error) {
+func Acl(p Permissions, resourceType, name, patternType string) (ACLRule, error) {
 	var (
 		acls []ACLRule
 		ar   ACLRule
 		err  error
 	)
-	switch resourceType {
+	switch strings.ToLower(resourceType) {
 	case "topic":
 		acls, err = TopicAcls(p)
 	case "group":
@@ -295,7 +295,7 @@ func Acl(p Permissions, resourceType, name string) (ACLRule, error) {
 		return ar, err
 	}
 	for _, r := range acls {
-		if r.Resource.Name == name {
+		if r.Resource.Name == name && strings.ToLower(r.Resource.PatternType) == strings.ToLower(patternType) {
 			ar = r
 			break
 		}

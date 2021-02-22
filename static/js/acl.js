@@ -2,7 +2,8 @@
   window.ckm = window.ckm || {}
   const resource_type = new URLSearchParams(window.location.search).get('type')
   const name = new URLSearchParams(window.location.search).get('name')
-  const url = `/api/acls/${resource_type}/${name}`
+  const pattern_type = new URLSearchParams(window.location.search).get('pattern_type')
+  const url = `/api/acls/${resource_type}/${name}/${pattern_type}`
   const raw = window.sessionStorage.getItem(cacheKey())
   let data = null
   let updateTimer = null
@@ -32,7 +33,6 @@
   function update (cb) {
     const headers = new window.Headers()
     ckm.http.request('GET', url, { headers }).then(function (response) {
-      pattern_type = response.pattern_type;
       try {
         window.sessionStorage.setItem(cacheKey(), JSON.stringify(response))
       } catch (e) {
@@ -55,7 +55,6 @@
   }
 
   function start (cb) {
-    get("pattern_type").then((pt) => { pattern_type = pt});
     update(cb)
     updateTimer = setInterval(() => update(cb), 5000)
   }
@@ -83,7 +82,6 @@
     })
   }
 
-  let pattern_type = null;
 
   Object.assign(window.ckm, {
     acl: {
@@ -95,7 +93,7 @@
     interval: 5000,
     pagination: true,
     keyColumns: ["principal"],
-    baseQuery: `name=${ckm.acl.name}&type=${resource_type}`
+    baseQuery: `name=${ckm.acl.name}&type=${resource_type}&pattern_type=${pattern_type}`
   }
   const usersTable = ckm.table.renderTable('users', tableOptions, function (tr, p, all) {
     if (all) {
@@ -108,19 +106,15 @@
     btn.classList.add('btn-danger')
     btn.innerHTML = 'Delete'
     btn.addEventListener('click', function(evt) {
-      if (pattern_type === null) {
-        pattern_type = data.pattern_type;
-      }
       const url = `/api/acls`
       const body = {
         resource_type: resource_type,
-        pattern_type: pt,
+        pattern_type: pattern_type,
         name: ckm.acl.name,
         principal: p.principal,
         permission: p.operation,
         permission_type: p.permission_type,
       }
-      console.log(pt)
       if (window.confirm('Are you sure? The ACL rule will be deleted and all principals authorized with this rule will be unable to access the resource.')) {
         ckm.http.request('DELETE', url, { body }).then(() => {
           ckm.dom.removeNodes(tr)

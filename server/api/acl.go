@@ -50,11 +50,12 @@ func Acl(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var (
-		p = user.Permissions
-		n = pat.Param(r, "resourceName")
-		t = strings.ToLower(pat.Param(r, "type"))
+		p            = user.Permissions
+		name         = pat.Param(r, "resourceName")
+		resourceType = pat.Param(r, "type")
+		patternType  = pat.Param(r, "patternType")
 	)
-	data, err := zookeeper.Acl(p, t, n)
+	data, err := zookeeper.Acl(p, resourceType, name, patternType)
 	if err != nil {
 		jsonError(w, err.Error())
 		return
