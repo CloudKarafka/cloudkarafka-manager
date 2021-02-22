@@ -5,8 +5,8 @@ before_script: if ! [[ $TRAVIS_TAG ]]; then export LAST_TAG=$(git tag --list | t
 script:
 - bash ./scripts/package.sh
 - go test -v ./...
-- go build -ldflags "-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$TRAVIS_COMMIT
-  -X github.com/cloudkarafka/cloudkarafka-manager/config.Version=$VERSION" -tags static -a
+- go build -ldflags="-X github.com/cloudkarafka/cloudkarafka-manager/config.GitCommit=$TRAVIS_COMMIT
+  -X github.com/cloudkarafka/cloudkarafka-manager/config.Version=$(git describe)" -tags static -a
   -o cloudkarafka-mgmt.linux
 after_success:
 - cp cloudkarafka-mgmt.linux target/
