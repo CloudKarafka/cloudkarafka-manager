@@ -19,7 +19,7 @@ func (p Permission) check(op, resource string) bool {
 // Check if rule matches resource on name
 func (p Permission) CheckResource(resource string) bool {
 	var (
-		pattern = strings.ToLower(p.Resource)
+		pattern = strings.ToLower(p.PatternType)
 		allowed = false
 	)
 	if p.Resource == "*" {
