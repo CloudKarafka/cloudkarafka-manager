@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -77,7 +76,7 @@ func (g ConsumerGroups) Topics(group string) []map[string]interface{} {
 			t = map[string]interface{}{
 				"lag": member.Lag(),
 				"clients": map[string]struct{}{
-					member.ConsumerId: struct{}{},
+					member.ConsumerId: {},
 				},
 			}
 		}
@@ -140,7 +139,7 @@ func (g ConsumerGroups) MarshalJSON() ([]byte, error) {
 		res = make([]map[string]interface{}, len(g))
 		i   = 0
 	)
-	for group, _ := range g {
+	for group := range g {
 		res[i] = map[string]interface{}{
 			"name":    group,
 			"topics":  g.Topics(group),
@@ -159,7 +158,7 @@ func FetchConsumerGroups(ctx context.Context, out chan ConsumerGroups) {
 		v   ConsumerGroups
 		r   *http.Response
 	)
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, Timeout)
 	defer cancel()
 	host := config.BrokerUrls.Rand()
 	if host == "" {
@@ -167,24 +166,31 @@ func FetchConsumerGroups(ctx context.Context, out chan ConsumerGroups) {
 		return
 	}
 	url := fmt.Sprintf("%s/consumer-groups", host)
-	select {
-	case <-ctx.Done():
-		log.Warn("fetch_consumer_groups", log.ErrorEntry{ctx.Err()})
-		return
-	default:
-		r, err = http.Get(url)
-		if err != nil {
-			log.Warn("fetch_consumer_groups", log.ErrorEntry{err})
-			return
-		}
-		err = json.NewDecoder(r.Body).Decode(&v)
-		if err != nil {
-			b, err := ioutil.ReadAll(r.Body)
-			if err == nil {
-				log.Error("fetch_consumer_groups", log.MapEntry{"err": "could_not_parse", "body": string(b)})
-			}
-			return
-		}
-		out <- v
+	if config.VerboseLogging {
+		log.Debug("fetch_consumer_groups", log.MapEntry{"url": url})
 	}
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	r, err = httpClient.Do(req)
+	if err != nil {
+		log.Warn("fetch_consumer_groups req_failed", log.ErrorEntry{Err: err})
+		return
+	}
+	defer r.Body.Close()
+	if r.StatusCode != 200 {
+		log.Warn("fetch_consumer_groups status_code", log.MapEntry{"url": req.URL, "status": r.StatusCode})
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&v)
+	if err != nil {
+		log.Warn("fetch_consumer_groups parse_failed", log.ErrorEntry{Err: err})
+		return
+	}
+	if config.VerboseLogging {
+		log_data := log.MapEntry{
+			"num_groups": len(v),
+		}
+		log.Debug("fetch_consumer_groups", log_data)
+	}
+	out <- v
 }

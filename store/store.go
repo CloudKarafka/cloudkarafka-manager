@@ -42,8 +42,8 @@ func handleBrokerChanges(hps []zookeeper.HostPort) []MetricRequest {
 	reqs := make([]MetricRequest, len(hps)*2)
 	for i, hp := range hps {
 		copy(reqs[i*2:], []MetricRequest{
-			MetricRequest{hp.Id, BeanBrokerBytesInPerSec, "Count"},
-			MetricRequest{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
+			{hp.Id, BeanBrokerBytesInPerSec, "Count"},
+			{hp.Id, BeanBrokerBytesOutPerSec, "Count"},
 		})
 		broker, _ := fetchBroker(hp.Id)
 		store.UpdateBroker(broker)
@@ -62,9 +62,9 @@ func handleTopicChanges(topics []zookeeper.T) []MetricRequest {
 		for _, p := range topic.Partitions {
 			if p.Leader != -1 {
 				reqs = append(reqs, []MetricRequest{
-					MetricRequest{p.Leader, BeanTopicLogSize(t.Name), "Value"},
-					MetricRequest{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
-					MetricRequest{p.Leader, BeanTopicLogStart(t.Name), "Value"},
+					{p.Leader, BeanTopicLogSize(t.Name), "Value"},
+					{p.Leader, BeanTopicLogEnd(t.Name), "Value"},
+					{p.Leader, BeanTopicLogStart(t.Name), "Value"},
 				}...)
 			}
 		}

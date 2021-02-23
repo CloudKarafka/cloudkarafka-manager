@@ -46,6 +46,7 @@ var (
 	WebRequestTimeout time.Duration = 5 * time.Second
 	DevMode           bool          = false
 	NoConsumers       bool          = false
+	VerboseLogging    bool          = false
 )
 
 func PrintConfig() {

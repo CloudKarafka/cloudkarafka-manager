@@ -15,6 +15,7 @@ var (
 	kafkaDir       = flag.String("kafkadir", "/opt/kafka", "The directory where kafka lives")
 	devMode        = flag.Bool("dev", false, "Devmode add more logging and reloadable assets")
 	noConsumers    = flag.Bool("no-consumers", false, "Disable listing of consumer groups")
+	verbose        = flag.Bool("verbose", false, "Verbose logging")
 )
 
 func Parse() {
@@ -27,5 +28,9 @@ func Parse() {
 	ZookeeperURL = strings.Split(*zk, ",")
 	DevMode = *devMode
 	NoConsumers = *noConsumers
+	VerboseLogging = *verbose
+	if DevMode {
+		VerboseLogging = true
+	}
 	PrintConfig()
 }

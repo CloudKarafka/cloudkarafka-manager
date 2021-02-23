@@ -16,6 +16,14 @@ import (
 var (
 	jmxCache1Min = cache.New(1*time.Minute, 1*time.Minute)
 	plainCache   = cache.New(1*time.Hour, 1*time.Hour)
+
+	tr = &http.Transport{
+		MaxIdleConns:    10,
+		IdleConnTimeout: 30 * time.Second,
+	}
+	httpClient = &http.Client{
+		Transport: tr,
+	}
 )
 
 type MetricRequest struct {
@@ -43,64 +51,50 @@ type Metric struct {
 	Error            string  `json:"-"`
 }
 
-func doRequest(ctx context.Context, url string) ([]Metric, error) {
-	var v []Metric
-	r, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer r.Body.Close()
-	//log.Debug("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
-	if r.StatusCode != 200 {
-		log.Warn("bean_request", log.MapEntry{"url": url, "status": r.StatusCode})
-		return nil, fmt.Errorf("URL %s returned %d", url, r.StatusCode)
-	}
-	if err = json.NewDecoder(r.Body).Decode(&v); err != nil {
-		return nil, err
-	}
-	//if len(v) == 0 {
-	//	log.Debug("bean_request", log.MapEntry{"body": "[]", "url": url})
-	//}
-	return v, nil
-}
-
 func GetMetrics(ctx context.Context, query MetricRequest) ([]Metric, error) {
 	switch query.Attr {
 	case "OneMinuteRate":
 		if r, found := jmxCache1Min.Get(query.String()); found {
-			log.Info("GetMetrics cached", log.MapEntry{"Bean": query.Bean.String(), "Attr": query.Attr})
 			return r.([]Metric), nil
 		}
-	case "TimeSerie", "Count", "Value":
-		// Never cache
-	default:
-		log.Info("GetMetrics nocache", log.MapEntry{"Attr": query.Attr})
 	}
 	host := config.BrokerUrls.HttpUrl(query.BrokerId)
 	if host == "" {
 		return nil, fmt.Errorf("Broker %d not available", query.BrokerId)
 	}
 	url := fmt.Sprintf("%s/jmx?bean=%s&attrs=%s", host, query.Bean, query.Attr)
-	select {
-	case <-ctx.Done():
-		return []Metric{}, ctx.Err()
-	default:
-		v, err := doRequest(ctx, url)
-		if err == nil {
-			for i, _ := range v {
-				v[i].Broker = query.BrokerId
-			}
-		}
-		switch query.Attr {
-		case "OneMinuteRate":
-			jmxCache1Min.Set(query.String(), v, cache.DefaultExpiration)
-		}
-		return v, err
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	if err != nil {
+		return nil, err
 	}
+
+	r, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer r.Body.Close()
+	if r.StatusCode != 200 {
+		log.Warn("bean_request", log.MapEntry{"url": req.URL, "status": r.StatusCode})
+		return nil, fmt.Errorf("URL %s returned %d", req.URL, r.StatusCode)
+	}
+
+	var v []Metric
+	if err = json.NewDecoder(r.Body).Decode(&v); err != nil {
+		return nil, err
+	}
+
+	for i := range v {
+		v[i].Broker = query.BrokerId
+	}
+	switch query.Attr {
+	case "OneMinuteRate":
+		jmxCache1Min.Set(query.String(), v, cache.DefaultExpiration)
+	}
+	return v, nil
 }
 
-func getSimpleValue(url string) (string, error) {
-	r, err := http.Get(url)
+func getSimpleValue(req *http.Request) (string, error) {
+	r, err := httpClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -116,7 +110,8 @@ func KafkaVersion(brokerId int) (string, error) {
 	if r, found := plainCache.Get(key); found {
 		return r.(string), nil
 	}
-	res, err := getSimpleValue(fmt.Sprintf("%s/kafka-version", config.BrokerUrls.HttpUrl(brokerId)))
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/kafka-version", config.BrokerUrls.HttpUrl(brokerId)), nil)
+	res, err := getSimpleValue(req)
 	if err != nil {
 		return "", nil
 	}
@@ -129,7 +124,8 @@ func PluginVersion(brokerId int) (string, error) {
 	if r, found := plainCache.Get(key); found {
 		return r.(string), nil
 	}
-	res, err := getSimpleValue(fmt.Sprintf("%s/plugin-version", config.BrokerUrls.HttpUrl(brokerId)))
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/plugin-version", config.BrokerUrls.HttpUrl(brokerId)), nil)
+	res, err := getSimpleValue(req)
 	if err != nil {
 		return "", nil
 	}

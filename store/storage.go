@@ -19,36 +19,36 @@ type storage struct {
 	consumers ConsumerGroups
 }
 
-var store = storage{
+var store = &storage{
 	brokers:   make(brokers),
 	topics:    make(topics),
 	consumers: make(ConsumerGroups),
 }
 
-func (me storage) DeleteTopic(name string) {
+func (me *storage) DeleteTopic(name string) {
 	delete(me.topics, name)
 }
 
-func (me storage) UpdateBroker(b broker) {
+func (me *storage) UpdateBroker(b broker) {
 	me.Lock()
 	defer me.Unlock()
 	me.brokers[strconv.Itoa(b.Id)] = b
 }
 
-func (me storage) Brokers() brokers {
+func (me *storage) Brokers() brokers {
 	me.RLock()
 	defer me.RUnlock()
 	return me.brokers
 }
 
-func (me storage) Broker(id string) (broker, bool) {
+func (me *storage) Broker(id string) (broker, bool) {
 	me.RLock()
 	defer me.RUnlock()
 	b, ok := me.brokers[id]
 	return b, ok
 }
 
-func (me storage) Topics() TopicSlice {
+func (me *storage) Topics() TopicSlice {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -61,13 +61,13 @@ func (me storage) Topics() TopicSlice {
 	}
 	return topics
 }
-func (me storage) Topic(name string) (topic, bool) {
+func (me *storage) Topic(name string) (topic, bool) {
 	me.RLock()
 	defer me.RUnlock()
 	t, ok := me.topics[name]
 	return t, ok
 }
-func (me storage) UpdateTopic(t topic) {
+func (me *storage) UpdateTopic(t topic) {
 	me.Lock()
 	defer me.Unlock()
 	me.topics[string(t.Name)] = t
@@ -105,7 +105,7 @@ func (me *storage) UpdateTopicMetric(m Metric) {
 	me.topics[m.Topic] = t
 }
 
-func (me storage) BrokerTopicStats(brokerId int) (int, int, string) {
+func (me *storage) BrokerTopicStats(brokerId int) (int, int, string) {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -146,7 +146,7 @@ func (me *storage) UpdateBrokerMetrics(m Metric) {
 		b.ISRExpand.Add(int(m.Value))
 	}
 }
-func (me storage) SumBrokerSeries(metric string) TimeSerie {
+func (me *storage) SumBrokerSeries(metric string) TimeSerie {
 	me.RLock()
 	defer me.RUnlock()
 	var (
@@ -174,7 +174,7 @@ func (me storage) SumBrokerSeries(metric string) TimeSerie {
 	return NewSumTimeSerie(series)
 }
 
-func (me storage) Consumers() ConsumerSlice {
+func (me *storage) Consumers() ConsumerSlice {
 	if config.NoConsumers {
 		return ConsumerSlice{}
 	}
@@ -184,7 +184,7 @@ func (me storage) Consumers() ConsumerSlice {
 		cs = make(ConsumerSlice, len(me.consumers))
 		i  = 0
 	)
-	for c, _ := range me.consumers {
+	for c := range me.consumers {
 		consumer, _ := me.Consumer(c)
 		cs[i] = consumer
 		i += 1
@@ -192,7 +192,7 @@ func (me storage) Consumers() ConsumerSlice {
 	return cs
 }
 
-func (me storage) Consumer(name string) (ConsumerGroup, bool) {
+func (me *storage) Consumer(name string) (ConsumerGroup, bool) {
 	me.RLock()
 	defer me.RUnlock()
 	members, ok := me.consumers[name]
@@ -206,7 +206,7 @@ func (me storage) Consumer(name string) (ConsumerGroup, bool) {
 	return cg, ok
 }
 
-func (me storage) UpdateConsumers(cgs ConsumerGroups) {
+func (me *storage) UpdateConsumers(cgs ConsumerGroups) {
 	me.Lock()
 	defer me.Unlock()
 	for name, cg := range cgs {

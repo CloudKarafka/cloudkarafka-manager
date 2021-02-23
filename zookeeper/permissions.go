@@ -125,7 +125,7 @@ func (p Permissions) ListGroups() bool {
 	return p.describe(p.Cluster, "kafka-cluster")
 }
 
-var AllowAll = []Permission{Permission{"All", "Allow", "LITERAL", "*"}}
+var AllowAll = []Permission{{"All", "Allow", "LITERAL", "*"}}
 var AdminPermissions = Permissions{
 	Cluster: AllowAll,
 	Topic:   AllowAll,
