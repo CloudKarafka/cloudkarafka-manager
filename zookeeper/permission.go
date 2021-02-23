@@ -6,37 +6,37 @@ import (
 )
 
 type Permission struct {
-	Operation string
-	Type      string
-	Pattern   string
-	Principal string
+	Operation    string
+	ResourceType string
+	PatternType  string
+	Resource     string
 }
 
 func (p Permission) check(op, resource string) bool {
-	return (p.All() || p.Operation == op) && p.Resource(resource)
+	return (p.All() || strings.ToLower(p.Operation) == strings.ToLower(op)) && p.CheckResource(strings.ToLower(resource))
 }
 
 // Check if rule matches resource on name
-func (p Permission) Resource(principal string) bool {
+func (p Permission) CheckResource(resource string) bool {
 	var (
-		pattern = strings.ToLower(p.Pattern)
+		pattern = strings.ToLower(p.Resource)
 		allowed = false
 	)
-	if p.Principal == "*" {
+	if p.Resource == "*" {
 		allowed = true
-	} else if pattern == "literal" && p.Principal == principal {
+	} else if pattern == "literal" && p.Resource == resource {
 		allowed = true
-	} else if pattern == "prefixed" && strings.HasPrefix(principal, p.Principal) {
+	} else if pattern == "prefixed" && strings.HasPrefix(resource, p.Resource) {
 		allowed = true
 	}
 	return allowed
 }
 
 func (p Permission) Allow() bool {
-	return strings.ToLower(p.Type) == "allow"
+	return strings.ToLower(p.ResourceType) == "allow"
 }
 func (p Permission) Deny() bool {
-	return strings.ToLower(p.Type) == "deny"
+	return strings.ToLower(p.ResourceType) == "deny"
 }
 func (p Permission) All() bool {
 	return strings.ToLower(p.Operation) == "all"
@@ -96,10 +96,10 @@ func permissionsMap(username string, rules []ACLRule) []Permission {
 		for _, user := range rule.Users {
 			if user.Principal == principal {
 				res = append(res, Permission{
-					Operation: user.Operation,
-					Type:      user.PermissionType,
-					Pattern:   rule.Resource.PatternType,
-					Principal: rule.Resource.Name})
+					Operation:    user.Operation,
+					ResourceType: user.PermissionType,
+					PatternType:  rule.Resource.PatternType,
+					Resource:     rule.Resource.Name})
 			}
 		}
 	}
