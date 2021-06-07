@@ -24,3 +24,7 @@ sass:
 pliugins:
   - jekyll-seo-tag
   - jekyll-sitemap
+
+exclude:
+  - "README.md"
+  - "CNAME"
