@@ -9,5 +9,5 @@ require (
 	github.com/samuel/go-zookeeper v0.0.0-20190923202752-2cc03de413da
 	github.com/zenazn/goji v0.9.0
 	goji.io v2.0.2+incompatible
-	golang.org/x/crypto v0.0.0-20191227163750-53104e6ec876
+	golang.org/x/crypto v0.17.0
 )
